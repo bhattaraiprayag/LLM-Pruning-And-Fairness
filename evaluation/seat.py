@@ -7,7 +7,8 @@ import os
 import transformers
 
 from utils.seat import SEATRunner
-from utils.model import models, generate_experiment_id
+import utils.models as models
+from utils.experiment_id import generate_experiment_id
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 parser = argparse.ArgumentParser(description="Runs SEAT benchmark.")
@@ -81,7 +82,7 @@ if __name__ == "__main__":
     runner = SEATRunner(
         experiment_id=experiment_id,
         tests=args.tests,
-        data_dir=f"{args.persistent_dir}/data/seat",
+        data_dir=f"{args.persistent_dir}/evaluation/data/seat",
         n_samples=args.n_samples,
         parametric=args.parametric,
         model=model,
@@ -90,6 +91,6 @@ if __name__ == "__main__":
     results = runner()
     print(results)
 
-    os.makedirs(f"{args.persistent_dir}/results/seat", exist_ok=True)
-    with open(f"{args.persistent_dir}/results/seat/{experiment_id}.json", "w") as f:
+    os.makedirs(f"{args.persistent_dir}/evaluation/results/seat", exist_ok=True)
+    with open(f"{args.persistent_dir}/evaluation/results/seat/{experiment_id}.json", "w") as f:
         json.dump(results, f)
