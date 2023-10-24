@@ -2,6 +2,11 @@
 
 This is repository for our team project at the University of Mannheim. This project will explore how a range of pruning methods impact the bias of a Language Model.
 
+To install the necessary packages, run the following whilst in the repository locally:
+```
+python -m pip install -e .
+```
+
 ## Fine-tuning
 
 ## Pruning
@@ -30,5 +35,8 @@ The following files in [utils](evaluation/utils/) are used:
 - [weat.py](evaluation/utils/weat.py) - This comes from https://github.com/McGill-NLP/bias-bench and contains functions for carrying out the WEAT tests and producing statistics on the output
 
 The final evaluation can be conducted by running [seat.py](evaluation/seat.py). There are optional variables for amending the filepath to the model or other variables. An example of this would be to run the following in the terminal:
-```python ./evaluation/seat.py --model_name_or_path <model_path>```
+
+```
+python ./evaluation/seat.py --model_name_or_path <model_path>
+```
 
