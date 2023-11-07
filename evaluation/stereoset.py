@@ -24,7 +24,7 @@ parser.add_argument(
     "--model",
     action="store",
     type=str,
-    default="RobertaModel",
+    default="RobertaForMaskedLM",
     choices=[
         "BertForMaskedLM",
         "AlbertForMaskedLM",
