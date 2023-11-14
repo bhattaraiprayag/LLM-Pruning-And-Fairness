@@ -48,6 +48,10 @@ The following files in [utils](evaluation/utils/) are used:
 - [stereoset.py](evaluation/utils/stereoset.py) - This comes from [BiasBench](https://github.com/McGill-NLP/bias-bench) and contains functions for reading in the test data and carrying out the tests
 - [stereoset_dataloader.py](evaluation/utils/stereoset_dataloader.py) - This comes from [BiasBench](https://github.com/McGill-NLP/bias-bench) and handles loading the data correctly for the tests
 
-The final evaluation can be conducted by running [stereoset.py](evaluation/stereoset.py) in a similar way to in [seat](#seat-and-weat).
+The evaluation can be conducted by running [stereoset.py](evaluation/stereoset.py) for the specific model, in a similar way to in [seat](#seat-and-weat). The local run-time is ~1 hour.
 
-The local run-time is ~1 hour.
+The output files must then be run with a summariser from [stereoset2.py](evaluation/stereoset2.py), to give actual values for how correct the model was. This can be done with a single call for all files:
+
+```
+python ./evaluation/stereoset2.py --predictions_dir "./evaluation/results/stereoset/"
+```
