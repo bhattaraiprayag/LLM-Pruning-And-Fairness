@@ -2,10 +2,7 @@
 
 This is repository for our team project at the University of Mannheim. This project will explore how a range of pruning methods impact the bias of a Language Model.
 
-To install the necessary packages, run the following whilst in the repository locally (not yet tested):
-```
-python -m pip install -e .
-```
+To install the necessary packages in a conda environment, follow the instructions in [requirements.txt](requirements.txt). This is currently set up for the evaluation packages.
 
 ## Fine-tuning
 
