@@ -67,7 +67,7 @@ This is implemented based on code published in [On Measuring and Mitigating Bias
 The first stage is to generate the templates. This can be accomplished by running:
 
 ``` 
-python ./evaluation/bias_nli/generate_templates.py --noun --p occupations --h occupations --output ./evaluation/data/bias_nli/test1.csv
+python ./evaluation/bias_nli/generate_templates.py --noun --p occupations --h gendered_words --output ./evaluation/data/bias_nli/occupation_gender.csv
 ```
 
-This will generate a file larger than 10GB if run to completion. Other options could be selected for `--p` and `--h`, but we are using this setting initially. This expands templates into a set of premise-hypothesis pairs and write the result into a CSV file.
+Other options could be selected for `--p` and `--h`, but we are using this setting initially as they compare occupations with sentences with gendered words. This expands templates into a set of premise-hypothesis pairs and write the result into a CSV file.
