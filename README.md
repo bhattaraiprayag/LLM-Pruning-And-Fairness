@@ -18,6 +18,10 @@ We have implemented a number of measures of bias.
 
 As measures of the intrinsic bias of the models we have:
 - SEAT and WEAT
+- StereoSet
+
+As measures of the extrinsic bias of the models we have:
+- Bias NLI - Incomplete
 
 There are some shared scripts within the [utils](evaluation/utils/) folder:
 - [models.py](evaluation/utils/models.py) - This comes from [BiasBench](https://github.com/McGill-NLP/bias-bench) and handles loading a model
@@ -55,3 +59,15 @@ The output files must then be run with a summariser from [stereoset2.py](evaluat
 ```
 python ./evaluation/stereoset2.py --predictions_dir "./evaluation/results/stereoset/"
 ```
+
+#### Bias NLI
+
+This is implemented based on code published in [On Measuring and Mitigating Biased Inferences of Word Embeddings](https://github.com/sunipa/On-Measuring-and-Mitigating-Biased-Inferences-of-Word-Embeddings/tree/master/word_lists).
+
+The first stage is to generate the templates. This can be accomplished by running:
+
+``` 
+python ./evaluation/bias_nli/generate_templates.py --noun --p occupations --h occupations --output ./evaluation/data/bias_nli/test1.csv
+```
+
+This will generate a file larger than 10GB if run to completion. Other options could be selected for `--p` and `--h`, but we are using this setting initially. This expands templates into a set of premise-hypothesis pairs and write the result into a CSV file.
