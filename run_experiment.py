@@ -25,7 +25,7 @@ class ExperimentArguments:
     - model_path (maybe replace the path by just specifying MNLI or STS-B and then select the path (only works if we only have these two options))
 
     missing:
-    - pruning method
+    - selected pruning method
     - output directory (include check to avoid that anything gets overwritten!)
     ...
     """
@@ -34,7 +34,6 @@ class ExperimentArguments:
     )
 
 # main function that runs the pipeline (evaluations and pruning dependent on arguments)
-
 def main():
     parser = HfArgumentParser(ExperimentArguments)
     exp_args = parser.parse_args_into_dataclasses()
