@@ -1,17 +1,17 @@
 # imports
 import transformers
 from transformers import (
-    #AutoConfig,
-    #AutoModelForSequenceClassification,
-    #AutoTokenizer,
-    #DataCollatorWithPadding,
-    #EvalPrediction,
+    # AutoConfig,
+    # AutoModelForSequenceClassification,
+    # AutoTokenizer,
+    # DataCollatorWithPadding,
+    # EvalPrediction,
     HfArgumentParser,
-    #PretrainedConfig,
-    #Trainer,
-    #TrainingArguments,
-    #default_data_collator,
-    #set_seed,
+    # PretrainedConfig,
+    # Trainer,
+    # TrainingArguments,
+    # default_data_collator,
+    # set_seed,
 )
 
 from dataclasses import dataclass, field
@@ -33,10 +33,19 @@ class ExperimentArguments:
         metadata={"help": "Path to fine-tuned model"}
     )
 
+    id: int = field(
+        metadata={"help": "ID of experiment run"}
+    )
+
+
 # main function that runs the pipeline (evaluations and pruning dependent on arguments)
 def main():
     parser = HfArgumentParser(ExperimentArguments)
     exp_args = parser.parse_args_into_dataclasses()
+
+    # load data frame that stores the results
+
+    # check if ID already exists, if yes throw error
 
     # load model
     model = transformers.RobertaForSequenceClassification.from_pretrained(
@@ -45,14 +54,13 @@ def main():
         local_files_only=True
     )
 
-
     # evaluation 1
-
 
     # pruning
 
-
     # evaluation 2
+
+    # store everything in data frame
 
 
 if __name__ == "__main__":
