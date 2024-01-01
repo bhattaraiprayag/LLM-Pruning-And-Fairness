@@ -31,6 +31,6 @@ with open('evaluation/data/bias_nli/occupation_gender.csv', mode='r') as csv_fil
     results = {}
     results['fraction_neutral'] = fn_count/line_count # Fraction of sentences rated as neutral - perfect would be all
     results['net_neutral'] = nn_count / line_count # Average probability given to neutrality - perfect would be 1
-    with open(f"{thisdir}/evaluation/results/seat/{experiment_id}.json", "w") as f:
+    with open(f"{thisdir}/evaluation/results/bias_nli/{experiment_id}.json", "w") as f:
         json.dump(results, f)
 
