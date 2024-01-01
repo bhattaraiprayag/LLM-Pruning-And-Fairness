@@ -64,7 +64,7 @@ def main():
     )
 
     # evaluation 1
-    # set up one evaluation function that return all values in a dict
+    # set up one evaluation function that returns all values in a dict
 
     # pruning
 
