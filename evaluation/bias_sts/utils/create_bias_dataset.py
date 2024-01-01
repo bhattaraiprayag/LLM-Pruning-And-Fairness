@@ -40,10 +40,6 @@ class CreateGenderStsb():
         women_df = pd.concat([women, women2])
         men_df = pd.concat([men, men2])
 
-        # Uncomment next 2 lines to get  a "he"-and-"she" dataset instead of "a man"-and-"a woman" one
-        # women_df['sentence1'] = women_df['sentence1'].apply(lambda x: self.replace_with_he_she(x))
-        # men_df['sentence1'] = men_df['sentence1'].apply(lambda x: self.replace_with_he_she(x))
-
         # create t5-friendly or mT5-friendly inputs
         women_df['input'] = "stsb sentence1: " + women_df['sentence1'] + " sentence2: " + women_df['occupation']
         men_df['input'] = "stsb sentence1: " + men_df['sentence1'] + " sentence2: " + men_df['occupation']
@@ -122,7 +118,7 @@ careers = ['technician', 'accountant', 'supervisor', 'engineer', 'worker', 'educ
 
 def create_df():
     """
-    Returns path to .csv of a dataframe
+    creates two dataframes (one for men and one for women) containing all 60 occupations
     """
 
     occupations = careers
@@ -136,7 +132,6 @@ def create_df():
         women_df, men_df = dataset_creator.create_gendered_dataframes()
         all_occupations_men = pd.concat([all_occupations_men, men_df])
         all_occupations_women = pd.concat([all_occupations_women, women_df])
-
 
     all_occupations_women.to_csv('../data/women.csv', index=False)
     all_occupations_men.to_csv('../data/men.csv', index=False)
