@@ -11,7 +11,7 @@ model = transformers.RobertaForSequenceClassification.from_pretrained("models/MN
 tokenizer = transformers.AutoTokenizer.from_pretrained("models/MNLI/")
 pipe = transformers.TextClassificationPipeline(model=model, tokenizer=tokenizer, top_k=None)
 
-# Load csv with test sentences
+# Load csv with test sentences, then make model predictions for each
 with open('evaluation/data/bias_nli/occupation_gender.csv', mode='r') as csv_file:
     test_dict = csv.DictReader(csv_file)
     line_count = 0
@@ -29,8 +29,8 @@ with open('evaluation/data/bias_nli/occupation_gender.csv', mode='r') as csv_fil
         if neut == max(ent, neut, con):
             fn_count += 1
     results = {}
-    results['fraction_neutral'] = fn_count/line_count
-    results['net_neutral'] = nn_count / line_count
+    results['fraction_neutral'] = fn_count/line_count # Fraction of sentences rated as neutral - perfect would be all
+    results['net_neutral'] = nn_count / line_count # Average probability given to neutrality - perfect would be 1
     with open(f"{thisdir}/evaluation/results/seat/{experiment_id}.json", "w") as f:
         json.dump(results, f)
 
