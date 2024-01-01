@@ -11,7 +11,7 @@ from transformers import (
     # Trainer,
     # TrainingArguments,
     # default_data_collator,
-    # set_seed,
+    set_seed,
 )
 
 from dataclasses import dataclass, field
@@ -22,6 +22,8 @@ from dataclasses import dataclass, field
 class ExperimentArguments:
     """
     Arguments needed to run the experiment
+    - id
+    - seed
     - model_path (maybe replace the path by just specifying MNLI or STS-B and then select the path (only works if we only have these two options))
 
     missing:
@@ -29,12 +31,16 @@ class ExperimentArguments:
     - output directory (include check to avoid that anything gets overwritten!)
     ...
     """
-    model_path: str = field(
-        metadata={"help": "Path to fine-tuned model"}
-    )
-
     id: int = field(
         metadata={"help": "ID of experiment run"}
+    )
+
+    seed: int = field(
+        metadata={"help": "random seed"}
+    )
+
+    model_path: str = field(
+        metadata={"help": "Path to fine-tuned model"}
     )
 
 
@@ -43,9 +49,12 @@ def main():
     parser = HfArgumentParser(ExperimentArguments)
     exp_args = parser.parse_args_into_dataclasses()
 
-    # load data frame that stores the results
+    # load data frame that stores the results (every run adds a new row)
 
-    # check if ID already exists, if yes throw error
+    # check if ID already exists in data frame, if yes throw error
+
+    # set seed before running the experiment
+    set_seed(exp_args.seed)
 
     # load model
     model = transformers.RobertaForSequenceClassification.from_pretrained(
@@ -55,6 +64,7 @@ def main():
     )
 
     # evaluation 1
+    # set up one evaluation function that return all values in a dict
 
     # pruning
 
