@@ -1,4 +1,5 @@
 # imports
+import pandas as pd
 import transformers
 from transformers import (
     # AutoConfig,
@@ -49,9 +50,12 @@ def main():
     parser = HfArgumentParser(ExperimentArguments)
     exp_args = parser.parse_args_into_dataclasses()
 
-    # load data frame that stores the results (every run adds a new row)
+    # load dataframe that stores the results (every run adds a new row)
+    results_df = pd.read_csv("results/results.csv")
 
     # check if ID already exists in data frame, if yes throw error
+    if exp_args.id in results_df['ID'].values:
+        raise ValueError("Experiment ID already exists.")
 
     # set seed before running the experiment
     set_seed(exp_args.seed)
@@ -71,7 +75,7 @@ def main():
     # evaluation 2
 
     # store everything in data frame
-
+    #results_df = pd.concat([results_df, results_run])
 
 if __name__ == "__main__":
     main()
