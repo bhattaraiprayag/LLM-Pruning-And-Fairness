@@ -16,7 +16,7 @@ from transformers import (
 )
 
 from dataclasses import dataclass, field
-
+from typing import Optional
 
 # dataclass that contains all arguments needed to run the experiment
 @dataclass
@@ -25,11 +25,10 @@ class ExperimentArguments:
     Arguments needed to run the experiment
     - id
     - seed
-    - model_path (maybe replace the path by just specifying MNLI or STS-B and then select the path (only works if we only have these two options))
-
-    missing:
-    - selected pruning method
-    - output directory (include check to avoid that anything gets overwritten!)
+    - model_path (maybe select the path automatically based on task)
+    - task
+    - pruning_method
+    - sparsity_level
     ...
     """
     id: int = field(
@@ -44,8 +43,21 @@ class ExperimentArguments:
         metadata={"help": "Path to fine-tuned model"}
     )
 
+    task: str = field(
+        metadata={"help": "MNLI or STS-B"},
+    )
 
-# main function that runs the pipeline (evaluations and pruning dependent on arguments)
+    pruning_method: Optional[str] = field(
+        default=None, # None means that the base models are evaluated without doing pruning
+        metadata={"help": "Specify pruning method (...)"}, # add all options
+    )
+
+    sparsity_level: Optional[float] = field(
+        default=None,
+        metadata={"help": "Specify pruning method (None, ... )"},  # add all options
+    )
+
+# main function that runs the pipeline (evaluation and pruning dependent on arguments)
 def main():
     parser = HfArgumentParser(ExperimentArguments)
     exp_args = parser.parse_args_into_dataclasses()
@@ -75,12 +87,13 @@ def main():
     # load tokenizer
     tokenizer = transformers.AutoTokenizer.from_pretrained(exp_args.model_path)
 
-    # evaluation 1
-    # set up one evaluation function that returns all values in a dict
+    # pruning (skipped if pruning == None)
+    # ideally set up one pruning function
 
-    # pruning
+    # model evaluation
 
-    # evaluation 2
+    # fairness evaluation
+    # ideally: set up one evaluation function
 
     # store everything in data frame (code still missing to create results_run)
     #results_df = pd.concat([results_df, results_run])
