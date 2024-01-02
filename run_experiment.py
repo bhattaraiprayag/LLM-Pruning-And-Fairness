@@ -67,6 +67,9 @@ def main():
         local_files_only=True
     )
 
+    # load tokenizer
+    tokenizer = transformers.AutoTokenizer.from_pretrained(exp_args.model_path)
+
     # evaluation 1
     # set up one evaluation function that returns all values in a dict
 
