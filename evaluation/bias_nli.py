@@ -9,7 +9,7 @@ experiment_id = 'test_biasnli'
 # Load model
 model = transformers.RobertaForSequenceClassification.from_pretrained(f"{thisdir}/models/MNLI/", use_safetensors=True, local_files_only=True)
 tokenizer = transformers.AutoTokenizer.from_pretrained(f"{thisdir}/models/MNLI/")
-pipe = transformers.TextClassificationPipeline(model=model, tokenizer=tokenizer, top_k=None)
+pipe = transformers.TextClassificationPipeline(model=model, tokenizer=tokenizer, top_k=None, max_length=512, truncation=True, padding=True)
 
 # Load csv with test sentences, then make model predictions for each
 with open(f'{thisdir}/evaluation/data/bias_nli/occupation_gender.csv', mode='r') as csv_file:
