@@ -20,7 +20,7 @@ with open(f'{thisdir}/evaluation/data/bias_nli/occupation_gender.csv', mode='r')
     for row in test_dict:
         line_count += 1
         if line_count % 1000 == 0:
-            break #print(line_count)
+            print(line_count)
         prediction = pipe((row["premise"],row["hypothesis"]))
         ent = [i['score'] for i in prediction if i['label']=='entailment'][0]
         neut = [i['score'] for i in prediction if i['label']=='neutral'][0]
