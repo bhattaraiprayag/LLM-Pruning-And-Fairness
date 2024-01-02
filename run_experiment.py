@@ -53,11 +53,16 @@ def main():
     # load dataframe that stores the results (every run adds a new row)
     results_df = pd.read_csv("results/results.csv")
 
+    # MISSING CHANGE: create ID instead of setting it manually
     # check if ID already exists in data frame, if yes throw error
     if exp_args.id in results_df['ID'].values:
         raise ValueError("Experiment ID already exists.")
 
-    # set seed before running the experiment
+    # specify current directory
+
+    # create output/results folder directory (one folder per run) -> used to store bigger/more detailed outputs
+
+    # set seed before running the experiment (??? needed if we put it directly into pruning functions ???)
     set_seed(exp_args.seed)
 
     # load model
@@ -77,7 +82,7 @@ def main():
 
     # evaluation 2
 
-    # store everything in data frame
+    # store everything in data frame (code still missing to create results_run)
     #results_df = pd.concat([results_df, results_run])
 
 if __name__ == "__main__":
