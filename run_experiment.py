@@ -1,10 +1,14 @@
 # imports
 import pandas as pd
+import os
+
 import transformers
 from transformers import (
     # AutoConfig,
     # AutoModelForSequenceClassification,
-    # AutoTokenizer,
+    AutoTokenizer,
+    RobertaForSequenceClassification,
+    TextClassificationPipeline,
     # DataCollatorWithPadding,
     # EvalPrediction,
     HfArgumentParser,
@@ -73,6 +77,7 @@ def main():
         raise ValueError("Experiment ID already exists.")
 
     # specify current directory
+    thisdir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
     # create output/results folder directory (one folder per run) -> used to store bigger/more detailed outputs
 
@@ -80,14 +85,17 @@ def main():
     set_seed(exp_args.seed)
 
     # load model
-    model = transformers.RobertaForSequenceClassification.from_pretrained(
+    model = RobertaForSequenceClassification.from_pretrained(
         exp_args.model_path,
         use_safetensors=True,
         local_files_only=True
     )
 
     # load tokenizer
-    tokenizer = transformers.AutoTokenizer.from_pretrained(exp_args.model_path)
+    tokenizer = AutoTokenizer.from_pretrained(exp_args.model_path)
+
+    # create pipeline
+    pipe = TextClassificationPipeline(model=model, tokenizer=tokenizer, top_k=None, max_length=512, truncation=True, padding=True)
 
     # pruning (skipped if pruning == None)
     # ideally set up one pruning function
