@@ -40,14 +40,10 @@ class CreateGenderStsb():
         women_df = pd.concat([women, women2])
         men_df = pd.concat([men, men2])
 
-        # create t5-friendly or mT5-friendly inputs
-        women_df['input'] = "stsb sentence1: " + women_df['sentence1'] + " sentence2: " + women_df['occupation']
-        men_df['input'] = "stsb sentence1: " + men_df['sentence1'] + " sentence2: " + men_df['occupation']
-
-        # keep only inputs
-        men_df = men_df[['sentence1', 'occupation', 'input']]
+        # keep only sentence pairs
+        men_df = men_df[['sentence1', 'occupation']]
         men_df = men_df.sort_index(axis=0)
-        women_df = women_df[['sentence1', 'occupation', 'input']]
+        women_df = women_df[['sentence1', 'occupation']]
         women_df = women_df.sort_index(axis=0)
 
         return women_df, men_df
@@ -97,22 +93,15 @@ class CreateGenderStsb():
                 x = x.replace('A woman ', 'A ' + occupation + ' ')
         return x
 
-    def replace_with_he_she(self, x):
-        if x[:5] == 'A man':
-            x = x.replace('A man ', 'He ')
-        if x[:7] == 'A woman':
-            x = x.replace('A woman ', 'She ')
-        return x
-
 
 occupations = ['technician', 'accountant', 'supervisor', 'engineer', 'worker', 'educator', 'clerk', 'counselor',
-           'inspector', 'mechanic', 'manager', 'therapist', 'administrator', 'salesperson', 'receptionist',
-           'librarian', 'advisor', 'pharmacist', 'janitor', 'psychologist', 'physician', 'carpenter', 'nurse',
-           'investigator', 'bartender', 'specialist', 'electrician', 'officer', 'pathologist', 'teacher', 'lawyer',
-           'planner', 'practitioner', 'plumber', 'instructor', 'surgeon', 'veterinarian', 'paramedic', 'examiner',
-           'chemist', 'machinist', 'appraiser', 'nutritionist', 'architect', 'hairdresser', 'baker', 'programmer',
-           'paralegal', 'hygienist', 'scientist', 'dispatcher', 'cashier', 'auditor', 'dietitian', 'painter', 'broker',
-           'chef', 'doctor', 'firefighter', 'secretary']
+               'inspector', 'mechanic', 'manager', 'therapist', 'administrator', 'salesperson', 'receptionist',
+               'librarian', 'advisor', 'pharmacist', 'janitor', 'psychologist', 'physician', 'carpenter', 'nurse',
+               'investigator', 'bartender', 'specialist', 'electrician', 'officer', 'pathologist', 'teacher', 'lawyer',
+               'planner', 'practitioner', 'plumber', 'instructor', 'surgeon', 'veterinarian', 'paramedic', 'examiner',
+               'chemist', 'machinist', 'appraiser', 'nutritionist', 'architect', 'hairdresser', 'baker', 'programmer',
+               'paralegal', 'hygienist', 'scientist', 'dispatcher', 'cashier', 'auditor', 'dietitian', 'painter',
+               'broker', 'chef', 'doctor', 'firefighter', 'secretary']
 
 
 def create_df():
@@ -120,8 +109,8 @@ def create_df():
     creates two dataframes (one for men and one for women) containing all 60 occupations
     """
 
-    all_occupations_men = pd.DataFrame(columns=['sentence1','occupation','input'])
-    all_occupations_women = pd.DataFrame(columns=['sentence1', 'occupation', 'input'])
+    all_occupations_men = pd.DataFrame(columns=['sentence1', 'occupation'])
+    all_occupations_women = pd.DataFrame(columns=['sentence1', 'occupation'])
 
     for i, occupation in enumerate(tqdm(occupations)):
         print(f'occupation {i + 1}/{len(occupations)}...')
