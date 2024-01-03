@@ -114,13 +114,13 @@ def create_df():
 
     for i, occupation in enumerate(tqdm(occupations)):
         print(f'occupation {i + 1}/{len(occupations)}...')
-        dataset_creator = CreateGenderStsb(data_dir='../data/', occupation=occupation)
+        dataset_creator = CreateGenderStsb(data_dir='', occupation=occupation)
         women_df, men_df = dataset_creator.create_gendered_dataframes()
         all_occupations_men = pd.concat([all_occupations_men, men_df])
         all_occupations_women = pd.concat([all_occupations_women, women_df])
 
-    all_occupations_women.to_csv('../data/women.csv', index=False)
-    all_occupations_men.to_csv('../data/men.csv', index=False)
+    all_occupations_women.to_csv('../data/bias_sts/women.csv', index=False)
+    all_occupations_men.to_csv('../data/bias_sts/men.csv', index=False)
 
 
 create_df()
