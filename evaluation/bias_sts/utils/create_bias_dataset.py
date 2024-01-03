@@ -105,8 +105,7 @@ class CreateGenderStsb():
         return x
 
 
-
-careers = ['technician', 'accountant', 'supervisor', 'engineer', 'worker', 'educator', 'clerk', 'counselor',
+occupations = ['technician', 'accountant', 'supervisor', 'engineer', 'worker', 'educator', 'clerk', 'counselor',
            'inspector', 'mechanic', 'manager', 'therapist', 'administrator', 'salesperson', 'receptionist',
            'librarian', 'advisor', 'pharmacist', 'janitor', 'psychologist', 'physician', 'carpenter', 'nurse',
            'investigator', 'bartender', 'specialist', 'electrician', 'officer', 'pathologist', 'teacher', 'lawyer',
@@ -121,13 +120,11 @@ def create_df():
     creates two dataframes (one for men and one for women) containing all 60 occupations
     """
 
-    occupations = careers
-
     all_occupations_men = pd.DataFrame(columns=['sentence1','occupation','input'])
     all_occupations_women = pd.DataFrame(columns=['sentence1', 'occupation', 'input'])
 
     for i, occupation in enumerate(tqdm(occupations)):
-        print(f'occupation {i + 1}/{len(careers)}...')
+        print(f'occupation {i + 1}/{len(occupations)}...')
         dataset_creator = CreateGenderStsb(data_dir='../data/', occupation=occupation)
         women_df, men_df = dataset_creator.create_gendered_dataframes()
         all_occupations_men = pd.concat([all_occupations_men, men_df])
