@@ -30,7 +30,6 @@ class ExperimentArguments:
     Arguments needed to run the experiment
     - id
     - seed
-    - model_path (maybe select the path automatically based on task)
     - task
     - pruning_method
     - sparsity_level
@@ -42,10 +41,6 @@ class ExperimentArguments:
 
     seed: int = field(
         metadata={"help": "random seed"}
-    )
-
-    model_path: str = field(
-        metadata={"help": "Path to fine-tuned model"}
     )
 
     task: str = field(
@@ -68,25 +63,30 @@ def main():
     parser = HfArgumentParser(ExperimentArguments)
     exp_args = parser.parse_args_into_dataclasses()
 
-    # load dataframe that stores the results (every run adds a new row)
-    results_df = pd.read_csv("results/results.csv")
-
     # MISSING CHANGE: create ID instead of setting it manually
     # check if ID already exists in data frame, if yes throw error
     if exp_args.id in results_df['ID'].values:
-        raise ValueError("Experiment ID already exists.")
+        raise ValueError('Experiment ID already exists.')
 
     # specify current directory
     thisdir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
     # create output/results folder directory (one folder per run) -> used to store bigger/more detailed outputs
 
-    # set seed before running the experiment (??? needed if we put it directly into pruning functions ???)
-    set_seed(exp_args.seed)
+    # load dataframe that stores the results (every run adds a new row)
+    results_df = pd.read_csv(f'{thisdir}/results/results.csv')
+
+    # select model_path based on task
+    if exp_args.task == 'MNLI':
+        model_path = f'{thisdir}/final_models/MNLI/'
+    elif exp_args.task == "STS-B":
+        model_path = f'{thisdir}/final_models/STS-B/'
+    else:
+        raise ValueError(f'No model found for task {exp_args.task}')
 
     # load model
     model = RobertaForSequenceClassification.from_pretrained(
-        exp_args.model_path,
+        model_path,
         use_safetensors=True,
         local_files_only=True
     )
@@ -96,6 +96,9 @@ def main():
 
     # create pipeline
     pipe = TextClassificationPipeline(model=model, tokenizer=tokenizer, top_k=None, max_length=512, truncation=True, padding=True)
+
+    # set seed before running the experiment (??? needed if we put it directly into pruning functions ???)
+    set_seed(exp_args.seed)
 
     # pruning (skipped if pruning == None)
     # ideally set up one pruning function
@@ -109,5 +112,5 @@ def main():
     # results_df = pd.concat([results_df, results_run])
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
