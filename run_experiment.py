@@ -28,16 +28,12 @@ from typing import Optional
 class ExperimentArguments:
     """
     Arguments needed to run the experiment
-    - id
     - seed
     - task
     - pruning_method
     - sparsity_level
     ...
     """
-    id: int = field(
-        metadata={"help": "ID of experiment run"}
-    )
 
     seed: int = field(
         metadata={"help": "random seed"}
@@ -58,28 +54,28 @@ class ExperimentArguments:
     )
 
 
-# main function that runs the pipeline (evaluation and pruning dependent on arguments)
+# main function that runs the experiment pipeline (evaluation and pruning dependent on arguments)
 def main():
     parser = HfArgumentParser(ExperimentArguments)
     exp_args = parser.parse_args_into_dataclasses()
 
-    # MISSING CHANGE: create ID instead of setting it manually
-    # check if ID already exists in data frame, if yes throw error
-    if exp_args.id in results_df['ID'].values:
-        raise ValueError('Experiment ID already exists.')
-
     # specify current directory
     thisdir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-
-    # create output/results folder directory (one folder per run) -> used to store bigger/more detailed outputs
 
     # load dataframe that stores the results (every run adds a new row)
     results_df = pd.read_csv(f'{thisdir}/results/results.csv')
 
-    # select model_path based on task
+    # determine ID of this run
+    id = results_df['ID'].max() + 1
+
+    # create output/results folder directory (one folder per run) -> used to store bigger/more detailed outputs
+    outdir = os.path.join(thisdir, f'/results/run{str(id)}')
+    os.mkdir(outdir)
+
+    # select model path based on task
     if exp_args.task == 'MNLI':
         model_path = f'{thisdir}/final_models/MNLI/'
-    elif exp_args.task == "STS-B":
+    elif exp_args.task == 'STS-B':
         model_path = f'{thisdir}/final_models/STS-B/'
     else:
         raise ValueError(f'No model found for task {exp_args.task}')
