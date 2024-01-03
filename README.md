@@ -70,4 +70,7 @@ The first stage is to generate the templates. This can be accomplished by runnin
 python ./evaluation/bias_nli/generate_templates.py --noun --p occupations --h gendered_words --output ./evaluation/data/bias_nli/occupation_gender.csv
 ```
 
-Other options could be selected for `--p` and `--h`, but we are using this setting initially as they compare occupations with sentences with gendered words. This expands templates into a set of premise-hypothesis pairs and write the result into a CSV file.
+Other options could be selected for `--p` and `--h`, but we are using this setting initially as they compare occupations with sentences with gendered words. This expands templates into a set of premise-hypothesis pairs and write the result into a CSV file. 
+The files used for this are in the [bias_nli folder](evaluation/bias_nli).
+
+There is then a function to produce the scores when it is given a transformers pipeline. It will return a dictionary with net neutral and fraction neutral values.
