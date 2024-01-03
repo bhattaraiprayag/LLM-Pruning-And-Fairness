@@ -18,6 +18,7 @@ from transformers import (
 from dataclasses import dataclass, field
 from typing import Optional
 
+
 # dataclass that contains all arguments needed to run the experiment
 @dataclass
 class ExperimentArguments:
@@ -48,14 +49,15 @@ class ExperimentArguments:
     )
 
     pruning_method: Optional[str] = field(
-        default=None, # None means that the base models are evaluated without doing pruning
-        metadata={"help": "Specify pruning method (...)"}, # add all options
+        default=None,  # None means that the base models are evaluated without doing pruning
+        metadata={"help": "Specify pruning method (...)"},  # add all options
     )
 
     sparsity_level: Optional[float] = field(
         default=None,
         metadata={"help": "Specify pruning method (None, ... )"},  # add all options
     )
+
 
 # main function that runs the pipeline (evaluation and pruning dependent on arguments)
 def main():
@@ -96,7 +98,8 @@ def main():
     # ideally: set up one evaluation function
 
     # store everything in data frame (code still missing to create results_run)
-    #results_df = pd.concat([results_df, results_run])
+    # results_df = pd.concat([results_df, results_run])
+
 
 if __name__ == "__main__":
     main()
