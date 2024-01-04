@@ -59,24 +59,22 @@ def main():
     parser = HfArgumentParser(ExperimentArguments)
     exp_args = parser.parse_args_into_dataclasses()
 
-    # specify current directory
-    thisdir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-
     # load dataframe that stores the results (every run adds a new row)
-    results_df = pd.read_csv(f'{thisdir}/results/results.csv')
+    results_df = pd.read_csv('/results/results.csv')
 
     # determine ID of this run
+    # MISSING: exception for very first run
     id = results_df['ID'].max() + 1
 
-    # create output/results folder directory (one folder per run) -> used to store bigger/more detailed outputs
-    outdir = os.path.join(thisdir, f'/results/run{str(id)}')
-    os.mkdir(outdir)
+    # NOT NEEDED?? create output/results folder directory (one folder per run) to put into functions
+    # outdir = f'/results/run{str(id)}'
+    # os.mkdir(outdir)
 
     # select model path based on task
     if exp_args.task == 'MNLI':
-        model_path = f'{thisdir}/final_models/MNLI/'
+        model_path = 'training/final_models/MNLI/'
     elif exp_args.task == 'STS-B':
-        model_path = f'{thisdir}/final_models/STS-B/'
+        model_path = 'training/final_models/STS-B/'
     else:
         raise ValueError(f'No model found for task {exp_args.task}')
 
@@ -88,7 +86,7 @@ def main():
     )
 
     # load tokenizer
-    tokenizer = AutoTokenizer.from_pretrained(exp_args.model_path)
+    tokenizer = AutoTokenizer.from_pretrained(model_path)
 
     # create pipeline
     pipe = TextClassificationPipeline(model=model, tokenizer=tokenizer, top_k=None, max_length=512, truncation=True, padding=True)
