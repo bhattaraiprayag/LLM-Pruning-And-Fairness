@@ -1,8 +1,6 @@
 # imports
 import pandas as pd
-import os
 
-import transformers
 from transformers import (
     # AutoConfig,
     # AutoModelForSequenceClassification,
