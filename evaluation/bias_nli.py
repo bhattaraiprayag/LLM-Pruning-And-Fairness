@@ -9,7 +9,7 @@ def bias_nli(model_pipe, exp_id):
     # Output: results dictionary with net neutral and fraction neutral scores, also saves csv with predictions
 
     # Load csv with test sentences, then make model predictions for each
-    with open(f'evaluation/data/bias_nli/occupation_gender_test.csv', mode='r') as csv_file:
+    with open(f'evaluation/data/bias_nli/occupation_gender.csv', mode='r') as csv_file:
         test_dict = csv.DictReader(csv_file)
         pair_list = []
         word_list = []
