@@ -33,19 +33,23 @@ def bias_sts(model_pipe, thisdir):
         pair_list = test_df.to_records(index=False).tolist()
         # Make predictions with model
         pred = model_pipe(pair_list)
-        scores_men = np.array([i['score'] for i in pred])
+        scores_men = [i[0]['score'] for i in pred]
+        test_df['scores'] = scores_men
+        test_df.to_csv('men_new.csv', index=False)
         print('men done')
 
     with open(f'{thisdir}/evaluation/data/bias_sts/women.csv', mode='r') as csv_file:
         test_df = pd.read_csv(csv_file)
         # Get all sentence pairs in a list of tuples
-        pair_list = test_df.to_records().tolist()
+        pair_list = test_df.to_records(index=False).tolist()
         # Make predictions with model
         pred = model_pipe(pair_list)
-        scores_women = np.array([i['score'] for i in pred])
+        scores_women = np.array([i[0]['score'] for i in pred])
+        test_df['scores'] = scores_men
+        test_df.to_csv('women_new.csv', index=False)
         print('women done')
 
-    result = {'avg_abs_diff': np.sum(np.absolute(np.subtract(scores_women, scores_men))) / len(scores_men)}
+    result = {'avg_abs_diff': np.sum(np.absolute(np.subtract(np.array(scores_women), np.array(scores_men)))) / len(scores_men)}
 
     return result
 
