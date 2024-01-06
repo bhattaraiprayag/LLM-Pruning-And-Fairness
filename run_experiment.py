@@ -61,8 +61,10 @@ def main():
     results_df = pd.read_csv('/results/results.csv')
 
     # determine ID of this run
-    # MISSING: exception for very first run
-    id = results_df['ID'].max() + 1
+    if results_df.empty:
+        id = 1
+    else:
+        id = results_df['ID'].max() + 1
 
     # NOT NEEDED?? create output/results folder directory (one folder per run) to put into functions
     # outdir = f'/results/run{str(id)}'
