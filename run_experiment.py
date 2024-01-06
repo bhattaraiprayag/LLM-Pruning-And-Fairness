@@ -2,18 +2,10 @@
 import pandas as pd
 
 from transformers import (
-    # AutoConfig,
-    # AutoModelForSequenceClassification,
     AutoTokenizer,
     RobertaForSequenceClassification,
     TextClassificationPipeline,
-    # DataCollatorWithPadding,
-    # EvalPrediction,
     HfArgumentParser,
-    # PretrainedConfig,
-    # Trainer,
-    # TrainingArguments,
-    # default_data_collator,
     set_seed,
 )
 
@@ -38,7 +30,7 @@ class ExperimentArguments:
     )
 
     task: str = field(
-        metadata={"help": "MNLI or STS-B"},
+        metadata={"help": "mnli or stsb"},
     )
 
     pruning_method: Optional[str] = field(
@@ -55,10 +47,10 @@ class ExperimentArguments:
 # main function that runs the experiment pipeline (evaluation and pruning dependent on arguments)
 def main():
     parser = HfArgumentParser(ExperimentArguments)
-    exp_args = parser.parse_args_into_dataclasses()
+    exp_args = parser.parse_args_into_dataclasses()[0]
 
     # load dataframe that stores the results (every run adds a new row)
-    results_df = pd.read_csv('/results/results.csv')
+    results_df = pd.read_csv('results/results.csv')
 
     # determine ID of this run
     if results_df.empty:
@@ -71,9 +63,9 @@ def main():
     # os.mkdir(outdir)
 
     # select model path based on task
-    if exp_args.task == 'MNLI':
+    if exp_args.task == 'mnli':
         model_path = 'training/final_models/MNLI/'
-    elif exp_args.task == 'STS-B':
+    elif exp_args.task == 'stsb':
         model_path = 'training/final_models/STS-B/'
     else:
         raise ValueError(f'No model found for task {exp_args.task}')
