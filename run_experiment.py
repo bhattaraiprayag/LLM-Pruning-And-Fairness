@@ -105,4 +105,5 @@ def main():
 
 
 if __name__ == '__main__':
+    # Sample run: python run_experiment.py --task stsb --pruning_method l1-unstructured --sparsity_level 0.5 --seed 42
     main()
