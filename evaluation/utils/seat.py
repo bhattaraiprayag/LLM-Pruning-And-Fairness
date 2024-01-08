@@ -162,10 +162,10 @@ def _encode(model, tokenizer, texts):
     for text in texts:
         # Encode each example.
         inputs = tokenizer(text, return_tensors="pt")
-        outputs = model(**inputs)
+        outputs = model(**inputs, output_hidden_states=True)
 
         # Average over the last layer of hidden representations.
-        enc = outputs["last_hidden_state"]
+        enc = outputs.hidden_states[-1]    # line wants to get last hidden state, should be the same as the last item in hidden_states (https://stackoverflow.com/questions/61323621/how-to-understand-hidden-states-of-the-returns-in-bertmodelhuggingface-transfo)
         enc = enc.mean(dim=1)
 
         # Following May et al., normalize the representation.
