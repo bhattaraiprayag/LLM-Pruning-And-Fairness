@@ -35,8 +35,6 @@ class SEATRunner:
         Args:
             model: HuggingFace model (e.g., BertModel) to evaluate.
             tokenizer: HuggingFace tokenizer (e.g., BertTokenizer) used for pre-processing.
-            tests (`str`): Comma separated list of SEAT tests to run. SEAT test files should
-                be in `data_dir` and have corresponding names with extension ".jsonl".
             data_dir (`str`): Path to directory containing the SEAT tests.
             experiment_id (`str`): Experiment identifier. Used for logging.
             n_samples (`int`): Number of permutation test samples used when estimating p-values
