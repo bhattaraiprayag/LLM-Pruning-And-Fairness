@@ -4,6 +4,8 @@ import json
 import os
 
 from evaluation.utils.seat import SEATRunner
+
+# TO DO: delete unused files
 #import utils.models as models
 #from utils.experiment_id import generate_experiment_id
 
