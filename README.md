@@ -17,11 +17,12 @@ To install the necessary packages in a conda environment, follow the instruction
 We have implemented a number of measures of bias.
 
 As measures of the intrinsic bias of the models we have:
-- SEAT and WEAT
-- StereoSet
+- SEAT
+- WEAT
 
 As measures of the extrinsic bias of the models we have:
-- Bias NLI - Incomplete
+- Bias NLI
+- Bias STS - incomplete
 
 There are some shared scripts within the [utils](evaluation/utils/) folder:
 - [models.py](evaluation/utils/models.py) - This comes from [BiasBench](https://github.com/McGill-NLP/bias-bench) and handles loading a model
@@ -43,22 +44,6 @@ python ./evaluation/seat.py --model_name_or_path <model_path>
 ```
 
 The local run-time is ~10 minutes.
-
-#### StereoSet
-
-This is implemented based on the code published in [BiasBench](https://github.com/McGill-NLP/bias-bench). The data for the tests is stored in [stereoset](evaluation/data/stereoset/).
-
-The following files in [utils](evaluation/utils/) are used:
-- [stereoset.py](evaluation/utils/stereoset.py) - This comes from [BiasBench](https://github.com/McGill-NLP/bias-bench) and contains functions for reading in the test data and carrying out the tests
-- [stereoset_dataloader.py](evaluation/utils/stereoset_dataloader.py) - This comes from [BiasBench](https://github.com/McGill-NLP/bias-bench) and handles loading the data correctly for the tests
-
-The evaluation can be conducted by running [stereoset.py](evaluation/stereoset.py) for the specific model, in a similar way to in [seat](#seat-and-weat). The local run-time is ~1 hour.
-
-The output files must then be run with a summariser from [stereoset2.py](evaluation/stereoset2.py), to give actual values for how correct the model was. This can be done with a single call for all files:
-
-```
-python ./evaluation/stereoset2.py --predictions_dir "./evaluation/results/stereoset/"
-```
 
 #### Bias NLI
 
