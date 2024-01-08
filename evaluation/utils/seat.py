@@ -8,7 +8,7 @@ import re
 import numpy as np
 import torch
 
-import weat
+import evaluation.utils.weat as weat
 
 
 class SEATRunner:
@@ -24,7 +24,6 @@ class SEATRunner:
         self,
         model,
         tokenizer,
-        tests,
         data_dir,
         experiment_id,
         n_samples=100000,
@@ -47,7 +46,6 @@ class SEATRunner:
         """
         self._model = model
         self._tokenizer = tokenizer
-        self._tests = tests
         self._data_dir = data_dir
         self._experiment_id = experiment_id
         self._n_samples = n_samples
@@ -73,7 +71,7 @@ class SEATRunner:
         )
 
         # Use the specified tests, otherwise, run all SEAT tests.
-        tests = self._tests or all_tests
+        tests = all_tests
 
         results = []
         for test in tests:
