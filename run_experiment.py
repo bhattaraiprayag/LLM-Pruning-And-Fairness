@@ -12,6 +12,8 @@ from transformers import (
 from dataclasses import dataclass, field
 from typing import Optional
 
+from evaluation.seat import seatandweat
+
 
 # dataclass that contains all arguments needed to run the experiment
 @dataclass
@@ -93,6 +95,7 @@ def main():
 
     # fairness evaluation
     # ideally: set up one evaluation function
+    seatandweat(model, tokenizer, id, exp_args.seed) # only print results so far and does not return anything!
 
     # store everything in data frame (code still missing to create results_run)
     # results_df = pd.concat([results_df, results_run])
