@@ -112,12 +112,13 @@ class ScoreEvaluator:
         micro_icat = np.mean(micro_icat_scores)
         macro_icat = lm_score * (min(ss_score, 100 - ss_score) / 50.0)
 
-        return {
-            "Count": total,
-            "LM Score": lm_score,
-            "SS Score": ss_score,
-            "ICAT Score": macro_icat,
-        }
+        output = {}
+        output['Count'] = total
+        output['LM Score'] = lm_score
+        output['SS Score'] = ss_score
+        output['ICAT Score'] = macro_icat
+
+        return {output}
 
     def pretty_print(self, d, indent=0):
         for key, value in d.items():

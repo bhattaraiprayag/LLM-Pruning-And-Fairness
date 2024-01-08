@@ -28,15 +28,20 @@ def stereoset(model, tokenizer, exp_id):
             batch_size=1,
             is_generative=False
         )
-    results = runner()
+    individuals = runner()
 
     # Save intermediate result
     os.makedirs(f'results/{exp_id}', exist_ok=True)
     with open(f"results/{exp_id}/stereoset_raw.json", "w") as f:
-        json.dump(results, f, indent=2)
+        json.dump(individuals, f, indent=2)
 
     # Getting actual score
-    overall = parse_file(f"evaluation/data/stereoset/test.json", f"results/{exp_id}/stereoset_raw.json")
+    overall = ss.parse_file(f"evaluation/data/stereoset/test.json", f"results/{exp_id}/stereoset_raw.json")
 
     with open(f"results/{exp_id}/stereoset_results.json", "w+") as f:
         json.dump(overall, f, indent=2)
+
+    # Getting values to return
+    results = {}
+    results['ss_lm_gender'] = overall['intrasentence']['gender']['LM Score']
+    results['ss_ss_gender'] = overall['intrasentence']['gender']['SS Score']
