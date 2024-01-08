@@ -2,6 +2,7 @@ import random
 import numpy as np
 import torch
 
+
 def set_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
@@ -22,5 +23,4 @@ def check_sparsity(model):
         total_params += layer_size
         nonzero_params += layer_nonzero.item()
     overall_sparsity = 1 - nonzero_params / total_params
-    # print(f"Overall Sparsity: {overall_sparsity:.4%}")
     return overall_sparsity

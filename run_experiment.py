@@ -1,5 +1,7 @@
 # imports
 import pandas as pd
+import numpy as np
+import evaluate
 
 from transformers import (
     AutoTokenizer,
@@ -12,6 +14,8 @@ from transformers import (
 from dataclasses import dataclass, field
 from typing import Optional
 from pruning.magnitude_pruner import MagnitudePrunerOneShot
+from utils_experiment import load_eval_dataset, evaluate_metrics
+
 
 # dataclass that contains all arguments needed to run the experiment
 @dataclass
@@ -83,15 +87,15 @@ def main():
     # create pipeline
     pipe = TextClassificationPipeline(model=model, tokenizer=tokenizer, top_k=None, max_length=512, truncation=True, padding=True)
 
-    # set seed before running the experiment (??? needed if we put it directly into pruning functions ???)
-    # set_seed(exp_args.seed)
-
     # pruning (skipped if pruning == None)
     if exp_args.pruning_method is not None:
         pruner = MagnitudePrunerOneShot(model, exp_args.seed, exp_args.pruning_method, exp_args.sparsity_level)
         pruner.prune()
 
-    # model evaluation
+    # evaluate model (not fairness)
+    eval_datasets = load_eval_dataset(exp_args.task)
+    eval_results = evaluate_metrics(model, tokenizer, exp_args.task, eval_datasets)
+    # print(f"Task: {exp_args.task.upper()} | {eval_results}")
 
     # fairness evaluation
     # ideally: set up one evaluation function
