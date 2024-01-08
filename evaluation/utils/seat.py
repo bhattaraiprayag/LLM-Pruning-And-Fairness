@@ -1,4 +1,4 @@
-# Directly copied from https://github.com/McGill-NLP/bias-bench
+# Adapted from https://github.com/McGill-NLP/bias-bench
 
 import json
 import os
@@ -68,7 +68,7 @@ class SEATRunner:
             key=_test_sort_key,
         )
 
-        # Use the specified tests, otherwise, run all SEAT tests.
+        # run all SEAT tests
         tests = all_tests
 
         results = []
