@@ -240,7 +240,7 @@ def calculate_icat(
 def stereoset(model, tokenizer, exp_id):
 
     eval_split = 'intrasentence' # More commonly used, but can also get intersentence
-    cls_head = int(1) # Can be 0, 1 or 2 for entailment, neutral or contradiction
+    cls_head = int(0) # Can be 0, 1 or 2 for entailment, neutral or contradiction
     eval_mode = 'score'
 
     sent_list, data = load_data('evaluation/data/StereoSet/test.json', eval_split)
