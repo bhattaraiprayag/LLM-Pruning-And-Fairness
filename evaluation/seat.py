@@ -21,6 +21,8 @@ def seatandweat(model, tokenizer, exp_id, seed):
     results = runner()
     print(results)
 
-    os.makedirs(f'results/{exp_id}', exist_ok=True)
+    # TO DO: return most important results (which are the most important?)
+
+    os.makedirs(f'results/{exp_id}', exist_ok=True) # maybe save as csv instead?
     with open(f'results/{exp_id}/seatandweat.json', 'w') as file:
         json.dump(results, file)
