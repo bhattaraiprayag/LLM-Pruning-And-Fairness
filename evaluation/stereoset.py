@@ -253,7 +253,10 @@ def stereoset(model, tokenizer, exp_id):
     print(f'============== Exp of cls_head: {cls_head} ==============')
     print('=========================================================')
 
+    overall = {}
+
     for bias_type in bias_type_list:
+        working = {}
         print(f'\n------- {bias_type} -------')
         lm_score, stereo_score, icat_score = calculate_icat(
             score_board if eval_mode == 'score' else pred_board,
@@ -264,4 +267,19 @@ def stereoset(model, tokenizer, exp_id):
         print(f'LM score = {lm_score}')
         print(f'SS score = {stereo_score}')
         print(f'iCat score = {icat_score}')
+        working['LM'] = lm_score
+        working['SS'] = stereo_score
+        working['iCAT'] = icat_score
+        overall[bias_type] = working
+
+    # Save whole output file
+    with open(f'results/{exp_id}/stereoset.json', 'w') as f:
+        json.dump(overall, f, indent=2)
+
+    # Return desired values for table
+    results = {}
+    results['SS_LM_gender']=overall['gender']['LM']
+    results['SS_SS_gender'] = overall['gender']['SS']
+
+    return results
 
