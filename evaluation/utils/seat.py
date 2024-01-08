@@ -8,7 +8,7 @@ import re
 import numpy as np
 import torch
 
-from bias_bench.benchmark.seat import weat
+from evaluation.utils import weat
 
 
 class SEATRunner:
