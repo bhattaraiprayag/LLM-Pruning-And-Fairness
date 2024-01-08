@@ -1,4 +1,4 @@
-# Directly copied from https://github.com/McGill-NLP/bias-bench
+# Adapted from https://github.com/McGill-NLP/bias-bench
 
 import itertools
 import math
