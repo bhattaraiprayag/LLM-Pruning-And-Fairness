@@ -8,7 +8,7 @@ import re
 import numpy as np
 import torch
 
-from evaluation.utils import weat
+import utils.weat as weat
 
 
 class SEATRunner:
