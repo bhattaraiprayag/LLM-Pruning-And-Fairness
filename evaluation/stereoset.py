@@ -1,22 +1,9 @@
 # Code amended from https://github.com/luohongyin/ESP/blob/main/eval_stereo.py
 
-import sys
 import json
 
-import random
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-
-from transformers import (
-    AutoTokenizer,
-    AutoModelForMaskedLM,
-    AutoModelForSequenceClassification,
-    AutoModelForSeq2SeqLM
-)
-
-torch.cuda.empty_cache()
-
 
 def proc_cls_output(output_logits, cls_head, no_neu=True):
     ent_logits = output_logits[:, :1]
@@ -112,8 +99,8 @@ def cls_evaluate(tok, model, cls_head, sent_list, batch_size=4):
             verbose=False
         )
 
-        input_ids = input_enc.input_ids.cuda()
-        attention_mask = input_enc.attention_mask.cuda()
+        input_ids = input_enc.input_ids
+        attention_mask = input_enc.attention_mask
 
         result = model(
             input_ids=input_ids,
@@ -250,51 +237,15 @@ def calculate_icat(
 
     return lm_score, stereo_score, icat_score
 
+def stereoset(model, tokenizer, exp_id):
 
-if __name__ == '__main__':
+    eval_split = 'intrasentence' # More commonly used, but can also get intersentence
+    cls_head = int(1) # Can be 0, 1 or 2 for entailment, neutral or contradiction
+    eval_mode = 'score'
 
-    model_type = sys.argv[1]
-    eval_split = sys.argv[2]
-    cls_head = int(sys.argv[3])
-    model_type_str = sys.argv[4]
-    eval_mode = sys.argv[5]
+    sent_list, data = load_data('evaluation/data/StereoSet/test.json', eval_split)
 
-    batch_size = 4
-
-    esp_model_path = f'luohy/ESP-{model_type_str}-large'
-    pt_model_path = f'luohy/{model_type_str}-large-sc-3'
-
-    if model_type == 'sc':
-        model_path = esp_model_path
-        eval_func = cls_evaluate
-    else:
-        model_path = pt_model_path
-        eval_func = nsp_evaluate
-
-    model_type_str_log = model_type_str
-
-    if 'unsup' in model_type_str:
-        model_type_str = model_type_str[:-6]
-
-    tok = AutoTokenizer.from_pretrained(
-        model_path
-    )
-    model = AutoModelForSequenceClassification.from_pretrained(
-        model_path
-    )
-
-    model = model.cuda()
-    model.eval()
-
-    model = nn.DataParallel(model)
-
-    sent_list, data = load_data(
-        'data/StereoSet/test.json', eval_split
-    )
-
-    score_board, pred_board = eval_func(
-        tok, model, cls_head, sent_list, batch_size=batch_size
-    )
+    score_board, pred_board = cls_evaluate(tokenizer, model, cls_head, sent_list, batch_size=4)
 
     bias_type_list = ['gender', 'profession', 'race', 'religion', 'overall']
 
