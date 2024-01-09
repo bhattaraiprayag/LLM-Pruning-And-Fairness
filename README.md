@@ -17,13 +17,14 @@ To install the necessary packages in a conda environment, follow the instruction
 We have implemented a number of measures of bias.
 
 As measures of the intrinsic bias of the models we have:
-- SEAT and WEAT
+- SEAT & WEAT (not yet in fn)
 - StereoSet
 
 As measures of the extrinsic bias of the models we have:
-- Bias NLI - Incomplete
+- Bias NLI
+- Bias STS - incomplete
 
-There are some shared scripts within the [utils](evaluation/utils/) folder:
+There are some shared scripts within the [utils](evaluation/utils/) folder. They will likely not be needed for the final version:
 - [models.py](evaluation/utils/models.py) - This comes from [BiasBench](https://github.com/McGill-NLP/bias-bench) and handles loading a model
 - [model_utils.py](evaluation/utils/model_utils.py) - This comes from [BiasBench](https://github.com/McGill-NLP/bias-bench) and handles some checks about the model type.
 - [experiment_id.py](evaluation/utils/experiment_id.py) - This comes from [BiasBench](https://github.com/McGill-NLP/bias-bench) and handles the naming of the output file
@@ -46,19 +47,13 @@ The local run-time is ~10 minutes.
 
 #### StereoSet
 
-This is implemented based on the code published in [BiasBench](https://github.com/McGill-NLP/bias-bench). The data for the tests is stored in [stereoset](evaluation/data/stereoset/).
+This is implemented based on the code published in [ESP - Logic against Bias](https://github.com/luohongyin/esp) rather than the more complex version implmented in [BiasBench](https://github.com/McGill-NLP/bias-bench). The additional functionality offered there was unnecessary for the variants we need.
 
-The following files in [utils](evaluation/utils/) are used:
-- [stereoset.py](evaluation/utils/stereoset.py) - This comes from [BiasBench](https://github.com/McGill-NLP/bias-bench) and contains functions for reading in the test data and carrying out the tests
-- [stereoset_dataloader.py](evaluation/utils/stereoset_dataloader.py) - This comes from [BiasBench](https://github.com/McGill-NLP/bias-bench) and handles loading the data correctly for the tests
+There is a [utils/stereoset.py](evaluation/utils/stereoset.py) file for the the background functions and [stereoset.py](evaluation/stereoset.py) containing the function to be called in the pipeline. There is an output file with all scores saved into the results folder for a particular model and it also returns the basic gender scores for inclusion in the overall results table.
 
-The evaluation can be conducted by running [stereoset.py](evaluation/stereoset.py) for the specific model, in a similar way to in [seat](#seat-and-weat). The local run-time is ~1 hour.
+The current settings use the 'intrasentence' setup.
 
-The output files must then be run with a summariser from [stereoset2.py](evaluation/stereoset2.py), to give actual values for how correct the model was. This can be done with a single call for all files:
-
-```
-python ./evaluation/stereoset2.py --predictions_dir "./evaluation/results/stereoset/"
-```
+The local run-time is ~15 minutes.
 
 #### Bias NLI
 
