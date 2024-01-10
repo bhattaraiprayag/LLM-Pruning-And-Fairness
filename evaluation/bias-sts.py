@@ -45,7 +45,7 @@ def bias_sts(model_pipe, thisdir):
         # Make predictions with model
         pred = model_pipe(pair_list)
         scores_women = np.array([i[0]['score'] for i in pred])
-        test_df['scores'] = scores_men
+        test_df['scores'] = scores_women
         test_df.to_csv('women_new.csv', index=False)
         print('women done')
 
@@ -67,5 +67,5 @@ tokenizer = AutoTokenizer.from_pretrained('../training/final_models/STS-B')
 pipe = TextClassificationPipeline(model=model, tokenizer=tokenizer, top_k=None, max_length=512, truncation=True,
                                   padding=True)
 
-pred = bias_sts(pipe, '..')
-print(pred)
+avg_abs_diff = bias_sts(pipe, '..')
+print(avg_abs_diff)
