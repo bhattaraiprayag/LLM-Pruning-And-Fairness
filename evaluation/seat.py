@@ -1,96 +1,31 @@
-# Adapted from experiments/seat.py in https://github.com/McGill-NLP/bias-bench
+# Code amended from experiments/seat.py in https://github.com/McGill-NLP/bias-bench
 
-import argparse
 import json
 import os
 
-import transformers
-
-from utils.seat import SEATRunner
-import utils.models as models
-from utils.experiment_id import generate_experiment_id
-
-thisdir = os.path.dirname(os.path.realpath(__file__))
-parser = argparse.ArgumentParser(description="Runs SEAT benchmark.")
-parser.add_argument(
-    "--persistent_dir",
-    action="store",
-    type=str,
-    default=os.path.realpath(os.path.join(thisdir, "..")),
-    help="Directory where all persistent data will be stored.",
-)
-parser.add_argument(
-    "--tests",
-    action="store",
-    nargs="*",
-    help="List of SEAT tests to run. Test files should be in `data_dir` and have "
-    "corresponding names with extension .jsonl.",
-)
-parser.add_argument(
-    "--n_samples",
-    action="store",
-    type=int,
-    default=100000,
-    help="Number of permutation test samples used when estimating p-values "
-    "(exact test is used if there are fewer than this many permutations).",
-)
-parser.add_argument(
-    "--parametric",
-    action="store_true",
-    help="Use parametric test (normal assumption) to compute p-values.",
-)
-parser.add_argument(
-    "--model_name_or_path",
-    action="store",
-    type=str,
-    default="roberta-base",
-    choices=["bert-base-uncased", "albert-base-v2", "roberta-base", "gpt2"],
-    help="HuggingFace model name or path (e.g., bert-base-uncased). Checkpoint from which a "
-    "model is instantiated.",
-)
-parser.add_argument(
-    "--model",
-    action="store",
-    type=str,
-    default="RobertaModel",
-    choices=["BertModel", "AlbertModel", "RobertaModel", "GPT2Model"],
-    help="Model to evalute (e.g., BertModel). Typically, these correspond to a HuggingFace "
-    "class.",
-)
+from evaluation.utils.seat import SEATRunner, aggregate_results
 
 
-if __name__ == "__main__":
-    args = parser.parse_args()
-
-    experiment_id = generate_experiment_id(
-        name="seat", model=args.model, model_name_or_path=args.model_name_or_path
-    )
-
-    print("Running SEAT benchmark:")
-    print(f" - persistent_dir: {args.persistent_dir}")
-    print(f" - tests: {args.tests}")
-    print(f" - n_samples: {args.n_samples}")
-    print(f" - parametric: {args.parametric}")
-    print(f" - model: {args.model}")
-    print(f" - model_name_or_path: {args.model_name_or_path}")
-
-    # Load model and tokenizer.
-    model = getattr(models, args.model)(args.model_name_or_path)
-    model.eval()
-    tokenizer = transformers.AutoTokenizer.from_pretrained(args.model_name_or_path)
-
+def seatandweat(model, tokenizer, exp_id, seed):
     runner = SEATRunner(
-        experiment_id=experiment_id,
-        tests=args.tests,
-        data_dir=f"{args.persistent_dir}/evaluation/data/seat",
-        n_samples=args.n_samples,
-        parametric=args.parametric,
+        experiment_id=exp_id,
+        data_dir='evaluation/data/seat',
+        n_samples=1000,
+        parametric=False,
         model=model,
         tokenizer=tokenizer,
+        seed=seed
     )
-    results = runner()
-    print(results)
+    all_results = runner()
 
-    os.makedirs(f"{args.persistent_dir}/evaluation/results/seat", exist_ok=True)
-    with open(f"{args.persistent_dir}/evaluation/results/seat/{experiment_id}.json", "w") as f:
-        json.dump(results, f)
+    # aggregate results by bias (returns average absolute effect sizes for every type of bias)
+    avg_es = aggregate_results(all_results)
+
+    os.makedirs(f'results/{exp_id}', exist_ok=True)  # maybe save as csv instead?
+    with open(f'results/{exp_id}/seatandweat_raw.json', 'w') as file:
+        json.dump(all_results, file)
+    with open(f'results/{exp_id}/seatandweat_aggregated.json', 'w') as file:
+        json.dump(avg_es, file)
+
+    # only return gender bias values in dict
+    return {k: avg_es[k] for k in ('seat_gender', 'weat_gender')}

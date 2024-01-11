@@ -1,4 +1,4 @@
-# Directly copied from https://github.com/McGill-NLP/bias-bench
+# Adapted from https://github.com/McGill-NLP/bias-bench
 
 import itertools
 import math
@@ -84,10 +84,10 @@ def p_val_permutation_test(X, Y, A, B, n_samples, cossims, parametric=False):
     the probability that a random even partition X_i, Y_i of X u Y
     satisfies P[s(X_i, Y_i, A, B) > s(X, Y, A, B)]
     """
-    X = np.array(list(X), dtype=np.int)
-    Y = np.array(list(Y), dtype=np.int)
-    A = np.array(list(A), dtype=np.int)
-    B = np.array(list(B), dtype=np.int)
+    X = np.array(list(X), dtype=int)
+    Y = np.array(list(Y), dtype=int)
+    A = np.array(list(A), dtype=int)
+    B = np.array(list(B), dtype=int)
 
     assert len(X) == len(Y)
     size = len(X)
@@ -157,7 +157,7 @@ def p_val_permutation_test(X, Y, A, B, n_samples, cossims, parametric=False):
         else:
             print("Using exact test ({} partitions)".format(num_partitions))
             for Xi in itertools.combinations(XY, len(X)):
-                Xi = np.array(Xi, dtype=np.int)
+                Xi = np.array(Xi, dtype=int)
                 assert 2 * len(Xi) == len(XY)
                 si = s_XAB(Xi, s_wAB_memo)
                 if si > s:

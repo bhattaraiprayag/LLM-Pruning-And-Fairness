@@ -17,6 +17,8 @@ from pruning.utils import set_seed
 from pruning.magnitude_pruner import MagnitudePrunerOneShot
 from evaluation.performance import load_eval_dataset, evaluate_metrics
 
+from evaluation.seat import seatandweat
+
 
 # dataclass that contains all arguments needed to run the experiment
 @dataclass
@@ -102,6 +104,8 @@ def main():
 
     # fairness evaluation
     # ideally: set up one evaluation function
+    res_seatandweat = seatandweat(model, tokenizer, id, exp_args.seed)
+    print(res_seatandweat)
 
     # store everything in data frame (code still missing to create results_run)
     # results_df = pd.concat([results_df, results_run])
