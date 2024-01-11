@@ -1,15 +1,13 @@
-import os
-from pathlib import Path
-from collections import defaultdict
 import random
+from pathlib import Path
 
 import numpy as np
 import torch
 import torch.utils.data
 from ignite.engine import Engine, Events
 from ignite.metrics import Loss, Accuracy
+from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import confusion_matrix, classification_report
 from tqdm import tqdm
 
 
@@ -20,11 +18,13 @@ class Net(torch.nn.Module):
         self.nb_classes = nb_classes
 
         self.net = torch.nn.Sequential(
-            torch.nn.Conv2d(1, 16, 3),
-            torch.nn.ReLU(),
+            torch.nn.Conv2d(1, 16, 3),  # The convolutional layers:
+            # Learning hierarchical features from the input images.
+            torch.nn.ReLU(),  # Rectified Linear Unit (ReLU) activation functions=
+            # Introduce non-linearity to the network.
             torch.nn.Conv2d(16, 16, 3),
             torch.nn.ReLU(),
-            torch.nn.MaxPool2d(2, 2),
+            torch.nn.MaxPool2d(2, 2),  # Max pooling layers= downsample the spatial dimensions.
 
             torch.nn.Conv2d(16, 32, 3),
             torch.nn.ReLU(),
@@ -38,16 +38,18 @@ class Net(torch.nn.Module):
             torch.nn.ReLU(),
 
             torch.nn.Conv2d(64, 16, 1),
-            torch.nn.AdaptiveAvgPool2d(1),
+            torch.nn.AdaptiveAvgPool2d(1),  # Adaptive average pooling = computes the average values of each channel
+            # to create a fixed-size output.
             torch.nn.Conv2d(16, self.nb_classes, 1),
         )
 
     def forward(self, inputs):
         h = self.net(inputs)
         logits = h.squeeze(dim=-1).squeeze(dim=-1)
-        return logits
+        return logits  # represent the raw scores or unnormalized probabilities for each class.
+        # output can later be used with a suitable loss function for training
 
-
+# Utility function used for initializing the weights of a neural network.
 def init_weights(modules):
     if isinstance(modules, torch.nn.Module):
         modules = modules.modules()
@@ -74,7 +76,7 @@ def init_weights(modules):
             torch.nn.init.xavier_normal_(m.weight.data)
             m.bias.data.zero_()
 
-
+#### Do I Need it ### ?
 def pad_image(image, max_size):
     image = image[:max_size, :max_size]
 
@@ -100,6 +102,7 @@ def standartize_image_name(image_name):
 
     return image_name
 
+# Load data from image files and their corresponding labels.
 def load_data(images_dir, labels_filename=None, only_labels=True, label2id=None, min_max_size=None, sample=None):
     # load labels
     labels_dict = {}
@@ -173,7 +176,7 @@ def plot_confusion_matrix(model, data_loader, device, label2id):
     clf_report = classification_report(y_true, y_pred, target_names=labels)
     print(clf_report)
 
-
+# Obtaining true and predicted labels from a model's predictions on a given data loader
 def predict(model, data_loader, device):
     y_true = []
     y_pred = []
@@ -221,7 +224,6 @@ def load_model(filename):
 
     return model, label2id, min_max_size
 
-
 def main():
     batch_size = 64
     nb_epochs = 200
@@ -264,7 +266,7 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
     criterion = torch.nn.CrossEntropyLoss()
 
-    def update_function(engine, batch):
+    def update_function(batch):
         model.train()
         optimizer.zero_grad()
 
@@ -278,8 +280,8 @@ def main():
 
         return loss
 
-    #used for making predictions during the evaluation phase
-    def inference_function(engine, batch):
+    # used for making predictions during the evaluation phase
+    def inference_function(batch):
         model.eval()
         with torch.no_grad():
             inputs, targets = [x.to(device) for x in batch]
@@ -299,6 +301,7 @@ def main():
         metric.attach(evaluator, name)
 
     best_val_acc = 0
+
     @trainer.on(Events.EPOCH_COMPLETED)
     def on_epoch_completed(engine):
         nonlocal best_val_acc

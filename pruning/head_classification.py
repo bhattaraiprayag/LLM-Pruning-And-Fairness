@@ -5,7 +5,7 @@ sys.path.insert(0, '../src')
 #import classify_attention_patterns
 #import classify_normed_patterns
 from argparse import Namespace
-from scratch import load_and_cache_examples, set_seed
+from run_glue import load_and_cache_examples, set_seed
 from transformers import RobertaConfig, RobertaTokenizer
 from transformers import RobertaForSequenceClassification, RobertaForMaskedLM
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler, TensorDataset

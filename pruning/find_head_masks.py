@@ -30,7 +30,7 @@ from torch.utils.data import DataLoader, SequentialSampler, Subset, random_split
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm
 
-from ablate_random_vs_masking import ALL_MODELS, load_and_cache_examples, set_seed, MODEL_CLASSES
+from ablate_random_vs_masking import load_and_cache_examples, set_seed, MODEL_CLASSES
 from model_roberta import RobertaForSequenceClassification
 
 #from run_glue import ALL_MODELS, MODEL_CLASSES, load_and_cache_examples, set_seed
@@ -39,12 +39,10 @@ from model_roberta import RobertaForSequenceClassification
 
 # from transformers import glue_compute_metrics as compute_metrics
 
-
 from glue_metrics import glue_compute_metrics as compute_metrics
 from transformers import glue_output_modes as output_modes
 from transformers import glue_processors as processors
 from experiment_impact_tracker.compute_tracker import ImpactTracker
-
 from config_roberta import RobertaConfig
 
 
@@ -223,7 +221,6 @@ def mask_heads(args, model, eval_dataloader):
 
     return head_mask
 
-
 def prune_heads(args, model, eval_dataloader, head_mask):
     """ This method shows how to prune head (remove heads weights) based on
         the head importance scores as described in Michel et al. (http://arxiv.org/abs/1905.10650)
@@ -288,7 +285,7 @@ def main():
         default=None,
         type=str,
         required=True,
-        help="Path to pre-trained model or shortcut name selected in the list: " + ", ".join(ALL_MODELS),
+        help="Path to pre-trained model or shortcut name selected in the list: " + ", ".join(MODEL_CLASSES),
     )
     parser.add_argument(
         "--task_name",
@@ -486,7 +483,7 @@ def main():
     eval_sampler = SequentialSampler(eval_data) if args.local_rank == -1 else DistributedSampler(eval_data)
     eval_dataloader = DataLoader(eval_data, sampler=eval_sampler, batch_size=args.batch_size)
 
-    # Try head masking (set heads to zero until the score goes under a threshole)
+    # Try head masking (set heads to zero until the score goes under a threshold)
     # and head pruning (remove masked heads and see the effect on the network)
     if args.try_masking and args.masking_threshold > 0.0 and args.masking_threshold < 1.0:
         head_mask = mask_heads(args, model, eval_dataloader)

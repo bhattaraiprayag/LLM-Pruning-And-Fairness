@@ -43,9 +43,6 @@ for k, v in hans_heads.items():
 experiments_path = pathlib.Path("../masks/heads_mlps")
 mlps = load_mlp_data(experiments_path)
 
-
-
-
 experiments_path = pathlib.Path("../masks/heads_mlps_hans")
 hans_mlps = load_mlp_data(experiments_path)
 

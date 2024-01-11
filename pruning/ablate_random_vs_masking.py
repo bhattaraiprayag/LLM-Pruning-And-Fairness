@@ -16,56 +16,39 @@
 """ Finetuning the library models for sequence classification on GLUE (Bert, XLM, XLNet, RoBERTa, Albert, XLM-RoBERTa)."""
 
 import argparse
-import glob
 import json
 import logging
 import os
-import random
 import pathlib
-import copy
+import random
 import re
 
 import numpy as np
-import torch
-from torch import nn
-from torch.utils.data import DataLoader, SequentialSampler, TensorDataset
-from torch.utils.data.distributed import DistributedSampler
-from tqdm import tqdm, trange
 import scipy.stats
-
-from transformers import (
-    WEIGHTS_NAME,
-    AdamW,
-    RobertaTokenizer,
-    get_linear_schedule_with_warmup,
-)
-#get_linear_schedule_with_warmup
-# Helps prevent the model from diverging or experiencing instability at the beginning of training.
-# After the warmup phase, the learning rate is linearly decayed until the end of training.
-
-
-# from transformers import glue_compute_metrics as compute_metrics
-from glue_metrics import glue_compute_metrics as compute_metrics
+import torch
+from experiment_impact_tracker.compute_tracker import ImpactTracker
+from torch.utils.data import DataLoader, SequentialSampler, TensorDataset
+from tqdm import tqdm
 from transformers import RobertaConfig, RobertaForSequenceClassification, RobertaTokenizer
 from transformers import glue_convert_examples_to_features as convert_examples_to_features
 from transformers import glue_output_modes as output_modes
 from transformers import glue_processors as processors
-from experiment_impact_tracker.compute_tracker import ImpactTracker
 
+# from transformers import glue_compute_metrics as compute_metrics
+from glue_metrics import glue_compute_metrics as compute_metrics
+
+# get_linear_schedule_with_warmup
+# Helps prevent the model from diverging or experiencing instability at the beginning of training.
+# After the warmup phase, the learning rate is linearly decayed until the end of training.
+
+# Try-Except Block: Importing SummaryWriter
 try:
     from torch.utils.tensorboard import SummaryWriter
 except ImportError:
     from tensorboardX import SummaryWriter
 
+#Logger Setup
 logger = logging.getLogger(__name__)
-
-ALL_MODELS = sum(
-    (
-        tuple(conf.pretrained_config_archive_map.keys())
-        for conf in (RobertaConfig,)
-    ),
-    (),
-)
 
 MODEL_CLASSES = {
     "roberta": (RobertaConfig, RobertaForSequenceClassification, RobertaTokenizer),
@@ -156,11 +139,14 @@ def evaluate(args, task_name, data_dir, model, tokenizer, head_mask=None):
         else:
             results["predictions"] = pred_outputs
     return results
+    # The final results include the evaluation loss, predictions, and computed metrics.
 
 
 def load_and_cache_examples(args, data_dir, task, tokenizer, evaluate=False):
+    # not the first process in distributed training
     if args.local_rank not in [-1, 0] and not evaluate:
-        torch.distributed.barrier()  # Make sure only the first process in distributed training process the dataset, and the others will use the cache
+        torch.distributed.barrier()  # Make sure only the first process in distributed training process the dataset,
+        # and the others will use the cache
 
     processor = processors[task]()
     output_mode = output_modes[task]
@@ -174,6 +160,9 @@ def load_and_cache_examples(args, data_dir, task, tokenizer, evaluate=False):
             str(task),
         ),
     )
+    #If the cached features file exists and overwrite_cache is not set,
+    # it loads the features from the cached file.
+    # Otherwise, it creates features from the dataset file.
     if os.path.exists(cached_features_file) and not args.overwrite_cache:
         logger.info("Loading features from cached file %s", cached_features_file)
         features = torch.load(cached_features_file)
@@ -201,7 +190,8 @@ def load_and_cache_examples(args, data_dir, task, tokenizer, evaluate=False):
             torch.save(features, cached_features_file)
 
     if args.local_rank == 0 and not evaluate:
-        torch.distributed.barrier()  # Make sure only the first process in distributed training process the dataset, and the others will use the cache
+        torch.distributed.barrier()  # Make sure only the first process in distributed training process the dataset,
+        # and the others will use the cache
 
     # Convert to Tensors and build dataset
     all_input_ids = torch.tensor([f.input_ids for f in features], dtype=torch.long)
@@ -215,7 +205,7 @@ def load_and_cache_examples(args, data_dir, task, tokenizer, evaluate=False):
     dataset = TensorDataset(all_input_ids, all_attention_mask, all_token_type_ids, all_labels)
     return dataset
 
-
+ ###### DO I need it ######
 def main():
     parser = argparse.ArgumentParser()
 
