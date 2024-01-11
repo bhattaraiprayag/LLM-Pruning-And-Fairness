@@ -3,7 +3,7 @@
 import json
 import os
 
-from evaluation.utils.seat import SEATRunner
+from evaluation.utils.seat import SEATRunner, aggregate_results
 
 
 def seatandweat(model, tokenizer, exp_id, seed):
@@ -18,8 +18,14 @@ def seatandweat(model, tokenizer, exp_id, seed):
     )
     all_results = runner()
 
-    # TO DO: return most important results (which are the most important?)
+    # aggregate results by bias (returns average absolute effect sizes for every type of bias)
+    avg_es = aggregate_results(all_results)
 
-    os.makedirs(f'results/{exp_id}', exist_ok=True) # maybe save as csv instead?
-    with open(f'results/{exp_id}/seatandweat.json', 'w') as file:
+    os.makedirs(f'results/{exp_id}', exist_ok=True)  # maybe save as csv instead?
+    with open(f'results/{exp_id}/seatandweat_raw.json', 'w') as file:
         json.dump(all_results, file)
+    with open(f'results/{exp_id}/seatandweat_aggregated.json', 'w') as file:
+        json.dump(avg_es, file)
+
+    # only return gender bias values in dict
+    return {k: avg_es[k] for k in ('seat_gender', 'weat_gender')}
