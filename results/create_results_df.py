@@ -7,7 +7,7 @@ results_df = pd.DataFrame(columns=['ID',
                                    'seed',
                                    'task',  # MNLI or STS-B
                                    'pruning_method', # None if using base model
-                                   'sparsity_level'
+                                   'sparsity_level',
                                    'SEAT_gender',
                                    'WEAT_gender',
                                    'StereoSet_LM_gender',
