@@ -37,31 +37,24 @@ The evaluation process involves tokenizing the datasets and feeding them through
 We have implemented a number of measures of bias.
 
 As measures of the intrinsic bias of the models we have:
-- SEAT & WEAT (not yet in fn)
+- SEAT & WEAT
 - StereoSet
 
 As measures of the extrinsic bias of the models we have:
 - Bias NLI
 - Bias STS - incomplete
 
-There are some shared scripts within the [utils](evaluation/utils/) folder. They will likely not be needed for the final version:
-- [models.py](evaluation/utils/models.py) - This comes from [BiasBench](https://github.com/McGill-NLP/bias-bench) and handles loading a model
-- [model_utils.py](evaluation/utils/model_utils.py) - This comes from [BiasBench](https://github.com/McGill-NLP/bias-bench) and handles some checks about the model type.
-- [experiment_id.py](evaluation/utils/experiment_id.py) - This comes from [BiasBench](https://github.com/McGill-NLP/bias-bench) and handles the naming of the output file
-
 #### SEAT and WEAT
 
 This is implemented based on the code published in [BiasBench](https://github.com/McGill-NLP/bias-bench). The data for the tests is stored in [seat](evaluation/data/seat/).
 
+The evaluation can be conducted by running the seatandweat function contained in [seat.py](evaluation/seat.py).
+
 The following files in [utils](evaluation/utils/) are used:
-- [seat.py](evaluation/utils/seat.py) - This comes from [BiasBench](https://github.com/McGill-NLP/bias-bench) and contains functions for reading in the test data and carrying out the tests
+- [seat.py](evaluation/utils/seat.py) - This contains functions and classes from [BiasBench](https://github.com/McGill-NLP/bias-bench) for reading in the test data and carrying out the tests. It also contains newly implemented functions to aggregate the individual test outputs by computing the average absolute effect sizes for the different types of biases.
 - [weat.py](evaluation/utils/weat.py) - This comes from [BiasBench](https://github.com/McGill-NLP/bias-bench) and contains functions for carrying out the WEAT tests and producing statistics on the output
 
-The final evaluation can be conducted by running [seat.py](evaluation/seat.py). There are optional variables for amending the filepath to the model or other variables. An example of this would be to run the following in the terminal:
-
-```
-python ./evaluation/seat.py --model_name_or_path <model_path>
-```
+The function returns two average absolute effect sizes for gender bias, one for SEAT and one for WEAT.
 
 The local run-time is ~10 minutes.
 
@@ -69,7 +62,7 @@ The local run-time is ~10 minutes.
 
 This is implemented based on the code published in [ESP - Logic against Bias](https://github.com/luohongyin/esp) rather than the more complex version implmented in [BiasBench](https://github.com/McGill-NLP/bias-bench). The additional functionality offered there was unnecessary for the variants we need.
 
-There is a [utils/stereoset.py](evaluation/utils/stereoset.py) file for the the background functions and [stereoset.py](evaluation/stereoset.py) containing the function to be called in the pipeline. There is an output file with all scores saved into the results folder for a particular model and it also returns the basic gender scores for inclusion in the overall results table.
+There is a [utils/stereoset.py](evaluation/utils/stereoset.py) file for the background functions and [stereoset.py](evaluation/stereoset.py) containing the function to be called in the pipeline. There is an output file with all scores saved into the results folder for a particular model and it also returns the basic gender scores for inclusion in the overall results table.
 
 The current settings use the 'intrasentence' setup.
 
