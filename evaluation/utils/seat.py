@@ -21,14 +21,14 @@ class SEATRunner:
     TEST_EXT = ".jsonl"
 
     def __init__(
-        self,
-        model,
-        tokenizer,
-        data_dir,
-        experiment_id,
-        n_samples=100000,
-        parametric=False,
-        seed=0,
+            self,
+            model,
+            tokenizer,
+            data_dir,
+            experiment_id,
+            n_samples=100000,
+            parametric=False,
+            seed=0,
     ):
         """Initializes a SEAT test runner.
 
@@ -124,7 +124,7 @@ def _test_sort_key(test):
     key = ()
     prev_end = 0
     for match in re.finditer(r"\d+", test):
-        key = key + (test[prev_end : match.start()], int(match.group(0)))
+        key = key + (test[prev_end: match.start()], int(match.group(0)))
         prev_end = match.end()
     key = key + (test[prev_end:],)
 
@@ -163,7 +163,8 @@ def _encode(model, tokenizer, texts):
         outputs = model(**inputs, output_hidden_states=True)
 
         # Average over the last layer of hidden representations.
-        enc = outputs.hidden_states[-1]    # line wants to get last hidden state, should be the same as the last item in hidden_states (https://stackoverflow.com/questions/61323621/how-to-understand-hidden-states-of-the-returns-in-bertmodelhuggingface-transfo)
+        enc = outputs.hidden_states[
+            -1]  # line wants to get last hidden state, should be the same as the last item in hidden_states (https://stackoverflow.com/questions/61323621/how-to-understand-hidden-states-of-the-returns-in-bertmodelhuggingface-transfo)
         enc = enc.mean(dim=1)
 
         # Following May et al., normalize the representation.
@@ -171,3 +172,83 @@ def _encode(model, tokenizer, texts):
         encs[text] /= np.linalg.norm(encs[text])
 
     return encs
+
+
+# newly added functions
+def compute_avg_effect_size(list):
+    es = [d['effect_size'] for d in list]
+    return sum(abs(e) for e in es) / len(es)
+
+
+def aggregate_results(all_results):
+    seat_gender_tests = ['sent-weat6',
+                         'sent-weat6b',
+                         'sent-weat7',
+                         'sent-weat7b',
+                         'sent-weat8',
+                         'sent-weat8b',
+                         'heilman_double_bind_competent_1+3-',
+                         'heilman_double_bind_competent_1',
+                         'heilman_double_bind_competent_1-',
+                         'heilman_double_bind_competent_one_sentence',
+                         'heilman_double_bind_competent_one_word',
+                         'heilman_double_bind_likable_1+3-',
+                         'heilman_double_bind_likable_1',
+                         'heilman_double_bind_likable_1-',
+                         'heilman_double_bind_likable_one_sentence',
+                         'heilman_double_bind_likable_one_word',
+                         'sent-heilman_double_bind_competent_one_word',
+                         'sent-heilman_double_bind_likable_one_word',
+                         ]
+    seat_gender = [d for d in all_results if d.get('test') in seat_gender_tests]
+
+    seat_race_tests = ['sent-weat3',
+                       'sent-weat3b',
+                       'sent-weat4',
+                       'sent-weat5',
+                       'sent-weat5b',
+                       'angry_black_woman_stereotype',
+                       'angry_black_woman_stereotype_b',
+                       'sent-angry_black_woman_stereotype_b',
+                       'sent-angry_black_woman_stereotype'
+                       ]
+    seat_race = [d for d in all_results if d.get('test') in seat_race_tests]
+
+    seat_illness = [d for d in all_results if d.get('test') == 'sent-weat9']
+
+    seat_religion_tests = ['sent-religion1',
+                           'sent-religion1b',
+                           'sent-religion2',
+                           'sent-religion2b'
+                           ]
+    seat_religion = [d for d in all_results if d.get('test') in seat_religion_tests]
+
+    weat_gender_tests = ['weat6',
+                         'weat6b',
+                         'weat7',
+                         'weat7b',
+                         'weat8',
+                         'weat8b'
+                         ]
+    weat_gender = [d for d in all_results if d.get('test') in weat_gender_tests]
+
+    weat_race_tests = ['weat3',
+                       'weat3b',
+                       'weat4',
+                       'weat5',
+                       'weat5b'
+                       ]
+    weat_race = [d for d in all_results if d.get('test') in weat_race_tests]
+
+    weat_illness = [d for d in all_results if d.get('test') == 'weat9']
+
+    all_avg_es = {'seat_gender': compute_avg_effect_size(seat_gender),
+                  'seat_race': compute_avg_effect_size(seat_race),
+                  'seat_illness': compute_avg_effect_size(seat_illness),
+                  'seat_religion': compute_avg_effect_size(seat_religion),
+                  'weat_gender': compute_avg_effect_size(weat_gender),
+                  'weat_race': compute_avg_effect_size(weat_race),
+                  'weat_illness': compute_avg_effect_size(weat_illness)
+                  }
+
+    return all_avg_es
