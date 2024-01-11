@@ -13,8 +13,9 @@ from transformers import (
 
 from dataclasses import dataclass, field
 from typing import Optional
+from pruning.utils import set_seed
 from pruning.magnitude_pruner import MagnitudePrunerOneShot
-from utils_experiment import load_eval_dataset, evaluate_metrics
+from evaluation.performance import load_eval_dataset, evaluate_metrics
 
 
 # dataclass that contains all arguments needed to run the experiment
@@ -73,6 +74,9 @@ def main():
         model_path = 'training/final_models/STS-B/'
     else:
         raise ValueError(f'No model found for task {exp_args.task}')
+    
+    # set experiment seed
+    set_seed(exp_args.seed)
 
     # load model
     model = RobertaForSequenceClassification.from_pretrained(
@@ -92,10 +96,9 @@ def main():
         pruner = MagnitudePrunerOneShot(model, exp_args.seed, exp_args.pruning_method, exp_args.sparsity_level)
         pruner.prune()
 
-    # evaluate model (not fairness)
+    # evaluate model "performance" (not fairness)
     eval_datasets = load_eval_dataset(exp_args.task)
     eval_results = evaluate_metrics(model, tokenizer, exp_args.task, eval_datasets)
-    # print(f"Task: {exp_args.task.upper()} | {eval_results}")
 
     # fairness evaluation
     # ideally: set up one evaluation function

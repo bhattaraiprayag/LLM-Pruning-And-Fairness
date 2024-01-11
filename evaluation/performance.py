@@ -5,7 +5,21 @@ from transformers import Trainer, TrainingArguments, EvalPrediction
 from datasets import load_dataset
 
 
-def load_eval_dataset(task):
+# def load_eval_dataset(task): FOR LOADING LOCAL FILES; local test set doesn't have labels | WORK IN PROGRESS
+#     """Loads the .tsv test datasets based on the specified task, from local folder"""
+#     mnli_path = "/training/glue_data/MNLI/"
+#     stsb_path = "/training/glue_data/STS-B/"
+#     if task == 'mnli':
+#         return (
+#             load_dataset("glue", "mnli", data_dir=mnli_path, split='test_matched'),
+#             load_dataset("glue", "mnli", data_dir=mnli_path, split='test_mismatched')
+#         )
+#     elif task == 'stsb':
+#         return load_dataset("glue", "stsb", data_dir=stsb_path, split='test')
+#     else:
+#         raise ValueError(f'No dataset found for task {task}')
+
+def load_eval_dataset(task):    # ONLY WORKS WITH split='validation'
     """Loads the evaluation dataset based on the specified task."""
     if task == 'mnli':
         return (
@@ -26,12 +40,14 @@ def evaluate_metrics(model, tokenizer, task, eval_datasets):
         mnli_matched = evaluate_model(model, tokenizer, task, eval_matched)
         mnli_mismatched = evaluate_model(model, tokenizer, task, eval_mismatched)
         results_dict['Matched Acc'], results_dict['Mismatched Acc'] = mnli_matched['eval_accuracy'], mnli_mismatched['eval_accuracy']
-        return results_dict
     elif task == 'stsb':
         eval_dataset = eval_datasets[0]
         eval_results = evaluate_model(model, tokenizer, task, eval_dataset)
         results_dict['Spearmanr'], results_dict['Pearson'] = eval_results['eval_spearmanr'], eval_results['eval_pearson']
-        return results_dict
+    else:
+        raise ValueError(f'No evaluation metrics found for task {task}')
+    # return print(f"Task: {task.upper()} | {results_dict}")
+    return results_dict
 
 
 def evaluate_model(model, tokenizer, task_name, eval_dataset):
@@ -70,7 +86,4 @@ def evaluate_model(model, tokenizer, task_name, eval_dataset):
         tokenizer=tokenizer,
     )
 
-    # evaluate the model
-    eval_results = trainer.evaluate()
-
-    return eval_results
+    return trainer.evaluate()
