@@ -95,7 +95,8 @@ def main():
 
     # fairness evaluation
     # ideally: set up one evaluation function
-    seatandweat(model, tokenizer, id, exp_args.seed) # only print results so far and does not return anything!
+    res_seatandweat = seatandweat(model, tokenizer, id, exp_args.seed)
+    print(res_seatandweat)
 
     # store everything in data frame (code still missing to create results_run)
     # results_df = pd.concat([results_df, results_run])
