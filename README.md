@@ -56,6 +56,10 @@ The following files in [utils](evaluation/utils/) are used:
 
 The function returns two average absolute effect sizes for gender bias, one for SEAT and one for WEAT.
 
+Additionally, it saves two files in the results folder of a particular experiment run:
+- seatandweat_raw.json: contains the p-values and effect sizes of each individual test
+- seatandweat_aggregated.json: contains the average absolute effect sizes for the different types if biases (SEAT: gender, race, illness, religion; WEAT: gender, race, illness)
+
 The local run-time is ~10 minutes.
 
 #### StereoSet
