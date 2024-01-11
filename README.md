@@ -8,9 +8,29 @@ To install the necessary packages in a conda environment, follow the instruction
 
 ## Pruning
 
+### Overview
+In our project, we focus on exploring the impact of various pruning techniques on the biasness of RoBERTa-base. Pruning, a method to reduce model size and computational load, involves selectively removing parameters (weights), or neurons, from the neural network. We have implemented and experimented with different types of pruning strategies, starting with magnitude-based methods.
+
+### Magnitude Pruning:
+Magnitude pruning is a method for reducing the size and complexity of an LLM/neural networks by selectively removing parameters (weights) based on their magnitudes. Our **MagnitudePrunerOneShot** class, defined in *magnitude_pruner.py*, is central to our pruning strategy. This class offers three distinct methods of magnitude-based pruning:
+- **L1-Unstructured**: This global pruning strategy removes weights across the entire network based on their L1-norm magnitude. Can be used with *--pruning_method l1-unstructured*.
+- **L1-Unstructured (Linear)**: Targets only the linear layers of the model, pruning weights based on their L1-norm. Can be used with *--pruning_method l1-unstructured-linear*.
+- **L1-Unstructured Invert**: (To be implemented) Aimed at exploring inverted criteria for pruning. IN PROGRESS.
+
+We ensure that each pruning process begins with a consistent state by setting a seed for reproducibility. Post-pruning, we evaluate and report the sparsity levels of the model to understand the extent of weight reduction.
+
 ## Evaluation
 
-### Model evaluation
+### Performance evaluation
+To gauge the performance of our pruned models, we turn to our benchmark tasks: the Multi-Genre Natural Language Inference (MNLI) and the Semantic Textual Similarity Benchmark (STS-B). These tasks allow us to assess the model's understanding of language and its ability to capture semantic relationships, respectively.
+
+Our performance.py script encapsulates the evaluation pipeline:
+* Dataset Loading: We load the validation datasets for MNLI and STS-B, accommodating both matched and mismatched scenarios for MNLI.
+* Evaluation Functionality: The evaluate_metrics function orchestrates the evaluation process. It leverages the evaluate_model function to perform task-specific assessments, returning a dictionary of key performance metrics.
+* Metrics Computation:
+  * For MNLI: We report accuracy for both matched and mismatched datasets.
+  * For STS-B: We measure performance using Spearman’s rank correlation coefficient and Pearson correlation coefficient.
+The evaluation process involves tokenizing the datasets and feeding them through the model using Hugging Face's Trainer API. We then compute the metrics using the predictions and labels.
 
 ### Bias evaluation
 

@@ -1,5 +1,7 @@
 # imports
 import pandas as pd
+import numpy as np
+import evaluate
 
 from transformers import (
     AutoTokenizer,
@@ -11,6 +13,9 @@ from transformers import (
 
 from dataclasses import dataclass, field
 from typing import Optional
+from pruning.utils import set_seed
+from pruning.magnitude_pruner import MagnitudePrunerOneShot
+from evaluation.performance import load_eval_dataset, evaluate_metrics
 
 
 # dataclass that contains all arguments needed to run the experiment
@@ -35,12 +40,12 @@ class ExperimentArguments:
 
     pruning_method: Optional[str] = field(
         default=None,  # None means that the base models are evaluated without doing pruning
-        metadata={"help": "Specify pruning method (...)"},  # add all options
+        metadata={"help": "Specify pruning method. Options: 'l1-unstructured', 'l1-unstructured-linear', 'l1-unstructured-invert', or None for no pruning."},  # add all options
     )
 
     sparsity_level: Optional[float] = field(
         default=None,
-        metadata={"help": "Specify pruning method (None, ... )"},  # add all options
+        metadata={"help": "Specify desired sparsity level. From 0 to 1.)"},  # add all options
     )
 
 
@@ -69,6 +74,9 @@ def main():
         model_path = 'training/final_models/STS-B/'
     else:
         raise ValueError(f'No model found for task {exp_args.task}')
+    
+    # set experiment seed
+    set_seed(exp_args.seed)
 
     # load model
     model = RobertaForSequenceClassification.from_pretrained(
@@ -83,13 +91,14 @@ def main():
     # create pipeline
     pipe = TextClassificationPipeline(model=model, tokenizer=tokenizer, top_k=None, max_length=512, truncation=True, padding=True)
 
-    # set seed before running the experiment (??? needed if we put it directly into pruning functions ???)
-    set_seed(exp_args.seed)
-
     # pruning (skipped if pruning == None)
-    # ideally set up one pruning function
+    if exp_args.pruning_method is not None:
+        pruner = MagnitudePrunerOneShot(model, exp_args.seed, exp_args.pruning_method, exp_args.sparsity_level)
+        pruner.prune()
 
-    # model evaluation
+    # evaluate model "performance" (not fairness)
+    eval_datasets = load_eval_dataset(exp_args.task)
+    eval_results = evaluate_metrics(model, tokenizer, exp_args.task, eval_datasets)
 
     # fairness evaluation
     # ideally: set up one evaluation function
@@ -99,4 +108,5 @@ def main():
 
 
 if __name__ == '__main__':
+    # Sample run: python run_experiment.py --task stsb --pruning_method l1-unstructured --sparsity_level 0.5 --seed 42
     main()
