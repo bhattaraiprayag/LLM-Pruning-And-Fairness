@@ -51,8 +51,8 @@ This is implemented based on the code published in [BiasBench](https://github.co
 The evaluation can be conducted by running the seatandweat function contained in [seat.py](evaluation/seat.py).
 
 The following files in [utils](evaluation/utils/) are used:
-- [seat.py](evaluation/utils/seat.py) - This contains functions and classes from [BiasBench](https://github.com/McGill-NLP/bias-bench) for reading in the test data and carrying out the tests. It also contains newly implemented functions to aggregate the individual test outputs by computing the average absolute effect sizes for the different types of biases.
-- [weat.py](evaluation/utils/weat.py) - This comes from [BiasBench](https://github.com/McGill-NLP/bias-bench) and contains functions for carrying out the WEAT tests and producing statistics on the output
+- [utils/seat.py](evaluation/utils/seat.py) - This contains functions and classes from [BiasBench](https://github.com/McGill-NLP/bias-bench) for reading in the test data and carrying out the tests. It also contains newly implemented functions to aggregate the individual test outputs by computing the average absolute effect sizes for the different types of biases.
+- [utils/weat.py](evaluation/utils/weat.py) - This comes from [BiasBench](https://github.com/McGill-NLP/bias-bench) and contains functions for carrying out the WEAT tests and producing statistics on the output
 
 The function returns two average absolute effect sizes for gender bias, one for SEAT and one for WEAT.
 
