@@ -16,8 +16,9 @@ from typing import Optional
 from pruning.utils import set_seed
 from pruning.magnitude_pruner import MagnitudePrunerOneShot
 from evaluation.performance import load_eval_dataset, evaluate_metrics
-
 from evaluation.seat import seatandweat
+from evaluation.stereoset import stereoset
+from evaluation.bias_nli import bias_nli
 
 
 # dataclass that contains all arguments needed to run the experiment
@@ -100,12 +101,18 @@ def main():
 
     # evaluate model "performance" (not fairness)
     eval_datasets = load_eval_dataset(exp_args.task)
-    eval_results = evaluate_metrics(model, tokenizer, exp_args.task, eval_datasets)
+    res_performance = evaluate_metrics(model, tokenizer, exp_args.task, eval_datasets)
+    print(res_performance)
 
     # fairness evaluation
     # ideally: set up one evaluation function
     res_seatandweat = seatandweat(model, tokenizer, id, exp_args.seed)
     print(res_seatandweat)
+    res_stereoset = stereoset(model, tokenizer, id)
+    print(res_stereoset)
+    res_bnli = bias_nli(pipe, id)
+    print(res_bnli)
+
 
     # store everything in data frame (code still missing to create results_run)
     # results_df = pd.concat([results_df, results_run])
