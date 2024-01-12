@@ -24,7 +24,6 @@ def stereoset(model, tokenizer, exp_id):
 
     for bias_type in bias_type_list:
         working = {}
-        print(f'\n------- {bias_type} -------')
         lm_score, stereo_score, icat_score = ss.calculate_icat(
             score_board if eval_mode == 'score' else pred_board,
             sent_list, data,

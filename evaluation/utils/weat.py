@@ -155,7 +155,7 @@ def p_val_permutation_test(X, Y, A, B, n_samples, cossims, parametric=False):
                 total += 1
 
         if total_equal:
-            print("Equalities contributed {}/{} to p-value".format(total_equal, total))
+            # print("Equalities contributed {}/{} to p-value".format(total_equal, total))
 
         return total_true / total
 
