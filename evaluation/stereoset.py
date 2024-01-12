@@ -42,8 +42,8 @@ def stereoset(model, tokenizer, exp_id):
 
     # Return desired values for table
     results = {}
-    results['SS_LM_gender']=overall['gender']['LM']
-    results['SS_SS_gender'] = overall['gender']['SS']
+    results['stereoset_LM_gender']=overall['gender']['LM']
+    results['stereoset_SS_gender'] = overall['gender']['SS']
 
     return results
 
