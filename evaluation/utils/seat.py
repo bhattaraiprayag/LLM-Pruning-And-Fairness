@@ -73,12 +73,10 @@ class SEATRunner:
 
         results = []
         for test in tests:
-            print(f"Running test {test}")
 
             # Load the test data.
             encs = _load_json(os.path.join(self._data_dir, f"{test}{self.TEST_EXT}"))
 
-            print("Computing sentence encodings")
             encs_targ1 = _encode(
                 self._model, self._tokenizer, encs["targ1"]["examples"]
             )
@@ -96,8 +94,6 @@ class SEATRunner:
             encs["targ2"]["encs"] = encs_targ2
             encs["attr1"]["encs"] = encs_attr1
             encs["attr2"]["encs"] = encs_attr2
-
-            print("\tDone!")
 
             # Run the test on the encodings.
             esize, pval = weat.run_test(
@@ -144,7 +140,6 @@ def _split_comma_and_check(arg_str, allowed_set, item_type):
 
 def _load_json(sent_file):
     """Load from json. We expect a certain format later, so do some post processing."""
-    print(f"Loading {sent_file}...")
     all_data = json.load(open(sent_file, "r"))
     data = {}
     for k, v in all_data.items():
@@ -163,8 +158,7 @@ def _encode(model, tokenizer, texts):
         outputs = model(**inputs, output_hidden_states=True)
 
         # Average over the last layer of hidden representations.
-        enc = outputs.hidden_states[
-            -1]  # line wants to get last hidden state, should be the same as the last item in hidden_states (https://stackoverflow.com/questions/61323621/how-to-understand-hidden-states-of-the-returns-in-bertmodelhuggingface-transfo)
+        enc = outputs.hidden_states[-1]  # line wants to get last hidden state, should be the same as the last item in hidden_states (https://stackoverflow.com/questions/61323621/how-to-understand-hidden-states-of-the-returns-in-bertmodelhuggingface-transfo)
         enc = enc.mean(dim=1)
 
         # Following May et al., normalize the representation.
