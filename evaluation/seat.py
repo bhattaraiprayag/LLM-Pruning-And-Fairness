@@ -21,10 +21,10 @@ def seatandweat(model, tokenizer, exp_id, seed):
     # aggregate results by bias (returns average absolute effect sizes for every type of bias)
     avg_es = aggregate_results(all_results)
 
-    os.makedirs(f'results/{exp_id}', exist_ok=True)  # maybe save as csv instead?
-    with open(f'results/{exp_id}/seatandweat_raw.json', 'w') as file:
+    os.makedirs(f'results/run{exp_id}', exist_ok=True)  # maybe save as csv instead?
+    with open(f'results/run{exp_id}/seatandweat_raw.json', 'w') as file:
         json.dump(all_results, file)
-    with open(f'results/{exp_id}/seatandweat_aggregated.json', 'w') as file:
+    with open(f'results/run{exp_id}/seatandweat_aggregated.json', 'w') as file:
         json.dump(avg_es, file)
 
     # only return gender bias values in dict

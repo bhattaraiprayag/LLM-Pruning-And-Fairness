@@ -37,8 +37,8 @@ def stereoset(model, tokenizer, exp_id):
         overall[bias_type] = working
 
     # Save whole output file
-    os.makedirs(f'results/{exp_id}', exist_ok=True)
-    with open(f'results/{exp_id}/stereoset.json', 'w') as f:
+    os.makedirs(f'results/run{exp_id}', exist_ok=True)
+    with open(f'results/run{exp_id}/stereoset.json', 'w') as f:
         json.dump(overall, f, indent=2)
 
     # Return desired values for table
