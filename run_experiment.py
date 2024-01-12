@@ -1,7 +1,6 @@
 # imports
 import pandas as pd
-import numpy as np
-import evaluate
+from datetime import date
 
 from transformers import (
     AutoTokenizer,
@@ -11,7 +10,7 @@ from transformers import (
     set_seed,
 )
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from typing import Optional
 from pruning.utils import set_seed
 from pruning.magnitude_pruner import MagnitudePrunerOneShot
@@ -107,15 +106,17 @@ def main():
     # fairness evaluation
     # ideally: set up one evaluation function
     res_seatandweat = seatandweat(model, tokenizer, id, exp_args.seed)
-    print(res_seatandweat)
     res_stereoset = stereoset(model, tokenizer, id)
-    print(res_stereoset)
     res_bnli = bias_nli(pipe, id)
-    print(res_bnli)
 
+    results_run = {**asdict(exp_args), **res_performance, **res_seatandweat, **res_stereoset, **res_bnli}
+    results_run.update({'ID': id, 'date': date.today()})
+    print(results_run)
 
-    # store everything in data frame (code still missing to create results_run)
-    # results_df = pd.concat([results_df, results_run])
+    # store everything in data frame
+    results_df = pd.concat([results_df, pd.DataFrame.from_dict([results_run])], ignore_index=True)
+    # save updated csv file
+    results_df.to_csv('results/results.csv', index=False)
 
 
 if __name__ == '__main__':
