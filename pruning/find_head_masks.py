@@ -49,13 +49,16 @@ from config_roberta import RobertaConfig
 logger = logging.getLogger(__name__)
 logging.getLogger("experiment_impact_tracker.compute_tracker.ImpactTracker").disabled = True
 
-
+# Step 1: It provides valuable insights into the distribution and importance of attention across different heads.
+# prune heads with the lowest entropy
+# Entropy of attention weights for each head and layer is calculated during the evaluation.
 def entropy(p):
     """ Compute the entropy of a probability distribution """
     plogp = p * torch.log(p)
     plogp[p == 0] = 0
     return -plogp.sum(dim=-1)
 
+#Step2 : Used to log and visualize information about attention heads
 
 def print_2d_tensor(tensor):
     """ Print a 2D tensor """
@@ -66,6 +69,11 @@ def print_2d_tensor(tensor):
         else:
             logger.info(f"layer {row + 1}:\t" + "\t".join(f"{x:d}" for x in tensor[row].cpu().data))
 
+#Step 3: Iteration computing the loss, logits, and attention values.
+# (Backpropagation is performed to populate the gradients in the head mask (used for computing head importance scores))
+# STS-B dataset includes label_scores instead of label_ids, as STS-B involves predicting similarity scores
+# rather than discrete labels. Adjustments might still be necessary depending on your specific dataset and requirements.
+# Make sure to check the tokenization and data loading process to ensure compatibility with your STS-B dataset.
 
 def compute_heads_importance(
         args, model, eval_dataloader, compute_entropy=True, compute_importance=True, head_mask=None
@@ -156,7 +164,8 @@ def compute_heads_importance(
 
     return attn_entropy, head_importance, preds, labels
 
-
+#Step 4: Implements a process of pruning (masking) attention heads in a transformer model based on their importance scores.
+# This pruning is done iteratively, removing heads with the lowest importance scores until a certain threshold is reached.
 def mask_heads(args, model, eval_dataloader):
     """ This method shows how to mask head (set some heads to zero), to test the effect on the network,
         based on the head importance scores, as described in Michel et al. (http://arxiv.org/abs/1905.10650)
