@@ -105,7 +105,7 @@ def main():
 
     # evaluate model "performance" (not fairness)
     eval_datasets = load_eval_dataset(exp_args.task)
-    res_performance = evaluate_metrics(model, tokenizer, exp_args.task, eval_datasets)
+    res_performance = evaluate_metrics(model, tokenizer, exp_args.task, eval_datasets, id)
     print(res_performance)
 
     # fairness evaluation
