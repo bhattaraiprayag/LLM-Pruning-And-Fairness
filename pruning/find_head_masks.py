@@ -23,31 +23,24 @@ import argparse
 import logging
 import os
 from datetime import datetime
-
 import numpy as np
 import torch
 from torch.utils.data import DataLoader, SequentialSampler, Subset, random_split
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm
-
-from ablate_random_vs_masking import load_and_cache_examples, set_seed, MODEL_CLASSES
-from model_roberta import RobertaForSequenceClassification
-
-#from run_glue import ALL_MODELS, MODEL_CLASSES, load_and_cache_examples, set_seed
-#from model_bert import BertForSequenceClassification
-#from config_bert import BertConfig
-
-# from transformers import glue_compute_metrics as compute_metrics
-
-from glue_metrics import glue_compute_metrics as compute_metrics
-from transformers import glue_output_modes as output_modes
+from utils import set_seed, load_and_cache_examples
 from transformers import glue_processors as processors
+from transformers import glue_output_modes as output_modes, RobertaConfig, RobertaForSequenceClassification, \
+    RobertaTokenizer
+from utils import glue_compute_metrics as compute_metrics
 from experiment_impact_tracker.compute_tracker import ImpactTracker
-from config_roberta import RobertaConfig
 
 
 logger = logging.getLogger(__name__)
 logging.getLogger("experiment_impact_tracker.compute_tracker.ImpactTracker").disabled = True
+MODEL_CLASSES = {
+    "roberta": (RobertaConfig, RobertaForSequenceClassification, RobertaTokenizer),
+}
 
 # Step 1: It provides valuable insights into the distribution and importance of attention across different heads.
 # prune heads with the lowest entropy
@@ -76,7 +69,7 @@ def print_2d_tensor(tensor):
 # Make sure to check the tokenization and data loading process to ensure compatibility with your STS-B dataset.
 
 def compute_heads_importance(
-        args, model, eval_dataloader, compute_entropy=True, compute_importance=True, head_mask=None
+        args, model, eval_dataloader, compute_entropy=False, compute_importance=True, head_mask=None
 ):
     """ This method shows how to compute:
         - head attention entropy
@@ -119,6 +112,7 @@ def compute_heads_importance(
 
         if compute_importance:
             head_importance += head_mask.grad.abs().detach()
+            head_mask.grad.zero_()  # set gradients to zero to not overestimate importance of early batches
 
         # Also store our logits/labels if we want to compute metrics afterwards
         if preds is None:
@@ -274,6 +268,7 @@ def prune_heads(args, model, eval_dataloader, head_mask):
 
 def main():
     parser = argparse.ArgumentParser()
+
     # Required parameters
     parser.add_argument(
         "--data_dir",
@@ -440,12 +435,11 @@ def main():
     # Load pretrained model and tokenizer
     if args.local_rank not in [-1, 0]:
         torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
-
+#Load pre trained model
 
 
     config_class, model_class, tokenizer_class = MODEL_CLASSES[args.model_type]
     MODEL_CLASSES["roberta"] = (RobertaConfig, RobertaForSequenceClassification, MODEL_CLASSES["roberta"][1])
-    #MODEL_CLASSES["bert"] = (BertConfig, BertForSequenceClassification, MODEL_CLASSES["bert"][1])
 
     config = config_class.from_pretrained(
         args.config_name if args.config_name else args.model_name_or_path,
