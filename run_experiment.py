@@ -50,6 +50,11 @@ class ExperimentArguments:
         metadata={"help": "Specify desired sparsity level. From 0 to 1.)"},  # add all options
     )
 
+    device: int = field(
+        default=0,
+        metadata={"help": "Specify device that should be used. GPU: 0 (default), CPU: -1"},
+    )
+
 
 # main function that runs the experiment pipeline (evaluation and pruning dependent on arguments)
 def main():
@@ -91,7 +96,7 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(model_path)
 
     # create pipeline
-    pipe = TextClassificationPipeline(model=model, tokenizer=tokenizer, top_k=None, max_length=512, truncation=True, padding=True)
+    pipe = TextClassificationPipeline(model=model, tokenizer=tokenizer, top_k=None, max_length=512, truncation=True, padding=True, device=exp_args.device)
 
     # pruning (skipped if pruning == None)
     if exp_args.pruning_method is not None:
