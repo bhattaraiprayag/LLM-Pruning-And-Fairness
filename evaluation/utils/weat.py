@@ -95,10 +95,8 @@ def p_val_permutation_test(X, Y, A, B, n_samples, cossims, parametric=False):
     XY = np.concatenate((X, Y))
 
     if parametric:
-        print("Using parametric test")
         s = s_XYAB(X, Y, s_wAB_memo)
 
-        print("Drawing {} samples".format(n_samples))
         samples = []
         for _ in range(n_samples):
             np.random.shuffle(XY)
@@ -110,25 +108,15 @@ def p_val_permutation_test(X, Y, A, B, n_samples, cossims, parametric=False):
 
         # Compute sample standard deviation and compute p-value by
         # assuming normality of null distribution
-        print("Inferring p-value based on normal distribution")
         (shapiro_test_stat, shapiro_p_val) = scipy.stats.shapiro(samples)
-        print(
-            "Shapiro-Wilk normality test statistic: {:.2g}, p-value: {:.2g}".format(
-                shapiro_test_stat, shapiro_p_val
-            )
-        )
+
         sample_mean = np.mean(samples)
         sample_std = np.std(samples, ddof=1)
-        print(
-            "Sample mean: {:.2g}, sample standard deviation: {:.2g}".format(
-                sample_mean, sample_std
-            )
-        )
+
         p_val = scipy.stats.norm.sf(s, loc=sample_mean, scale=sample_std)
         return p_val
 
     else:
-        print("Using non-parametric test")
         s = s_XAB(X, s_wAB_memo)
         total_true = 0
         total_equal = 0
@@ -141,7 +129,7 @@ def p_val_permutation_test(X, Y, A, B, n_samples, cossims, parametric=False):
             # reflect that.
             total_true += 1
             total += 1
-            print("Drawing {} samples (and biasing by 1)".format(n_samples - total))
+
             for _ in range(n_samples - 1):
                 np.random.shuffle(XY)
                 Xi = XY[:size]
@@ -155,7 +143,6 @@ def p_val_permutation_test(X, Y, A, B, n_samples, cossims, parametric=False):
                 total += 1
 
         else:
-            print("Using exact test ({} partitions)".format(num_partitions))
             for Xi in itertools.combinations(XY, len(X)):
                 Xi = np.array(Xi, dtype=int)
                 assert 2 * len(Xi) == len(XY)
@@ -167,8 +154,8 @@ def p_val_permutation_test(X, Y, A, B, n_samples, cossims, parametric=False):
                     total_equal += 1
                 total += 1
 
-        if total_equal:
-            print("Equalities contributed {}/{} to p-value".format(total_equal, total))
+        # if total_equal:
+            # print("Equalities contributed {}/{} to p-value".format(total_equal, total))
 
         return total_true / total
 
@@ -228,9 +215,10 @@ def run_test(encs, n_samples, parametric=False):
     AB = A.copy()
     AB.update(B)
 
-    print("Computing cosine similarities...")
     cossims = construct_cossim_lookup(XY, AB)
 
+    # suppress print statement but might be useful to later help with interpreting the results
+    '''
     print(
         "Null hypothesis: no difference between {} and {} in association to attributes {} and {}".format(
             encs["targ1"]["category"],
@@ -239,15 +227,14 @@ def run_test(encs, n_samples, parametric=False):
             encs["attr2"]["category"],
         )
     )
-    print("Computing pval...")
+    '''
+
     pval = p_val_permutation_test(
         X, Y, A, B, n_samples, cossims=cossims, parametric=parametric
     )
-    print(f"pval: {pval:.3f}")
 
-    print("computing effect size...")
     esize = effect_size(X, Y, A, B, cossims=cossims)
-    print(f"esize: {esize:.3f}")
+
     return esize, pval
 
 
@@ -268,10 +255,6 @@ if __name__ == "__main__":
     AB.update(B)
 
     cossims = construct_cossim_lookup(XY, AB)
-    print("computing pval...")
     pval = p_val_permutation_test(X, Y, A, B, cossims=cossims, n_samples=10000)
-    print("pval: %g".format(pval))
 
-    print("computing effect size...")
     esize = effect_size(X, Y, A, B, cossims=cossims)
-    print("esize: %g".format(esize))

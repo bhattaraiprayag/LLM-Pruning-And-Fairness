@@ -32,17 +32,17 @@ def load_eval_dataset(task):    # ONLY WORKS WITH split='validation'
         raise ValueError(f'No evaluation dataset found for task {task}')
 
 
-def evaluate_metrics(model, tokenizer, task, eval_datasets):
+def evaluate_metrics(model, tokenizer, task, eval_datasets, exp_id):
     """Evaluates task-specific metrics and returns results."""
     results_dict = {}
     if task == 'mnli':
         eval_matched, eval_mismatched = eval_datasets
-        mnli_matched = evaluate_model(model, tokenizer, task, eval_matched)
-        mnli_mismatched = evaluate_model(model, tokenizer, task, eval_mismatched)
+        mnli_matched = evaluate_model(model, tokenizer, task, eval_matched, exp_id)
+        mnli_mismatched = evaluate_model(model, tokenizer, task, eval_mismatched, exp_id)
         results_dict['Matched Acc'], results_dict['Mismatched Acc'] = mnli_matched['eval_accuracy'], mnli_mismatched['eval_accuracy']
     elif task == 'stsb':
         eval_dataset = eval_datasets[0]
-        eval_results = evaluate_model(model, tokenizer, task, eval_dataset)
+        eval_results = evaluate_model(model, tokenizer, task, eval_dataset, exp_id)
         results_dict['Spearmanr'], results_dict['Pearson'] = eval_results['eval_spearmanr'], eval_results['eval_pearson']
     else:
         raise ValueError(f'No evaluation metrics found for task {task}')
@@ -50,7 +50,7 @@ def evaluate_metrics(model, tokenizer, task, eval_datasets):
     return results_dict
 
 
-def evaluate_model(model, tokenizer, task_name, eval_dataset):
+def evaluate_model(model, tokenizer, task_name, eval_dataset, exp_id):
     # tokenization
     def preprocess_function(examples, task_name=task_name):
         if task_name == "mnli":
@@ -73,7 +73,7 @@ def evaluate_model(model, tokenizer, task_name, eval_dataset):
 
     # define trainer
     training_args = TrainingArguments(
-        output_dir="./results",  # Temporary directory for storing evaluation results
+        output_dir=f"./results/run{exp_id}",  # Temporary directory for storing evaluation results
         do_train=False,
         do_eval=True,
     )

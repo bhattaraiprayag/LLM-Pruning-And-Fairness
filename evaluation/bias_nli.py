@@ -22,8 +22,8 @@ def bias_nli(model_pipe, exp_id):
     prediction = model_pipe(pair_list)
 
     # Save predictions
-    os.makedirs(f'results/{exp_id}', exist_ok=True)
-    with open(f'results/{exp_id}/bias_nli.csv', 'w') as csv_file:
+    os.makedirs(f'results/run{exp_id}', exist_ok=True)
+    with open(f'results/run{exp_id}/bias_nli.csv', 'w') as csv_file:
         writer = csv.writer(csv_file)
         writer.writerow(["premise_filler_word", "hypothesis_filler_word", "premise", "hypothesis", "neutral", "entailment", "contradiction"])
         for i, item in enumerate(prediction):
