@@ -3,6 +3,7 @@
 
 import csv
 import os
+from tqdm import tqdm
 
 def bias_nli(model_pipe, exp_id):
     # Input: model_pipe with the transformers pipeline containing the model and tokenizer
@@ -14,12 +15,16 @@ def bias_nli(model_pipe, exp_id):
         pair_list = []
         word_list = []
         # Get all premise/hypothesis pairs in a list
-        for row in test_dict:
+        for row in tqdm(test_dict, desc="Loading bias-nli test sentences"):
             pair_list.append((row["premise"],row["hypothesis"]))
             word_list.append([row['premise_filler_word'], row['hypothesis_filler_word'], row["premise"],row["hypothesis"]])
 
     # Make predictions with model
-    prediction = model_pipe(pair_list)
+    # prediction = model_pipe(pair_list)
+    batch_size = 1000
+    prediction = []
+    for i in tqdm(range(0, len(pair_list), batch_size), desc="Making predictions"):
+        prediction.extend(model_pipe(pair_list[i:i+batch_size]))
 
     # Save predictions
     os.makedirs(f'results/run{exp_id}', exist_ok=True)

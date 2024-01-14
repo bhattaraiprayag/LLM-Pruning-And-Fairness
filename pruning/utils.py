@@ -3,7 +3,7 @@ import numpy as np
 import torch
 
 
-def set_seed(seed):
+def get_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -24,3 +24,7 @@ def check_sparsity(model):
         nonzero_params += layer_nonzero.item()
     overall_sparsity = 1 - nonzero_params / total_params
     return overall_sparsity
+
+
+def get_device():
+    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
