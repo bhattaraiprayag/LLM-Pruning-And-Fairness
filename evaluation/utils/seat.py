@@ -10,6 +10,8 @@ import torch
 
 import evaluation.utils.weat as weat
 
+from pruning.utils import get_device
+
 
 class SEATRunner:
     """Runs SEAT tests for a given HuggingFace transformers model.
@@ -155,6 +157,7 @@ def _encode(model, tokenizer, texts):
     for text in texts:
         # Encode each example.
         inputs = tokenizer(text, return_tensors="pt")
+        inputs = inputs.to(get_device())
         outputs = model(**inputs, output_hidden_states=True)
 
         # Average over the last layer of hidden representations.
@@ -162,7 +165,7 @@ def _encode(model, tokenizer, texts):
         enc = enc.mean(dim=1)
 
         # Following May et al., normalize the representation.
-        encs[text] = enc.detach().view(-1).numpy()
+        encs[text] = enc.detach().view(-1).cpu().numpy()
         encs[text] /= np.linalg.norm(encs[text])
 
     return encs

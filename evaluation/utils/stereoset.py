@@ -1,9 +1,9 @@
 # Code amended from https://github.com/luohongyin/ESP/blob/main/eval_stereo.py
 
 import json
-
 import torch
 import torch.nn as nn
+from pruning.utils import get_device
 
 def proc_cls_output(output_logits, cls_head, no_neu=True):
     ent_logits = output_logits[:, :1]
@@ -99,8 +99,8 @@ def cls_evaluate(tok, model, cls_head, sent_list, batch_size=4):
             verbose=False
         )
 
-        input_ids = input_enc.input_ids
-        attention_mask = input_enc.attention_mask
+        input_ids = input_enc.input_ids.to(get_device())
+        attention_mask = input_enc.attention_mask.to(get_device())
 
         result = model(
             input_ids=input_ids,
@@ -151,11 +151,11 @@ def nsp_evaluate(tok, model, cls_head, sent_list, batch_size=4):
             verbose=False
         )
 
-        ctx_ids = ctx_enc.input_ids.cuda()
-        ctx_attn_mask = ctx_enc.attention_mask.cuda()
+        ctx_ids = ctx_enc.input_ids.to(get_device())
+        ctx_attn_mask = ctx_enc.attention_mask.to(get_device())
 
-        sent_ids = sent_enc.input_ids.cuda()
-        sent_attn_mask = sent_enc.attention_mask.cuda()
+        sent_ids = sent_enc.input_ids.to(get_device())
+        sent_attn_mask = sent_enc.attention_mask.to(get_device())
 
         with torch.no_grad():
             ctx_result = model(

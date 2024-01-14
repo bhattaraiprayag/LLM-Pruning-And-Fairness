@@ -12,7 +12,7 @@ from transformers import (
 
 from dataclasses import dataclass, field, asdict
 from typing import Optional
-from pruning.utils import set_seed
+from pruning.utils import get_seed, get_device
 from pruning.magnitude_pruner import MagnitudePrunerOneShot
 from evaluation.performance import load_eval_dataset, evaluate_metrics
 from evaluation.seat import seatandweat
@@ -83,7 +83,7 @@ def main():
         raise ValueError(f'No model found for task {exp_args.task}')
     
     # set experiment seed
-    set_seed(exp_args.seed)
+    get_seed(exp_args.seed)
 
     # load model
     model = RobertaForSequenceClassification.from_pretrained(
@@ -91,6 +91,7 @@ def main():
         use_safetensors=True,
         local_files_only=True
     )
+    model.to(get_device())
 
     # load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_path)
