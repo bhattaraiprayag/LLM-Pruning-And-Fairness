@@ -37,7 +37,7 @@ def bias_nli(model_pipe, exp_id):
 
     # Calculate output scores
     results = {}
-    results['net_neutral'] = sum([next((item.get('score') for item in i if item["label"] == "neutral"), False) for i in prediction])/len(pair_list)
-    results['fraction_neutral'] = sum([1 for i in prediction if max(i, key=lambda x:x['score'])['label']=='neutral'])/len(pair_list)
+    results['BiasNLI_NN'] = sum([next((item.get('score') for item in i if item["label"] == "neutral"), False) for i in prediction])/len(pair_list)
+    results['BiasNLI_FN'] = sum([1 for i in prediction if max(i, key=lambda x:x['score'])['label']=='neutral'])/len(pair_list)
 
     return results
