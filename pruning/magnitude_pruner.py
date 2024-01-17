@@ -3,7 +3,7 @@ import torch.nn.utils.prune as prune
 import random
 import numpy as np
 
-from pruning.utils import set_seed, check_sparsity
+from pruning.utils import get_seed, check_sparsity
 
 # Class for one-shot magnitude pruning
 class MagnitudePrunerOneShot:
@@ -15,10 +15,10 @@ class MagnitudePrunerOneShot:
 
     def prune(self):
         # Set seed
-        set_seed(self.seed)
+        get_seed(self.seed)
 
-        # Check sparsity before pruning
-        print(f"Sparsity before pruning: {check_sparsity(self.model):.4%}")
+        # # Check sparsity before pruning
+        # print(f"Sparsity before pruning: {check_sparsity(self.model):.4%}")
 
         if self.pruning_method == "l1-unstructured":
             self._apply_l1_unstructured()
