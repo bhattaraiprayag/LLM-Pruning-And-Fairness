@@ -23,11 +23,11 @@ def load_eval_dataset(task):    # ONLY WORKS WITH split='validation'
     """Loads the evaluation dataset based on the specified task."""
     if task == 'mnli':
         return (
-            load_dataset('glue', 'mnli', split='validation_matched'),
-            load_dataset('glue', 'mnli', split='validation_mismatched')
+            load_dataset('glue', 'mnli', split='validation_matched[-50%:]'),
+            load_dataset('glue', 'mnli', split='validation_mismatched[-50%:]')
         )
     elif task == 'stsb':
-        return load_dataset('glue', 'stsb', split='validation'),
+        return load_dataset('glue', 'stsb', split='validation[-50%:]'),
     else:
         raise ValueError(f'No evaluation dataset found for task {task}')
 
