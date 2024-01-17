@@ -27,7 +27,7 @@ from typing import Optional
 import datasets
 import evaluate
 import numpy as np
-from datasets import load_dataset
+from datasets import load_dataset, DatasetDict
 
 import transformers
 from transformers import (
@@ -303,12 +303,39 @@ def main():
     # download the dataset.
     if data_args.task_name is not None:
         # Downloading and loading a dataset from the hub.
-        raw_datasets = load_dataset(
-            "glue",
-            data_args.task_name,
-            cache_dir=model_args.cache_dir,
-            token=model_args.token,
-        )
+        if data_args.task_name == 'mnli':
+            raw_datasets = load_dataset(
+                "glue",
+                data_args.task_name,
+                cache_dir=model_args.cache_dir,
+                token=model_args.token,
+                split=['train', 'validation_matched[:50%]',
+                       'validation_mismatched[:50%]',
+                       'validation_matched[-50%:]',
+                       'validation_mismatched[-50%:]'
+                       ]
+            )
+            raw_datasets = DatasetDict({'train':raw_datasets[0],
+                                        'validation_matched':raw_datasets[1],
+                                        'validation_mismatched':raw_datasets[2],
+                                        'test_matched':raw_datasets[3],
+                                        'test_mismatched':raw_datasets[4]
+                                        })
+        else:
+            raw_datasets = load_dataset(
+                "glue",
+                data_args.task_name,
+                cache_dir=model_args.cache_dir,
+                token=model_args.token,
+                split=['train',
+                       'validation[:50%]',
+                       'validation[-50%:]'
+                       ]
+            )
+            raw_datasets = DatasetDict({'train': raw_datasets[0],
+                                        'validation': raw_datasets[1],
+                                        'test': raw_datasets[2]
+                                        })
     elif data_args.dataset_name is not None:
         # Downloading and loading a dataset from the hub.
         raw_datasets = load_dataset(

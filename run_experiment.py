@@ -33,11 +33,11 @@ class ExperimentArguments:
     """
 
     seed: int = field(
-        metadata={"help": "random seed"}
+        metadata={"help": "Specify random seed."}
     )
 
     task: str = field(
-        metadata={"help": "mnli or stsb"},
+        metadata={"help": "Specify task. Options: 'mnli' or 'stsb'"},
     )
 
     pruning_method: Optional[str] = field(
@@ -53,6 +53,11 @@ class ExperimentArguments:
     device: int = field(
         default=0,
         metadata={"help": "Specify device that should be used. GPU: 0 (default), CPU: -1"},
+    )
+
+    temperature: float = field(
+        default=1,
+        metadata={"help": "Specify temperature. Default: 1"},
     )
 
 
