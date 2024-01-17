@@ -46,7 +46,7 @@ class ExperimentArguments:
     )
 
     sparsity_level: Optional[float] = field(
-        default=None,
+        default=0,
         metadata={"help": "Specify desired sparsity level. From 0 to 1.)"},  # add all options
     )
 

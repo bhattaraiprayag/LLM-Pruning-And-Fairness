@@ -28,4 +28,4 @@ def seatandweat(model, tokenizer, exp_id, seed):
         json.dump(avg_es, file)
 
     # only return gender bias values in dict
-    return {k: avg_es[k] for k in ('seat_gender', 'weat_gender')}
+    return {k: avg_es[k] for k in ('SEAT_gender', 'WEAT_gender')}

@@ -15,7 +15,6 @@ results_df = pd.DataFrame(columns=['ID',
                                    'BiasNLI_NN',
                                    'BiasNLI_FN',
                                    'BiasSTS',
-                                   'model_performance'
                                    # ??? pruning variables
                                    ])
 
