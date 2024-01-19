@@ -41,7 +41,7 @@ class ExperimentArguments:
     )
 
     pruning_method: Optional[str] = field(
-        default=None,  # None means that the base models are evaluated without doing pruning
+        default='None',  # None means that the base models are evaluated without doing pruning
         metadata={"help": "Specify pruning method. Options: 'l1-unstructured', 'l1-unstructured-linear', 'l1-unstructured-invert', or None for no pruning."},  # add all options
     )
 
