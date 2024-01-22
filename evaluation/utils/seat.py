@@ -239,13 +239,13 @@ def aggregate_results(all_results):
 
     weat_illness = [d for d in all_results if d.get('test') == 'weat9']
 
-    all_avg_es = {'seat_gender': compute_avg_effect_size(seat_gender),
-                  'seat_race': compute_avg_effect_size(seat_race),
-                  'seat_illness': compute_avg_effect_size(seat_illness),
-                  'seat_religion': compute_avg_effect_size(seat_religion),
-                  'weat_gender': compute_avg_effect_size(weat_gender),
-                  'weat_race': compute_avg_effect_size(weat_race),
-                  'weat_illness': compute_avg_effect_size(weat_illness)
+    all_avg_es = {'SEAT_gender': compute_avg_effect_size(seat_gender),
+                  'SEAT_race': compute_avg_effect_size(seat_race),
+                  'SEAT_illness': compute_avg_effect_size(seat_illness),
+                  'SEAT_religion': compute_avg_effect_size(seat_religion),
+                  'WEAT_gender': compute_avg_effect_size(weat_gender),
+                  'WEAT_race': compute_avg_effect_size(weat_race),
+                  'WEAT_illness': compute_avg_effect_size(weat_illness)
                   }
 
     return all_avg_es
