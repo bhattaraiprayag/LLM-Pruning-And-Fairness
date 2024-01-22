@@ -105,7 +105,7 @@ def main():
     pipe = TextClassificationPipeline(model=model, tokenizer=tokenizer, top_k=None, max_length=512, truncation=True, padding=True, device=exp_args.device)
 
     # pruning (skipped if pruning == None)
-    if exp_args.pruning_method is not "None":
+    if exp_args.pruning_method != "None":
         pruner = MagnitudePrunerOneShot(model, exp_args.seed, exp_args.pruning_method, exp_args.sparsity_level)
         pruner.prune()
 
