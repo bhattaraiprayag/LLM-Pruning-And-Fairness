@@ -9,8 +9,11 @@ To install the necessary packages in a conda environment, follow the instruction
 ## Pruning
 
 ### Overview
-In our project, we focus on exploring the impact of various pruning techniques on the biasness of RoBERTa-base. Pruning, a method to reduce model size and computational load, involves selectively removing parameters (weights), or neurons, from the neural network. We have implemented and experimented with different types of pruning strategies, starting with magnitude-based methods.
+In our project, we focus on exploring the impact of various pruning techniques on the biasness of RoBERTa-base. Pruning, a method to reduce model size and computational load, involves selectively removing parameters (weights), or neurons, from the neural network. We have implemented and experimented with different types of pruning strategies, starting with magnitude-based methods and structure Pruning.
 
+### Structure Pruning:
+Structural pruning is a technique for compressing neural networks by removing entire groups of parameters, or filters, based on their structural relationships. 
+**Importance Pruning** A technique for compressing neural networks by removing parameters based on their importance scores. Importance scores are measures of how important each parameter is to the overall performance of the network. 
 ### Magnitude Pruning:
 Magnitude pruning is a method for reducing the size and complexity of an LLM/neural networks by selectively removing parameters (weights) based on their magnitudes. Our **MagnitudePrunerOneShot** class, defined in *magnitude_pruner.py*, is central to our pruning strategy. This class offers three distinct methods of magnitude-based pruning:
 - **L1-Unstructured**: This global pruning strategy removes weights across the entire network based on their L1-norm magnitude. Can be used with *--pruning_method l1-unstructured*.
