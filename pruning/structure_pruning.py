@@ -28,12 +28,13 @@ import torch
 from torch.utils.data import DataLoader, SequentialSampler, Subset, random_split
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm
-from utils import set_seed, load_and_cache_examples
+from utils import get_seed, load_and_cache_examples
 from transformers import glue_processors as processors
 from transformers import glue_output_modes as output_modes, RobertaConfig, RobertaForSequenceClassification, \
     RobertaTokenizer
 from utils import glue_compute_metrics as compute_metrics
-from experiment_impact_tracker.compute_tracker import ImpactTracker
+#from experiment_impact_tracker.compute_tracker import ImpactTracker
+#from pandas import json_normalize
 
 
 logger = logging.getLogger(__name__)
@@ -43,7 +44,7 @@ MODEL_CLASSES = {
 }
 
 # Step 1: It provides valuable insights into the distribution and importance of attention across different heads.
-# prune heads with the lowest entropy
+# prune heads with the lowest entropyß
 # Entropy of attention weights for each head and layer is calculated during the evaluation.
 def entropy(p):
     """ Compute the entropy of a probability distribution """
@@ -403,9 +404,10 @@ def main():
     logger.info("device: {} n_gpu: {}, distributed: {}".format(args.device, args.n_gpu, bool(args.local_rank != -1)))
 
     # Set seeds
-    set_seed(args)
+    get_seed(args)
 
-    tracker = ImpactTracker(args.output_dir)
+    #tracker = ImpactTracker(args.output_dir)
+    tracker = (args.output_dir)
     tracker.launch_impact_monitor()
 
     # Prepare GLUE task
@@ -498,3 +500,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
