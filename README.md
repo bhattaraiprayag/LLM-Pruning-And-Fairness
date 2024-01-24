@@ -13,7 +13,8 @@ In our project, we focus on exploring the impact of various pruning techniques o
 
 ### Structure Pruning:
 Structural pruning is a technique for compressing neural networks by removing entire groups of parameters, or filters, based on their structural relationships. 
-**Importance Pruning** A technique for compressing neural networks by removing parameters based on their importance scores. Importance scores are measures of how important each parameter is to the overall performance of the network. 
+-**Importance Pruning** A technique for compressing neural networks by removing parameters based on their importance scores. Importance scores are measures of how important each parameter is to the overall performance of the network. 
+Variables that we chenge to get the best performance are: **masking threshold ( masking threshold in term of metrics (stop masking when metric < threshold * original metric value)) and **masking amount (mount to heads to masking at each masking step). 
 ### Magnitude Pruning:
 Magnitude pruning is a method for reducing the size and complexity of an LLM/neural networks by selectively removing parameters (weights) based on their magnitudes. Our **MagnitudePrunerOneShot** class, defined in *magnitude_pruner.py*, is central to our pruning strategy. This class offers three distinct methods of magnitude-based pruning:
 - **L1-Unstructured**: This global pruning strategy removes weights across the entire network based on their L1-norm magnitude. Can be used with *--pruning_method l1-unstructured*.
