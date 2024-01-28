@@ -19,9 +19,13 @@ def bias_nli(model_pipe, exp_id):
             pair_list.append((row["premise"],row["hypothesis"]))
             word_list.append([row['premise_filler_word'], row['hypothesis_filler_word'], row["premise"],row["hypothesis"]])
 
+            # # # DEBUGGING SWITCH: Work with less rows
+            # if len(pair_list) >= 1000:
+            #     break
+
     # Make predictions with model
     # prediction = model_pipe(pair_list)
-    batch_size = 1000
+    batch_size = max(1, len(pair_list) // 10)
     prediction = []
     for i in tqdm(range(0, len(pair_list), batch_size), desc="Making predictions"):
         prediction.extend(model_pipe(pair_list[i:i+batch_size]))
