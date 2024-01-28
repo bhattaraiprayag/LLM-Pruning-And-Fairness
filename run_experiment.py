@@ -1,4 +1,5 @@
 # imports
+import os
 import pandas as pd
 from datetime import date
 
@@ -74,6 +75,13 @@ def main():
         id = 1
     else:
         id = results_df['ID'].max() + 1
+    
+    results_dir = 'results'
+    experiment_dir = f'{results_dir}/run_{str(id)}'
+
+    # Create a unique directory for the experiment
+    if not os.path.exists(experiment_dir):
+        os.makedirs(experiment_dir)
 
     # NOT NEEDED?? create output/results folder directory (one folder per run) to put into functions
     # outdir = f'/results/run{str(id)}'
@@ -108,6 +116,13 @@ def main():
     if exp_args.pruning_method != "None":
         pruner = MagnitudePrunerOneShot(model, exp_args.seed, exp_args.pruning_method, exp_args.sparsity_level)
         pruner.prune()
+
+        # save pruned model
+        pruned_model_dir = f'{experiment_dir}/pruned_model/'
+        if not os.path.exists(pruned_model_dir):
+            os.makedirs(pruned_model_dir)
+        model.save_pretrained(pruned_model_dir)
+        tokenizer.save_pretrained(pruned_model_dir)
 
     # evaluate model "performance" (not fairness)
     eval_datasets = load_eval_dataset(exp_args.task)
