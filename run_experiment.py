@@ -70,11 +70,14 @@ def main():
     # load dataframe that stores the results (every run adds a new row)
     results_df = pd.read_csv('results/results.csv')
 
+    # Looking at current ids in use as folders
+    id_list = [int(str.replace(item, 'run_', '')) for item in os.listdir('results') if 'run' in item]
+
     # determine ID of this run
-    if results_df.empty:
+    if len(id_list)==0:
         id = 1
     else:
-        id = results_df['ID'].max() + 1
+        id = max(id_list) + 1
     
     results_dir = 'results'
     experiment_dir = f'{results_dir}/run_{str(id)}'
