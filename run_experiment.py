@@ -71,7 +71,7 @@ def main():
     results_df = pd.read_csv('results/results.csv')
 
     # Looking at current ids in use as folders
-    id_list = [int(str.replace(item, 'run_', '')) for item in os.listdir('results') if 'run' in item]
+    id_list = [int(str.replace(item, 'run', '')) for item in os.listdir('results') if 'run' in item]
 
     # determine ID of this run
     if len(id_list)==0:
@@ -80,7 +80,7 @@ def main():
         id = max(id_list) + 1
     
     results_dir = 'results'
-    experiment_dir = f'{results_dir}/run_{str(id)}'
+    experiment_dir = f'{results_dir}/run{str(id)}'
 
     # Create a unique directory for the experiment
     if not os.path.exists(experiment_dir):
