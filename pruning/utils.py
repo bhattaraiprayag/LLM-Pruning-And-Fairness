@@ -6,6 +6,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from sklearn.metrics import matthews_corrcoef
+from torch import threshold
 from transformers import RobertaModel, RobertaConfig
 from transformers import glue_processors as processors
 from torch.utils.data import TensorDataset
@@ -18,11 +19,67 @@ from transformers import glue_convert_examples_to_features as convert_examples_t
 ROBERTA_PRETRAINED_MODEL_ARCHIVE_MAP = {'roberta-base': "https://s3.amazonaws.com/models.huggingface.co/bert/roberta-base-pytorch_model.bin"
 
 }
-def set_seed(seed):
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
+#def get_seed(seed):
+    #random.seed(seed)
+    #np.random.seed(seed)
+    #torch.manual_seed(seed)
+    #torch.cuda.manual_seed_all(seed)
+
+#def get_seed(args):
+    #if args.seed is not None:
+        #seed = int(args.seed)
+       # random.seed(seed)
+        #np.random.seed(seed)
+
+
+def get_seed(seed):
+    if seed is not None:
+        if isinstance(seed, int):
+            return seed
+        elif isinstance(seed, float):
+            return int(seed)
+        elif isinstance(seed, str):
+            try:
+                return int(seed)
+            except ValueError:
+                return seed
+        elif isinstance(seed, bytes) or isinstance(seed, bytearray):
+            return seed.decode("utf-8")
+
+    random.seed(None)
+    np.random.seed(None)
+    torch.manual_seed(None)
+    torch.cuda.manual_seed_all(None)
+
+
+class ImpactTracker:
+    def __init__(self, metrics, threshold):
+        self.metrics = metrics
+        self.threshold = threshold
+
+    def track_impact(self, model):
+        before_metrics = {metric: model.evaluate(metric) for metric in self.metrics}
+        model.prune()  # Perform pruning or modifications
+        after_metrics = {metric: model.evaluate(metric) for metric in self.metrics}
+
+        for metric, change in zip(self.metrics, after_metrics - before_metrics):
+            if abs(change) > self.threshold:
+                print(f"Significant change detected for {metric}: {change}")
+
+    def launch_impact_monitor(self, model):
+        # Collect metrics before pruning
+        before_metrics = {metric: model.evaluate(metric) for metric in self.metrics}
+
+        # Perform pruning or modifications
+        model.prune()
+
+        # Collect metrics after pruning
+        after_metrics = {metric: model.evaluate(metric) for metric in self.metrics}
+
+        # Analyze and alert for significant changes
+        for metric, change in zip(self.metrics, after_metrics - before_metrics):
+            if abs(change) > self.threshold:
+                print(f"Significant change detected for {metric}: {change}")
 
 
 def check_sparsity(model):
@@ -41,7 +98,10 @@ def check_sparsity(model):
     return overall_sparsity
 
 
+def get_device():
+    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 RobertaLayerNorm = torch.nn.LayerNorm
+
 
 def load_tf_weights_in_roberta(model, config, tf_checkpoint_path):
     try:
@@ -108,15 +168,16 @@ def load_tf_weights_in_roberta(model, config, tf_checkpoint_path):
 
     return model
 
+
 class RobertaPreTrainedModel(PreTrainedModel):
     """ An abstract class to handle weights initialization and
         a simple interface for downloading and loading pretrained models.
     """
-
     config_class = RobertaConfig  # Update with the correct config class for RoBERTa
     pretrained_model_archive_map = ROBERTA_PRETRAINED_MODEL_ARCHIVE_MAP  # Update with the correct map
     load_tf_weights = load_tf_weights_in_roberta  # Implement a function to load RoBERTa TF weights
     base_model_prefix = "roberta"  # Update with the correct prefix for RoBERTa
+
 
     def _init_weights(self, module):
         """ Initialize the weights """
@@ -133,6 +194,7 @@ class RobertaPreTrainedModel(PreTrainedModel):
 #Logger Setup
 logger = logging.getLogger(__name__)
 
+# This caching mechanism helps improve performance by avoiding unnecessary data loading for each epoch.
 def load_and_cache_examples(args, data_dir, task, tokenizer, evaluate=False):
     # not the first process in distributed training
     if args.local_rank not in [-1, 0] and not evaluate:
@@ -196,6 +258,8 @@ def load_and_cache_examples(args, data_dir, task, tokenizer, evaluate=False):
     dataset = TensorDataset(all_input_ids, all_attention_mask, all_token_type_ids, all_labels)
     return dataset
 
+
+# Compute evaluation metrics for various GLUE tasks
 def glue_compute_metrics(task_name, preds, labels):
         assert len(preds) == len(labels)
         if task_name == "cola":

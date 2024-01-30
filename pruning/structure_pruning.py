@@ -25,35 +25,34 @@ import os
 from datetime import datetime
 import numpy as np
 import torch
+import random
 from torch.utils.data import DataLoader, SequentialSampler, Subset, random_split
 from torch.utils.data.distributed import DistributedSampler
-from tqdm import tqdm
-from utils import get_seed, load_and_cache_examples
+from tqdm import tqdm # display progress bars during long-running operations
+from utils import load_and_cache_examples, ImpactTracker, get_seed
 from transformers import glue_processors as processors
 from transformers import glue_output_modes as output_modes, RobertaConfig, RobertaForSequenceClassification, \
     RobertaTokenizer
 from utils import glue_compute_metrics as compute_metrics
-#from experiment_impact_tracker.compute_tracker import ImpactTracker
-#from pandas import json_normalize
+import transformers
 
 
 logger = logging.getLogger(__name__)
 logging.getLogger("experiment_impact_tracker.compute_tracker.ImpactTracker").disabled = True
-MODEL_CLASSES = {
-    "roberta": (RobertaConfig, RobertaForSequenceClassification, RobertaTokenizer),
-}
 
-# Step 1: It provides valuable insights into the distribution and importance of attention across different heads.
-# prune heads with the lowest entropyß
-# Entropy of attention weights for each head and layer is calculated during the evaluation.
+MODEL_CLASSES = {
+    "roberta": (RobertaConfig, RobertaForSequenceClassification, RobertaTokenizer) }
+
+# 1)Calculates the entropy of a probability distribution by summing the negative log probabilities of the distribution, excluding probabilities that are zero
+# prune heads with the lowest entropy.
+# Entropy is a measure of uncertainty or randomness in a probability distribution.
 def entropy(p):
     """ Compute the entropy of a probability distribution """
     plogp = p * torch.log(p)
     plogp[p == 0] = 0
     return -plogp.sum(dim=-1)
 
-#Step2 : Used to log and visualize information about attention heads
-
+#Used to log and visualize information about attention heads
 def print_2d_tensor(tensor):
     """ Print a 2D tensor """
     logger.info("lv, h >\t" + "\t".join(f"{x + 1}" for x in range(len(tensor))))
@@ -63,12 +62,8 @@ def print_2d_tensor(tensor):
         else:
             logger.info(f"layer {row + 1}:\t" + "\t".join(f"{x:d}" for x in tensor[row].cpu().data))
 
-#Step 3: Iteration computing the loss, logits, and attention values.
-# (Backpropagation is performed to populate the gradients in the head mask (used for computing head importance scores))
-# STS-B dataset includes label_scores instead of label_ids, as STS-B involves predicting similarity scores
-# rather than discrete labels. Adjustments might still be necessary depending on your specific dataset and requirements.
-# Make sure to check the tokenization and data loading process to ensure compatibility with your STS-B dataset.
-
+# Iteration computing the loss, logits, and attention values.
+# Evaluate the importance of attention heads in a Transformer model by computing attention entropy and head importance scores.
 def compute_heads_importance(
         args, model, eval_dataloader, compute_entropy=False, compute_importance=True, head_mask=None
 ):
@@ -159,8 +154,8 @@ def compute_heads_importance(
 
     return attn_entropy, head_importance, preds, labels
 
-#Step 4: Implements a process of pruning (masking) attention heads in a transformer model based on their importance scores.
-# This pruning is done iteratively, removing heads with the lowest importance scores until a certain threshold is reached.
+# masks specific attention heads in a Transformer model based on their importance scores.
+# The goal of masking is to identify and remove less important heads to improve the efficiency andgeneralizability of the model.
 def mask_heads(args, model, eval_dataloader):
     """ This method shows how to mask head (set some heads to zero), to test the effect on the network,
         based on the head importance scores, as described in Michel et al. (http://arxiv.org/abs/1905.10650)
@@ -225,6 +220,9 @@ def mask_heads(args, model, eval_dataloader):
 
     return head_mask
 
+# Pruning involves removing the weights of masked attention heads, effectively reducing the model's size and
+# complexity. compares the performance of the pruned model to the masked model on the evaluation dataset. compares
+# the execution time of the two models to assess the impact of pruning on computational efficiency.
 def prune_heads(args, model, eval_dataloader, head_mask):
     """ This method shows how to prune head (remove heads weights) based on
         the head importance scores as described in Michel et al. (http://arxiv.org/abs/1905.10650)
@@ -278,20 +276,20 @@ def main():
         required=True,
         help="The input data dir. Should contain the .tsv files (or other data files) for the task.",
     )
-    parser.add_argument(
-        "--model_type",
-        default=None,
-        type=str,
-        required=True,
-        help="Model type selected in the list: " + ", ".join(MODEL_CLASSES.keys()),
-    )
-    parser.add_argument(
-        "--model_name_or_path",
-        default=None,
-        type=str,
-        required=True,
-        help="Path to pre-trained model or shortcut name selected in the list: " + ", ".join(MODEL_CLASSES),
-    )
+    #parser.add_argument(
+        #"--model_type",
+        #default=None,
+        #type=str,
+        #required=True,
+        #help="Model type selected in the list: " + ", ".join(MODEL_CLASSES.keys()),
+   # )
+   # parser.add_argument(
+        #"--model_name_or_path",
+        #default=None,
+        #type=str,
+        #required=True,
+       # help="Path to pre-trained model or shortcut name selected in the list: " + ", ".join(MODEL_CLASSES),
+    #)
     parser.add_argument(
         "--task_name",
         default=None,
@@ -360,6 +358,7 @@ def main():
         type=float,
         help="masking threshold in term of metrics (stop masking when metric < threshold * original metric value).",
     )
+    # Determine the number of heads to mask
     parser.add_argument(
         "--masking_amount", default=0.1, type=float, help="Amount to heads to masking at each masking step."
     )
@@ -406,11 +405,18 @@ def main():
     # Set seeds
     get_seed(args)
 
-    #tracker = ImpactTracker(args.output_dir)
-    tracker = (args.output_dir)
-    tracker.launch_impact_monitor()
+    metrics = ["accuracy", "fairness_index"]
+    #threshold = 0.1
+    threshold = 0.15
+    tracker = ImpactTracker(metrics, threshold)
+    model = transformers.RobertaForSequenceClassification.from_pretrained(
+        "/Users/mariamamir/TeamProject/final_models//sts-b", use_safetensors=True, local_files_only=True)
+    # Assuming model is the pruned model
+    tracker.launch_impact_monitor(model)
+    model.evaluate(metrics)
 
     # Prepare GLUE task
+    # We will be using mnli & sts-b
     args.task_name = args.task_name.lower()
     if args.task_name not in processors:
         raise ValueError("Task not found: %s" % (args.task_name))
@@ -438,7 +444,6 @@ def main():
     if args.local_rank not in [-1, 0]:
         torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
 #Load pre trained model
-
 
     config_class, model_class, tokenizer_class = MODEL_CLASSES[args.model_type]
     MODEL_CLASSES["roberta"] = (RobertaConfig, RobertaForSequenceClassification, MODEL_CLASSES["roberta"][1])
@@ -497,8 +502,5 @@ def main():
         # Compute head entropy and importance score
         compute_heads_importance(args, model, eval_dataloader)
 
-
 if __name__ == "__main__":
-    main()
-
-
+ main()
