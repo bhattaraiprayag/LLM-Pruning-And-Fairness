@@ -67,9 +67,6 @@ def main():
     parser = HfArgumentParser(ExperimentArguments)
     exp_args = parser.parse_args_into_dataclasses()[0]
 
-    # load dataframe that stores the results (every run adds a new row)
-    results_df = pd.read_csv('results/results.csv')
-
     # Looking at current ids in use as folders
     id_list = [int(str.replace(item, 'run', '')) for item in os.listdir('results') if 'run' in item]
 
@@ -142,6 +139,8 @@ def main():
     results_run.update({'ID': id, 'date': date.today()})
     print(results_run)
 
+    # load dataframe that stores the results (every run adds a new row)
+    results_df = pd.read_csv('results/results.csv')
     # store everything in data frame
     results_df = pd.concat([results_df, pd.DataFrame.from_dict([results_run])], ignore_index=True)
     # save updated csv file
