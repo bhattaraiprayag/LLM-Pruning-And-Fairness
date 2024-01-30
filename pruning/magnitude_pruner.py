@@ -26,6 +26,8 @@ class MagnitudePrunerOneShot:
             self._apply_l1_unstructured_linear()
         elif self.pruning_method == "l1-unstructured-invert":
             self._apply_l1_unstructured_invert()
+        elif self.pruning_method == "random-unstructured":
+            self._apply_random_unstructured()
         else:
             raise ValueError("Pruning method not supported, yet!")
         
@@ -65,3 +67,15 @@ class MagnitudePrunerOneShot:
     def _apply_l1_unstructured_invert(self):
         # TODO: implement
         raise NotImplementedError("Not implemented, yet!")
+
+    # Baseline method: Random pruning
+    def _apply_random_unstructured(self):
+        # Pruning
+        for name, module in self.model.named_modules():
+            if hasattr(module, 'weight'):
+                prune.random_unstructured(module, name='weight', amount=self.sparsity_level)
+
+        # Remove the reparametrization after pruning
+        for name, module in self.model.named_modules():
+            if hasattr(module, 'weight'):
+                prune.remove(module, 'weight')
