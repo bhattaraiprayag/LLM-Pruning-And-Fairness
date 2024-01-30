@@ -13,7 +13,7 @@ def stereoset(model, tokenizer, exp_id):
     eval_mode = 'score'
 
     # Get data
-    sent_list, data = ss.load_data('evaluation/data/StereoSet/test.json', eval_split)
+    sent_list, data = ss.load_data('evaluation/data/stereoset/test.json', eval_split)
 
     # Get output values
     score_board, pred_board = ss.cls_evaluate(tokenizer, model, cls_head, sent_list, batch_size=4)
