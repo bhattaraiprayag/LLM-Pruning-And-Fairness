@@ -1,47 +1,30 @@
 #!/usr/bin/env python3
-# Copyright 2018 CMU and The HuggingFace Inc. team.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-""" Bertology: this script shows how you can explore the internals of the models in the library to:
-    - compute the entropy of the head attentions
-    - compute the importance of each head
-    - prune (remove) the low importance head.
-    Some parts of this script are adapted from the code of Michel et al. (http://arxiv.org/abs/1905.10650)
-    which is available at https://github.com/pmichel31415/are-16-heads-really-better-than-1
-"""
+
 import argparse
 import logging
 import os
 from datetime import datetime
 import numpy as np
 import torch
-import random
 from torch.utils.data import DataLoader, SequentialSampler, Subset, random_split
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm # display progress bars during long-running operations
 from utils import load_and_cache_examples, ImpactTracker, get_seed
+import transformers
 from transformers import glue_processors as processors
 from transformers import glue_output_modes as output_modes, RobertaConfig, RobertaForSequenceClassification, \
     RobertaTokenizer
 from utils import glue_compute_metrics as compute_metrics
-import transformers
-
 
 logger = logging.getLogger(__name__)
 logging.getLogger("experiment_impact_tracker.compute_tracker.ImpactTracker").disabled = True
 
-MODEL_CLASSES = {
-    "roberta": (RobertaConfig, RobertaForSequenceClassification, RobertaTokenizer) }
+#model_config = RobertaConfig.from_pretrained("roberta-base")
+#model = RobertaForSequenceClassification.from_pretrained("roberta-base", config=model_config)
+#tokenizer = RobertaTokenizer.from_pretrained("roberta-base")
+
+MODEL_CLASSES = {"roberta": (RobertaConfig, RobertaForSequenceClassification, RobertaTokenizer),
+                 }
 
 # 1)Calculates the entropy of a probability distribution by summing the negative log probabilities of the distribution, excluding probabilities that are zero
 # prune heads with the lowest entropy.
@@ -276,20 +259,23 @@ def main():
         required=True,
         help="The input data dir. Should contain the .tsv files (or other data files) for the task.",
     )
-    #parser.add_argument(
-        #"--model_type",
-        #default=None,
-        #type=str,
-        #required=True,
-        #help="Model type selected in the list: " + ", ".join(MODEL_CLASSES.keys()),
-   # )
-   # parser.add_argument(
-        #"--model_name_or_path",
-        #default=None,
-        #type=str,
-        #required=True,
-       # help="Path to pre-trained model or shortcut name selected in the list: " + ", ".join(MODEL_CLASSES),
-    #)
+    parser.add_argument(
+        "--model_type",
+        default=None,
+        type=str,
+        required=True,
+        help="Model type selected in the list: " + ", ".join(MODEL_CLASSES.keys()),
+        #help="Path to pre-trained model or shortcut name selected in the list: "
+            # "roberta-base",
+   )
+    parser.add_argument(
+        "--model_name_or_path",
+        default=None,
+        type=str,
+        required=True,
+        help="Path to pre-trained model or shortcut name selected in the list: " + ", ".join(MODEL_CLASSES),
+        #help="Path to pre-trained model or shortcut name selected in the list:" "roberta-base",
+    )
     parser.add_argument(
         "--task_name",
         default=None,
@@ -378,7 +364,12 @@ def main():
     parser.add_argument("--no_cuda", action="store_true", help="Whether not to use CUDA when available")
     parser.add_argument("--server_ip", type=str, default="", help="Can be used for distant debugging.")
     parser.add_argument("--server_port", type=str, default="", help="Can be used for distant debugging.")
+
     args = parser.parse_args()
+
+    #model = transformers.RobertaForSequenceClassification.from_pretrained(
+        #"/Users/mariamamir/TeamProject/sts-b/",
+    #repo_type="directory")
 
     if args.server_ip and args.server_port:
         # Distant debugging - see https://code.visualstudio.com/docs/python/debugging#_attach-to-a-local-script
@@ -403,17 +394,21 @@ def main():
     logger.info("device: {} n_gpu: {}, distributed: {}".format(args.device, args.n_gpu, bool(args.local_rank != -1)))
 
     # Set seeds
-    get_seed(args)
+    #get_seed(args)
+    torch.manual_seed(42)
+    #tracker = ImpactTracker(args.output_dir)
+    #tracker.launch_impact_monitor()
 
     metrics = ["accuracy", "fairness_index"]
     #threshold = 0.1
     threshold = 0.15
     tracker = ImpactTracker(metrics, threshold)
-    model = transformers.RobertaForSequenceClassification.from_pretrained(
-        "/Users/mariamamir/TeamProject/final_models//sts-b", use_safetensors=True, local_files_only=True)
+  #  model = transformers.RobertaForSequenceClassification.from_pretrained(
+        #"/Users/mariamamir/TeamProject/final_models//sts-b", use_safetensors=True, local_files_only=True)
+
     # Assuming model is the pruned model
-    tracker.launch_impact_monitor(model)
-    model.evaluate(metrics)
+    #tracker.launch_impact_monitor(model)
+    #model.evaluate(metrics)
 
     # Prepare GLUE task
     # We will be using mnli & sts-b
@@ -445,10 +440,15 @@ def main():
         torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
 #Load pre trained model
 
+    #model_config = transformers.RobertaConfig.from_pretrained("roberta-base")
+    #model_class = transformers.RobertaForSequenceClassification
+    #tokenizer_class = transformers.RobertaTokenizer
+
     config_class, model_class, tokenizer_class = MODEL_CLASSES[args.model_type]
     MODEL_CLASSES["roberta"] = (RobertaConfig, RobertaForSequenceClassification, MODEL_CLASSES["roberta"][1])
 
     config = config_class.from_pretrained(
+    #config = model_config.from_pretrained(
         args.config_name if args.config_name else args.model_name_or_path,
         num_labels=num_labels,
         finetuning_task=args.task_name,
@@ -478,10 +478,18 @@ def main():
     elif args.n_gpu > 1:
         model = torch.nn.DataParallel(model)
 
+        # Create the output directory if it doesn't exist
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
+
     # Print/save training arguments
     torch.save(args, os.path.join(args.output_dir, "run_args.bin"))
     logger.info("Training/evaluation parameters %s", args)
 
+    # Load the tokenizer
+    tokenizer = transformers.RobertaTokenizer.from_pretrained(
+        args.model_name_or_path
+    )
     # Prepare dataset for the GLUE task
     eval_data = load_and_cache_examples(args, args.task_name, tokenizer, evaluate=True)
     true_eval_len = len(eval_data)
@@ -501,6 +509,5 @@ def main():
     else:
         # Compute head entropy and importance score
         compute_heads_importance(args, model, eval_dataloader)
-
 if __name__ == "__main__":
  main()
