@@ -17,13 +17,13 @@ from transformers import glue_convert_examples_to_features as convert_examples_t
 
 
 ROBERTA_PRETRAINED_MODEL_ARCHIVE_MAP = {'roberta-base': "https://s3.amazonaws.com/models.huggingface.co/bert/roberta-base-pytorch_model.bin"
-
 }
-#def get_seed(seed):
-    #random.seed(seed)
-    #np.random.seed(seed)
-    #torch.manual_seed(seed)
-    #torch.cuda.manual_seed_all(seed)
+def get_seed(args):
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    if args.n_gpu > 0:
+        torch.cuda.manual_seed_all(args.seed)
 
 #def get_seed(args):
     #if args.seed is not None:
@@ -32,24 +32,24 @@ ROBERTA_PRETRAINED_MODEL_ARCHIVE_MAP = {'roberta-base': "https://s3.amazonaws.co
         #np.random.seed(seed)
 
 
-def get_seed(seed):
-    if seed is not None:
-        if isinstance(seed, int):
-            return seed
-        elif isinstance(seed, float):
-            return int(seed)
-        elif isinstance(seed, str):
-            try:
-                return int(seed)
-            except ValueError:
-                return seed
-        elif isinstance(seed, bytes) or isinstance(seed, bytearray):
-            return seed.decode("utf-8")
+#def get_seed(seed):
+    #if seed is not None:
+        #if isinstance(seed, int):
+            #return seed
+        #elif isinstance(seed, float):
+           # return int(seed)
+        #elif isinstance(seed, str):
+            #try:
+                #return int(seed)
+            #except ValueError:
+                #return seed
+        #elif isinstance(seed, bytes) or isinstance(seed, bytearray):
+            #return seed.decode("utf-8")
 
-    random.seed(None)
-    np.random.seed(None)
-    torch.manual_seed(None)
-    torch.cuda.manual_seed_all(None)
+    #random.seed(None)
+    #np.random.seed(None)
+    #torch.manual_seed(None)
+    #torch.cuda.manual_seed_all(None)
 
 
 class ImpactTracker:
