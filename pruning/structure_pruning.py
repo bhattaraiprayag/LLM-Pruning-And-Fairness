@@ -19,10 +19,6 @@ from utils import glue_compute_metrics as compute_metrics
 logger = logging.getLogger(__name__)
 logging.getLogger("experiment_impact_tracker.compute_tracker.ImpactTracker").disabled = True
 
-#model_config = RobertaConfig.from_pretrained("roberta-base")
-#model = RobertaForSequenceClassification.from_pretrained("roberta-base", config=model_config)
-#tokenizer = RobertaTokenizer.from_pretrained("roberta-base")
-
 MODEL_CLASSES = {"roberta": (RobertaConfig, RobertaForSequenceClassification, RobertaTokenizer),
                  }
 
@@ -45,7 +41,6 @@ def print_2d_tensor(tensor):
         else:
             logger.info(f"layer {row + 1}:\t" + "\t".join(f"{x:d}" for x in tensor[row].cpu().data))
 
-# Iteration computing the loss, logits, and attention values.
 # Evaluate the importance of attention heads in a Transformer model by computing attention entropy and head importance scores.
 def compute_heads_importance(
         args, model, eval_dataloader, compute_entropy=False, compute_importance=True, head_mask=None
@@ -259,22 +254,20 @@ def main():
         required=True,
         help="The input data dir. Should contain the .tsv files (or other data files) for the task.",
     )
-    parser.add_argument(
-        "--model_type",
-        default=None,
-        type=str,
-        required=True,
-        help="Model type selected in the list: " + ", ".join(MODEL_CLASSES.keys()),
-        #help="Path to pre-trained model or shortcut name selected in the list: "
-            # "roberta-base",
-   )
+
     parser.add_argument(
         "--model_name_or_path",
         default=None,
         type=str,
         required=True,
         help="Path to pre-trained model or shortcut name selected in the list: " + ", ".join(MODEL_CLASSES),
-        #help="Path to pre-trained model or shortcut name selected in the list:" "roberta-base",
+    )
+    parser.add_argument(
+        "--model_type",
+        default=None,
+        type=str,
+        required=True,
+        help="Model type selected in the list: " + ", ".join(MODEL_CLASSES.keys()),
     )
     parser.add_argument(
         "--task_name",
@@ -292,15 +285,16 @@ def main():
     )
 
     # Other parameters
+
     parser.add_argument(
         "--config_name",
-        default="",
+        default="roberta-base",
         type=str,
         help="Pretrained config name or path if not the same as model_name_or_path",
     )
     parser.add_argument(
         "--tokenizer_name",
-        default="",
+        default="roberta-base",
         type=str,
         help="Pretrained tokenizer name or path if not the same as model_name_or_path",
     )
@@ -367,10 +361,6 @@ def main():
 
     args = parser.parse_args()
 
-    #model = transformers.RobertaForSequenceClassification.from_pretrained(
-        #"/Users/mariamamir/TeamProject/sts-b/",
-    #repo_type="directory")
-
     if args.server_ip and args.server_port:
         # Distant debugging - see https://code.visualstudio.com/docs/python/debugging#_attach-to-a-local-script
         import ptvsd
@@ -394,8 +384,7 @@ def main():
     logger.info("device: {} n_gpu: {}, distributed: {}".format(args.device, args.n_gpu, bool(args.local_rank != -1)))
 
     # Set seeds
-    #get_seed(args)
-    torch.manual_seed(42)
+    get_seed(args)
     #tracker = ImpactTracker(args.output_dir)
     #tracker.launch_impact_monitor()
 
@@ -440,15 +429,10 @@ def main():
         torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
 #Load pre trained model
 
-    #model_config = transformers.RobertaConfig.from_pretrained("roberta-base")
-    #model_class = transformers.RobertaForSequenceClassification
-    #tokenizer_class = transformers.RobertaTokenizer
-
     config_class, model_class, tokenizer_class = MODEL_CLASSES[args.model_type]
     MODEL_CLASSES["roberta"] = (RobertaConfig, RobertaForSequenceClassification, MODEL_CLASSES["roberta"][1])
 
     config = config_class.from_pretrained(
-    #config = model_config.from_pretrained(
         args.config_name if args.config_name else args.model_name_or_path,
         num_labels=num_labels,
         finetuning_task=args.task_name,
@@ -459,13 +443,16 @@ def main():
         args.tokenizer_name if args.tokenizer_name else args.model_name_or_path,
         cache_dir=args.cache_dir if args.cache_dir else None,
     )
+    #model = model_class.from_pretrained(
+        #args.model_name_or_path,
+        #from_tf=bool(".ckpt" in args.model_name_or_path),
+        #config=config,
+        #cache_dir=args.cache_dir if args.cache_dir else None,
+   # )
     model = model_class.from_pretrained(
-        args.model_name_or_path,
-        from_tf=bool(".ckpt" in args.model_name_or_path),
-        config=config,
-        cache_dir=args.cache_dir if args.cache_dir else None,
+        "/Users/mariamamir/TeamProject/final_models/sts-b",  # Provide the path to your trained model directory
+        config=config,  # Pass the configuration object if needed
     )
-
     if args.local_rank == 0:
         torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
 
@@ -486,10 +473,6 @@ def main():
     torch.save(args, os.path.join(args.output_dir, "run_args.bin"))
     logger.info("Training/evaluation parameters %s", args)
 
-    # Load the tokenizer
-    tokenizer = transformers.RobertaTokenizer.from_pretrained(
-        args.model_name_or_path
-    )
     # Prepare dataset for the GLUE task
     eval_data = load_and_cache_examples(args, args.task_name, tokenizer, evaluate=True)
     true_eval_len = len(eval_data)
@@ -501,8 +484,8 @@ def main():
     eval_sampler = SequentialSampler(eval_data) if args.local_rank == -1 else DistributedSampler(eval_data)
     eval_dataloader = DataLoader(eval_data, sampler=eval_sampler, batch_size=args.batch_size)
 
-    # Try head masking (set heads to zero until the score goes under a threshold)
-    # and head pruning (remove masked heads and see the effect on the network)
+     #Try head masking (set heads to zero until the score goes under a threshold)
+    #and head pruning (remove masked heads and see the effect on the network)
     if args.try_masking and args.masking_threshold > 0.0 and args.masking_threshold < 1.0:
         head_mask = mask_heads(args, model, eval_dataloader)
         prune_heads(args, model, eval_dataloader, head_mask)
