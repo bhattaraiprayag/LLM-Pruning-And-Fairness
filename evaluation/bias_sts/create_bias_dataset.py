@@ -33,17 +33,17 @@ class CreateGenderStsb():
         women2 = men.copy()
 
         # transform the copies to opposite gender ones
-        men2['sentence1'] = men2['sentence1'].apply(lambda x: self.replace_with(x, 'man'))
-        women2['sentence1'] = women2['sentence1'].apply(lambda x: self.replace_with(x, 'woman'))
+        men2['sentence_gender'] = men2['sentence_gender'].apply(lambda x: self.replace_with(x, 'man'))
+        women2['sentence_gender'] = women2['sentence_gender'].apply(lambda x: self.replace_with(x, 'woman'))
 
         # concatenate dataframes of same gender
         women_df = pd.concat([women, women2])
         men_df = pd.concat([men, men2])
 
         # keep only sentence pairs
-        men_df = men_df[['sentence1', 'occupation']]
+        men_df = men_df[['sentence_gender', 'sentence_occupation']]
         men_df = men_df.sort_index(axis=0)
-        women_df = women_df[['sentence1', 'occupation']]
+        women_df = women_df[['sentence_gender', 'sentence_occupation']]
         women_df = women_df.sort_index(axis=0)
 
         return women_df, men_df
@@ -53,16 +53,16 @@ class CreateGenderStsb():
         test_path = os.path.join(self.data_dir, 'sts-test.csv')
         df = pd.read_csv(test_path, delimiter='\t', header=None, quoting=csv.QUOTE_NONE, usecols=range(7))
         print(f'len of test set: {df.shape}')
-        df = df.rename(columns={5: "sentence1", 6: "sentence2"})
-        df = df[['sentence1', 'sentence2']]
+        df = df.rename(columns={5: "sentence_gender", 6: "sentence2"})
+        df = df[['sentence_gender', 'sentence2']]
         # if sentence1 start with 'A man' or 'A woman' and lacks gender-pronouns, replace 'man' or 'woman'
         # with occupation in a new column:
-        df['occupation'] = df['sentence1'].apply(
+        df['sentence_occupation'] = df['sentence_gender'].apply(
             lambda x: self.replace_with(x, self.occupation) if self.is_gendered(x) else False)
         # indicate the gender of a sentence
-        df['gender'] = df['sentence1'].apply(lambda x: 'man' if x[:5] == 'A man' else 'woman')
+        df['gender'] = df['sentence_gender'].apply(lambda x: 'man' if x[:5] == 'A man' else 'woman')
         # keep only those sentences which start with 'a man' or 'a woman' and lack gender-pronouns
-        df = df[df.occupation != False]
+        df = df[df.sentence_occupation != False]
         return df
 
     def is_gendered(self, x):
@@ -109,13 +109,15 @@ def create_df():
     creates two dataframes (one for men and one for women) containing all 60 occupations
     """
 
-    all_occupations_men = pd.DataFrame(columns=['sentence1', 'occupation'])
-    all_occupations_women = pd.DataFrame(columns=['sentence1', 'occupation'])
+    all_occupations_men = pd.DataFrame(columns=['sentence_gender', 'sentence_occupation', 'occupation'])
+    all_occupations_women = pd.DataFrame(columns=['sentence_gender', 'sentence_occupation', 'occupation'])
 
     for i, occupation in enumerate(tqdm(occupations)):
         print(f'occupation {i + 1}/{len(occupations)}...')
         dataset_creator = CreateGenderStsb(data_dir='', occupation=occupation)
         women_df, men_df = dataset_creator.create_gendered_dataframes()
+        women_df['occupation'] = occupation
+        men_df['occupation'] = occupation
         all_occupations_men = pd.concat([all_occupations_men, men_df])
         all_occupations_women = pd.concat([all_occupations_women, women_df])
 
