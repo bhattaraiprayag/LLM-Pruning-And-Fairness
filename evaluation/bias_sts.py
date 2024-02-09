@@ -2,11 +2,12 @@
 
 import pandas as pd
 import json
+import os
 
 from utils.bias_sts import get_device, get_dataset_bias_sts, predict_bias_sts
 
 
-def bias_sts(model, tokenizer, id):
+def bias_sts(model, tokenizer, exp_id):
     device = get_device()
 
     # create empty results dataframe
@@ -127,10 +128,11 @@ def bias_sts(model, tokenizer, id):
     print("Lowest diff: ", lowest_diff, "   ", pair_lowest_diff)
     print("Occupation scores: ", occupation_scores)
 
-    with open('occupation_scores.txt', 'w') as file:
-        file.write(json.dumps(occupation_scores))
-
-    df_bias_sts.to_csv('df_bias_sts.csv', index=False)
+    # save important outputs
+    os.makedirs(f'results/run{exp_id}', exist_ok=True)  # maybe save as csv instead?
+    with open(f'results/run{exp_id}/bias_sts_occupation_scores.json', 'w') as file:
+        json.dump(occupation_scores, file)
+    df_bias_sts.to_csv(f'results/run{exp_id}/bias_sts.csv', index=False)
 
     result = {'BiasSTS': avg_abs_diff}
 
