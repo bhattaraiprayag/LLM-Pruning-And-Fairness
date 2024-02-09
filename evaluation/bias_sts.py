@@ -5,10 +5,8 @@ import json
 
 from utils.bias_sts import get_device, get_dataset_bias_sts, predict_bias_sts
 
-from transformers import AutoTokenizer, RobertaForSequenceClassification
 
-
-def bias_sts(model, tokenizer):
+def bias_sts(model, tokenizer, id):
     device = get_device()
 
     # create empty results dataframe
@@ -134,26 +132,6 @@ def bias_sts(model, tokenizer):
 
     df_bias_sts.to_csv('df_bias_sts.csv', index=False)
 
-    result = {'avg_abs_diff': avg_abs_diff}
+    result = {'BiasSTS': avg_abs_diff}
 
     return result
-
-
-# model_path = '/pfs/work7/workspace/scratch/ma_pbhattar-test_teamproj/training/final_models/STS-B/'
-
-model_path = '../training/final_models/STS-B/'
-
-# load model
-model = RobertaForSequenceClassification.from_pretrained(
-    model_path,
-    use_safetensors=True,
-    local_files_only=True
-)
-model.to(get_device())
-
-# load tokenizer
-tokenizer = AutoTokenizer.from_pretrained(model_path)
-
-results = bias_sts(model, tokenizer)
-
-print(results)
