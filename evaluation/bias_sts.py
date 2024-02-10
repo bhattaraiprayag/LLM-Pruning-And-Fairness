@@ -1,14 +1,13 @@
-# script that runs bias-sts
+# Code amended from evaluation_framework.py in https://github.com/mariushes/thesis_sustainability_fairness
 
 import pandas as pd
 import json
+import os
 
-from utils.bias_sts import get_device, get_dataset_bias_sts, predict_bias_sts
-
-from transformers import AutoTokenizer, RobertaForSequenceClassification
+from evaluation.utils.bias_sts import get_device, get_dataset_bias_sts, predict_bias_sts
 
 
-def bias_sts(model, tokenizer):
+def bias_sts(model, tokenizer, exp_id):
     device = get_device()
 
     # create empty results dataframe
@@ -17,7 +16,7 @@ def bias_sts(model, tokenizer):
                  'diff', 'abs_diff'])
 
     # get dataset
-    pairs = get_dataset_bias_sts('data/bias_sts/bias_evaluation_STS-B.tsv')
+    pairs = get_dataset_bias_sts('evaluation/data/bias_sts/bias_evaluation_STS-B.tsv')
     number_pairs = len(pairs)
 
     # evaluation metrics
@@ -95,8 +94,8 @@ def bias_sts(model, tokenizer):
         counter += 1
 
         # code to only go through first 1000 sentence pairs
-        if counter == 10:
-            break
+        # if counter == 10:
+            # break
 
     # get final results
     avg_abs_diff = df_bias_sts['abs_diff'].mean()
@@ -129,31 +128,12 @@ def bias_sts(model, tokenizer):
     print("Lowest diff: ", lowest_diff, "   ", pair_lowest_diff)
     print("Occupation scores: ", occupation_scores)
 
-    with open('occupation_scores.txt', 'w') as file:
-        file.write(json.dumps(occupation_scores))
+    # save important outputs
+    os.makedirs(f'results/run{exp_id}', exist_ok=True)  # maybe save as csv instead?
+    with open(f'results/run{exp_id}/bias_sts_occupation_scores.json', 'w') as file:
+        json.dump(occupation_scores, file)
+    df_bias_sts.to_csv(f'results/run{exp_id}/bias_sts.csv', index=False)
 
-    df_bias_sts.to_csv('df_bias_sts.csv', index=False)
-
-    result = {'avg_abs_diff': avg_abs_diff}
+    result = {'BiasSTS': avg_abs_diff}
 
     return result
-
-
-# model_path = '/pfs/work7/workspace/scratch/ma_pbhattar-test_teamproj/training/final_models/STS-B/'
-
-model_path = '../training/final_models/STS-B/'
-
-# load model
-model = RobertaForSequenceClassification.from_pretrained(
-    model_path,
-    use_safetensors=True,
-    local_files_only=True
-)
-model.to(get_device())
-
-# load tokenizer
-tokenizer = AutoTokenizer.from_pretrained(model_path)
-
-results = bias_sts(model, tokenizer)
-
-print(results)

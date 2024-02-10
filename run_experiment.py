@@ -19,6 +19,7 @@ from evaluation.performance import load_eval_dataset, evaluate_metrics
 from evaluation.seat import seatandweat
 from evaluation.stereoset import stereoset
 from evaluation.bias_nli import bias_nli
+from evaluation.bias_sts import bias_sts
 
 
 # dataclass that contains all arguments needed to run the experiment
@@ -30,6 +31,8 @@ class ExperimentArguments:
     - task
     - pruning_method
     - sparsity_level
+    - device
+    - temperature
     ...
     """
 
@@ -133,9 +136,13 @@ def main():
     # ideally: set up one evaluation function
     res_seatandweat = seatandweat(model, tokenizer, id, exp_args.seed)
     res_stereoset = stereoset(model, tokenizer, id)
-    res_bnli = bias_nli(pipe, id)
+    if exp_args.task == 'mnli':
+        res_bias = bias_nli(pipe, id)
+    else:
+        res_bias = bias_sts(model, tokenizer, id)
 
-    results_run = {**asdict(exp_args), **res_performance, **res_seatandweat, **res_stereoset, **res_bnli}
+    # create a dict with all variables of the current run
+    results_run = {**asdict(exp_args), **res_performance, **res_seatandweat, **res_stereoset, **res_bias}
     results_run.update({'ID': id, 'date': date.today()})
     print(results_run)
 
