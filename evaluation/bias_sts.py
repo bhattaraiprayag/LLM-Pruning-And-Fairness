@@ -16,7 +16,7 @@ def bias_sts(model, tokenizer, exp_id):
                  'diff', 'abs_diff'])
 
     # get dataset
-    pairs = get_dataset_bias_sts('data/bias_sts/bias_evaluation_STS-B.tsv')
+    pairs = get_dataset_bias_sts('evaluation/data/bias_sts/bias_evaluation_STS-B.tsv')
     number_pairs = len(pairs)
 
     # evaluation metrics
