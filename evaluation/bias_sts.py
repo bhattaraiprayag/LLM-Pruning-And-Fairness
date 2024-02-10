@@ -4,7 +4,7 @@ import pandas as pd
 import json
 import os
 
-from utils.bias_sts import get_device, get_dataset_bias_sts, predict_bias_sts
+from evaluation.utils.bias_sts import get_device, get_dataset_bias_sts, predict_bias_sts
 
 
 def bias_sts(model, tokenizer, exp_id):
