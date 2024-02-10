@@ -94,8 +94,8 @@ def bias_sts(model, tokenizer, exp_id):
         counter += 1
 
         # code to only go through first 1000 sentence pairs
-        if counter == 10:
-            break
+        # if counter == 10:
+            # break
 
     # get final results
     avg_abs_diff = df_bias_sts['abs_diff'].mean()
