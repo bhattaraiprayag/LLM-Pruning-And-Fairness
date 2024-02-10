@@ -138,8 +138,10 @@ def main():
     res_stereoset = stereoset(model, tokenizer, id)
     if exp_args.task == 'mnli':
         res_bnli = bias_nli(pipe, id)
-    elif exp_args.task == 'stsb':
+        res_bsts = {}
+    else:
         res_bsts = bias_sts(model, tokenizer, id)
+        res_bnli = {}
 
     # create a dict with all variables of the current run
     results_run = {**asdict(exp_args), **res_performance, **res_seatandweat, **res_stereoset, **res_bnli, **res_bsts}
