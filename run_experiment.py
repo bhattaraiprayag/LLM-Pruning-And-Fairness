@@ -137,14 +137,12 @@ def main():
     res_seatandweat = seatandweat(model, tokenizer, id, exp_args.seed)
     res_stereoset = stereoset(model, tokenizer, id)
     if exp_args.task == 'mnli':
-        res_bnli = bias_nli(pipe, id)
-        res_bsts = {}
+        res_bias = bias_nli(pipe, id)
     else:
-        res_bsts = bias_sts(model, tokenizer, id)
-        res_bnli = {}
+        res_bias = bias_sts(model, tokenizer, id)
 
     # create a dict with all variables of the current run
-    results_run = {**asdict(exp_args), **res_performance, **res_seatandweat, **res_stereoset, **res_bnli, **res_bsts}
+    results_run = {**asdict(exp_args), **res_performance, **res_seatandweat, **res_stereoset, **res_bias}
     results_run.update({'ID': id, 'date': date.today()})
     print(results_run)
 
