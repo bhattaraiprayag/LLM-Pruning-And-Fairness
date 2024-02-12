@@ -195,39 +195,37 @@ class RobertaPreTrainedModel(PreTrainedModel):
 logger = logging.getLogger(__name__)
 
 # This caching mechanism helps improve performance by avoiding unnecessary data loading for each epoch.
-def load_and_cache_examples(args, data_dir, task, tokenizer, evaluate=False):
-    # not the first process in distributed training
+#def load_and_cache_examples(args, task, tokenizer, evaluate=False):
+
+def load_and_cache_examples(args, task, tokenizer, evaluate=False):
     if args.local_rank not in [-1, 0] and not evaluate:
-        torch.distributed.barrier()  # Make sure only the first process in distributed training process the dataset,
-        # and the others will use the cache
+        torch.distributed.barrier()  # Make sure only the first process in distributed training process the dataset, and the others will use the cache
 
     processor = processors[task]()
     output_mode = output_modes[task]
     # Load data features from cache or dataset file
     cached_features_file = os.path.join(
-        data_dir,
-        "cached_{}_{}_{}".format(
+        args.data_dir,
+        "cached_{}_{}_{}_{}".format(
             "dev" if evaluate else "train",
-            # list(filter(None, args.model_name_or_path.split("/"))).pop(), Single cache for each task
+            list(filter(None, args.model_name_or_path.split("/"))).pop(),
             str(args.max_seq_length),
             str(task),
         ),
     )
-    #If the cached features file exists and overwrite_cache is not set,
-    # it loads the features from the cached file.
-    # Otherwise, it creates features from the dataset file.
     if os.path.exists(cached_features_file) and not args.overwrite_cache:
         logger.info("Loading features from cached file %s", cached_features_file)
         features = torch.load(cached_features_file)
     else:
-        logger.info("Creating features from dataset file at %s", data_dir)
+        logger.info("Creating features from dataset file at %s", args.data_dir)
         label_list = processor.get_labels()
         if task in ["mnli", "mnli-mm"] and args.model_type in ["roberta", "xlmroberta"]:
             # HACK(label indices are swapped in RoBERTa pretrained model)
             label_list[1], label_list[2] = label_list[2], label_list[1]
         examples = (
-            processor.get_dev_examples(data_dir) if evaluate else processor.get_train_examples(data_dir)
+            processor.get_dev_examples(args.data_dir) if evaluate else processor.get_train_examples(args.data_dir)
         )
+
         features = convert_examples_to_features(
             examples,
             tokenizer,
@@ -243,8 +241,7 @@ def load_and_cache_examples(args, data_dir, task, tokenizer, evaluate=False):
             torch.save(features, cached_features_file)
 
     if args.local_rank == 0 and not evaluate:
-        torch.distributed.barrier()  # Make sure only the first process in distributed training process the dataset,
-        # and the others will use the cache
+        torch.distributed.barrier()  # Make sure only the first process in distributed training process the dataset, and the others will use the cache
 
     # Convert to Tensors and build dataset
     all_input_ids = torch.tensor([f.input_ids for f in features], dtype=torch.long)
