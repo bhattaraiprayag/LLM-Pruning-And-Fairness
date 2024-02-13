@@ -304,7 +304,7 @@ def main():
     if data_args.task_name is not None:
         # Downloading and loading a dataset from the hub.
         if data_args.task_name == 'mnli':
-            raw_datasets = load_dataset(
+            '''raw_datasets = load_dataset(
                 "glue",
                 data_args.task_name,
                 cache_dir=model_args.cache_dir,
@@ -320,9 +320,29 @@ def main():
                                         'validation_mismatched':raw_datasets[2],
                                         'test_matched':raw_datasets[3],
                                         'test_mismatched':raw_datasets[4]
-                                        })
-        else:
+                                        })'''
+
+            # code to get random splits of dataset (train and matched)
             raw_datasets = load_dataset(
+                "glue",
+                "mnli",
+                split=['train+validation_matched', 'validation_mismatched[:50%]', 'validation_mismatched[-50%:]']
+            )
+            # 2.5% test_matched + validation_matched (keep the same ratio as in the original split)
+            train_testvalid = raw_datasets[0].train_test_split(test_size=0.025, shuffle=True, seed=3)
+            # Split test_matched + validation_matched in half test_matched, half validation_matched
+            test_valid = train_testvalid['test'].train_test_split(test_size=0.5, shuffle=True, seed=3)
+            # gather everything into a single DatasetDict
+            raw_datasets = DatasetDict({
+                'train': train_testvalid['train'],
+                'test_matched': test_valid['test'],
+                'validation_matched': test_valid['train'],
+                'test_mismatched': raw_datasets[1],
+                'validation_mismatched': raw_datasets[2]
+            })
+
+        else:
+            '''raw_datasets = load_dataset(
                 "glue",
                 data_args.task_name,
                 cache_dir=model_args.cache_dir,
@@ -335,7 +355,24 @@ def main():
             raw_datasets = DatasetDict({'train': raw_datasets[0],
                                         'validation': raw_datasets[1],
                                         'test': raw_datasets[2]
-                                        })
+                                        })'''
+
+            # code to get random splits of dataset
+            raw_datasets = load_dataset(
+                "glue",
+                "stsb",
+                split='train+validation'
+            )
+            # 20% test + validation (keep the same ratio as in the original split)
+            train_testvalid = raw_datasets.train_test_split(test_size=0.2, shuffle=True, seed=2)
+            # Split test + valid in half test, half valid
+            test_valid = train_testvalid['test'].train_test_split(test_size=0.5, shuffle=True, seed=2)
+            # gather everything into a single DatasetDict
+            raw_datasets = DatasetDict({
+                'train': train_testvalid['train'],
+                'test': test_valid['test'],
+                'validation': test_valid['train']})
+
     elif data_args.dataset_name is not None:
         # Downloading and loading a dataset from the hub.
         raw_datasets = load_dataset(
