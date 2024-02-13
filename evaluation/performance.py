@@ -19,15 +19,46 @@ from datasets import load_dataset
 #     else:
 #         raise ValueError(f'No dataset found for task {task}')
 
-def load_eval_dataset(task):    # ONLY WORKS WITH split='validation'
+def load_eval_dataset(task, model_no):    # ONLY WORKS WITH split='validation'
     """Loads the evaluation dataset based on the specified task."""
     if task == 'mnli':
-        return (
-            load_dataset('glue', 'mnli', split='validation_matched[-50%:]'),
-            load_dataset('glue', 'mnli', split='validation_mismatched[-50%:]')
-        )
+        if model_no == 1: # uses original split of the data
+            return (
+                load_dataset('glue', 'mnli', split='validation_matched[-50%:]'),
+                load_dataset('glue', 'mnli', split='validation_mismatched[-50%:]')
+            )
+        else: # uses shuffled split based on seed
+            full_dataset = load_dataset(
+                "glue",
+                "mnli",
+                split=['train+validation_matched', 'validation_mismatched[:50%]', 'validation_mismatched[-50%:]']
+            )
+            # 2.5% test_matched + validation_matched (keep the same ratio as in the original split)
+            train_testvalid = full_dataset[0].train_test_split(test_size=0.025, shuffle=True, seed=model_no)
+            # Split test_matched + validation_matched in half test_matched, half validation_matched
+            test_valid = train_testvalid['test'].train_test_split(test_size=0.5, shuffle=True, seed=model_no)
+            # gather everything into a single DatasetDict
+            return(
+                test_valid['train'],
+                full_dataset[2]
+            )
+
     elif task == 'stsb':
-        return load_dataset('glue', 'stsb', split='validation[-50%:]'),
+        if model_no == 1: # uses original split of the data
+            return load_dataset('glue', 'stsb', split='validation[-50%:]')
+        else: # uses shuffled split based on seed
+            full_dataset = load_dataset(
+                "glue",
+                "stsb",
+                split='train+validation'
+            )
+            # 20% test + validation (keep the same ratio as in the original split)
+            train_testvalid = full_dataset.train_test_split(test_size=0.2, shuffle=True, seed=model_no)
+            # Split test + valid in half test, half valid
+            test_valid = train_testvalid['test'].train_test_split(test_size=0.5, shuffle=True, seed=model_no)
+            # gather everything into a single DatasetDict
+            return test_valid['test']
+
     else:
         raise ValueError(f'No evaluation dataset found for task {task}')
 
