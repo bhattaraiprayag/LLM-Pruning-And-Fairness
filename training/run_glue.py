@@ -364,9 +364,9 @@ def main():
                 split='train+validation'
             )
             # 20% test + validation (keep the same ratio as in the original split)
-            train_testvalid = raw_datasets.train_test_split(test_size=0.2, shuffle=True, seed=2)
+            train_testvalid = raw_datasets.train_test_split(test_size=0.2, shuffle=True, seed=3)
             # Split test + valid in half test, half valid
-            test_valid = train_testvalid['test'].train_test_split(test_size=0.5, shuffle=True, seed=2)
+            test_valid = train_testvalid['test'].train_test_split(test_size=0.5, shuffle=True, seed=3)
             # gather everything into a single DatasetDict
             raw_datasets = DatasetDict({
                 'train': train_testvalid['train'],
