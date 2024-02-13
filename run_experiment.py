@@ -59,7 +59,7 @@ class ExperimentArguments:
         metadata={"help": "Specify device that should be used. GPU: 0 (default), CPU: -1"},
     )
 
-    model_no: float = field(
+    model_no: int = field(
         default=1,
         metadata={"help": "Specify which model is used. The different models were fine-tuned on different splits of the datasets. Default: 1"},
     )
