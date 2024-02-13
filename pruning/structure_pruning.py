@@ -1,3 +1,5 @@
+# Based on code from https://github.com/sai-prasanna/bert-experiments/tree/master
+
 #!/usr/bin/env python3
 
 import argparse
@@ -50,7 +52,7 @@ def compute_heads_importance(
         - head importance scores according to http://arxiv.org/abs/1905.10650
     """
     # Prepare our tensors
-    n_layers, n_heads = model.bert.config.num_hidden_layers, model.bert.config.num_attention_heads
+    n_layers, n_heads = model.roberta.config.num_hidden_layers, model.roberta.config.num_attention_heads
     head_importance = torch.zeros(n_layers, n_heads).to(args.device)
     attn_entropy = torch.zeros(n_layers, n_heads).to(args.device)
 
@@ -166,8 +168,8 @@ def mask_heads(args, model, eval_dataloader):
         for head in current_heads_to_mask:
             if len(selected_heads_to_mask) == num_to_mask or head_importance.view(-1)[head.item()] == float("Inf"):
                 break
-            layer_idx = head.item() // model.bert.config.num_attention_heads
-            head_idx = head.item() % model.bert.config.num_attention_heads
+            layer_idx = head.item() // model.roberta.config.num_attention_heads
+            head_idx = head.item() % model.roberta.config.num_attention_heads
             new_head_mask[layer_idx][head_idx] = 0.0
             selected_heads_to_mask.append(head.item())
 
@@ -450,7 +452,7 @@ def main():
         #cache_dir=args.cache_dir if args.cache_dir else None,
    # )
     model = model_class.from_pretrained(
-        "/Users/mariamamir/TeamProject/final_models/sts-b",  # Provide the path to your trained model directory
+        args.model_name_or_path,  # Provide the path to your trained model directory
         config=config,  # Pass the configuration object if needed
     )
     if args.local_rank == 0:
@@ -489,6 +491,11 @@ def main():
     if args.try_masking and args.masking_threshold > 0.0 and args.masking_threshold < 1.0:
         head_mask = mask_heads(args, model, eval_dataloader)
         prune_heads(args, model, eval_dataloader, head_mask)
+        pruned_model_dir = f'{args.output_dir}/pruned_model/'
+        if not os.path.exists(pruned_model_dir):
+            os.makedirs(pruned_model_dir)
+        model.save_pretrained(pruned_model_dir)
+        tokenizer.save_pretrained(pruned_model_dir)
     else:
         # Compute head entropy and importance score
         compute_heads_importance(args, model, eval_dataloader)

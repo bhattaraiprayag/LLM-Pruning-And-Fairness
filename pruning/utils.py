@@ -1,3 +1,5 @@
+# Based on code from https://github.com/sai-prasanna/bert-experiments/tree/master
+
 import os
 import logging
 import re
@@ -232,9 +234,9 @@ def load_and_cache_examples(args, task, tokenizer, evaluate=False):
             label_list=label_list,
             max_length=args.max_seq_length,
             output_mode=output_mode,
-            pad_on_left=bool(args.model_type in ["xlnet"]),  # pad on the left for xlnet
-            pad_token=tokenizer.convert_tokens_to_ids([tokenizer.pad_token])[0],
-            pad_token_segment_id=4 if args.model_type in ["xlnet"] else 0,
+            #pad_on_left=bool(args.model_type in ["xlnet"]),  # pad on the left for xlnet
+            #pad_token=tokenizer.convert_tokens_to_ids([tokenizer.pad_token])[0],
+            #pad_token_segment_id=4 if args.model_type in ["xlnet"] else 0,
         )
         if args.local_rank in [-1, 0]:
             logger.info("Saving features into cached file %s", cached_features_file)
@@ -246,7 +248,7 @@ def load_and_cache_examples(args, task, tokenizer, evaluate=False):
     # Convert to Tensors and build dataset
     all_input_ids = torch.tensor([f.input_ids for f in features], dtype=torch.long)
     all_attention_mask = torch.tensor([f.attention_mask for f in features], dtype=torch.long)
-    all_token_type_ids = torch.tensor([f.token_type_ids for f in features], dtype=torch.long)
+    all_token_type_ids = torch.tensor([0 for f in features], dtype=torch.long)
     if output_mode == "classification":
         all_labels = torch.tensor([f.label for f in features], dtype=torch.long)
     elif output_mode == "regression":
