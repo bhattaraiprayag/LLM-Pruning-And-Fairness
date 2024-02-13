@@ -92,9 +92,9 @@ def main():
 
     # select model path based on task and model_no
     if exp_args.task == 'mnli':
-        model_path = f'training/final_models/MNLI/model_no{exp_args.model_no}'
+        model_path = f'training/final_models/MNLI/model_no{exp_args.model_no}/'
     elif exp_args.task == 'stsb':
-        model_path = f'training/final_models/STS-B/model_no{exp_args.model_no}'
+        model_path = f'training/final_models/STS-B/model_no{exp_args.model_no}/'
     else:
         raise ValueError(f'No model found for task {exp_args.task}')
     
@@ -128,7 +128,7 @@ def main():
         tokenizer.save_pretrained(pruned_model_dir)
 
     # evaluate model "performance" (not fairness)
-    eval_datasets = load_eval_dataset(exp_args.task)
+    eval_datasets = load_eval_dataset(exp_args.task, exp_args.model_no)
     res_performance = evaluate_metrics(model, tokenizer, exp_args.task, eval_datasets, id)
     print(res_performance)
 
