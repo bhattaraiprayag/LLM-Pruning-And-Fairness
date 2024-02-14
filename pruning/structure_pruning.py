@@ -384,7 +384,7 @@ def main():
     logger.info("device: {} n_gpu: {}, distributed: {}".format(args.device, args.n_gpu, bool(args.local_rank != -1)))
 
     # Set seeds
-    get_seed(args)
+    get_seed(args.seed)
 
     metrics = ["accuracy", "fairness_index"]
     threshold = 0.15
