@@ -15,15 +15,11 @@ from transformers import glue_output_modes as output_modes, RobertaConfig, Rober
     RobertaTokenizer
 from utils import glue_compute_metrics as compute_metrics
 
+logger = logging.getLogger(__name__)
+logging.getLogger("experiment_impact_tracker.compute_tracker.ImpactTracker").disabled = True
 
-# Calculates the entropy of a probability distribution by summing the negative log probabilities of the distribution, excluding probabilities that are zero
-# prune heads with the lowest entropy.
-# Entropy is a measure of uncertainty or randomness in a probability distribution.
-def entropy(p):
-    """ Compute the entropy of a probability distribution """
-    plogp = p * torch.log(p)
-    plogp[p == 0] = 0
-    return -plogp.sum(dim=-1)
+MODEL_CLASSES = {"roberta": (RobertaConfig, RobertaForSequenceClassification, RobertaTokenizer),
+                 }
 
 
 # Used to log and visualize information about attention heads
@@ -37,13 +33,10 @@ def print_2d_tensor(tensor):
             logger.info(f"layer {row + 1}:\t" + "\t".join(f"{x:d}" for x in tensor[row].cpu().data))
 
 
-# Evaluate the importance of attention heads in a Transformer model by computing attention entropy and head importance scores.
-def compute_heads_importance(
-        args, model, eval_dataloader, compute_entropy=False, compute_importance=True, head_mask=None
-):
-    """ This method shows how to compute:
-        - head attention entropy
-        - head importance scores according to http://arxiv.org/abs/1905.10650
+# Evaluate the importance of attention heads in a Transformer model by computing head importance scores.
+def compute_heads_importance(args, model, eval_dataloader, compute_importance=True, head_mask=None):
+    """ This method shows how to compute
+        head importance scores according to http://arxiv.org/abs/1905.10650
     """
     # Prepare our tensors
     n_layers, n_heads = model.roberta.config.num_hidden_layers, model.roberta.config.num_attention_heads
@@ -75,11 +68,7 @@ def compute_heads_importance(
         )  # Loss and logits are the first, attention the last
         loss.backward()  # Backpropagate to populate the gradients in the head mask
 
-        if compute_entropy:
-            for layer, attn in enumerate(all_attentions):
-                masked_entropy = entropy(attn.detach()) * input_mask.float().unsqueeze(1)
-                attn_entropy[layer] += masked_entropy.sum(-1).sum(0).detach()
-
+        # compute head importance
         if compute_importance:
             head_importance += head_mask.grad.abs().detach()
             head_mask.grad.zero_()  # set gradients to zero to not overestimate importance of early batches
@@ -94,12 +83,6 @@ def compute_heads_importance(
 
         tot_tokens += input_mask.float().detach().sum().data
 
-    if compute_entropy:
-        # Normalize
-        attn_entropy /= tot_tokens
-        np.save(os.path.join(args.output_dir, "attn_entropy.npy"), attn_entropy.detach().cpu().numpy())
-        logger.info("Attention entropies")
-        print_2d_tensor(attn_entropy)
     if compute_importance:
         # Normalize
         head_importance /= tot_tokens
@@ -130,12 +113,11 @@ def compute_heads_importance(
 
 
 # masks specific attention heads in a Transformer model based on their importance scores.
-# The goal of masking is to identify and remove less important heads to improve the efficiency and generalizability of the model.
 def mask_heads(args, model, eval_dataloader):
     """ This method shows how to mask head (set some heads to zero), to test the effect on the network,
         based on the head importance scores, as described in Michel et al. (http://arxiv.org/abs/1905.10650)
     """
-    _, head_importance, preds, labels = compute_heads_importance(args, model, eval_dataloader, compute_entropy=False)
+    _, head_importance, preds, labels = compute_heads_importance(args, model, eval_dataloader)
     preds = np.argmax(preds, axis=1) if args.output_mode == "classification" else np.squeeze(preds)
     original_score = compute_metrics(args.task_name, preds, labels)[args.metric_name]
     logger.info("Pruning: original score: %f, threshold: %f", original_score, original_score * args.masking_threshold)
@@ -178,7 +160,7 @@ def mask_heads(args, model, eval_dataloader):
 
         # Compute metric and head importance again
         _, head_importance, preds, labels = compute_heads_importance(
-            args, model, eval_dataloader, compute_entropy=False, head_mask=new_head_mask
+            args, model, eval_dataloader, head_mask=new_head_mask
         )
         preds = np.argmax(preds, axis=1) if args.output_mode == "classification" else np.squeeze(preds)
         current_score = compute_metrics(args.task_name, preds, labels)[args.metric_name]
@@ -207,7 +189,7 @@ def prune_heads(args, model, eval_dataloader, head_mask):
     # Pruning is like masking but we actually remove the masked weights
     before_time = datetime.now()
     _, _, preds, labels = compute_heads_importance(
-        args, model, eval_dataloader, compute_entropy=False, compute_importance=False, head_mask=head_mask
+        args, model, eval_dataloader, compute_importance=False, head_mask=head_mask
     )
     preds = np.argmax(preds, axis=1) if args.output_mode == "classification" else np.squeeze(preds)
     score_masking = compute_metrics(args.task_name, preds, labels)[args.metric_name]
@@ -225,7 +207,7 @@ def prune_heads(args, model, eval_dataloader, head_mask):
 
     before_time = datetime.now()
     _, _, preds, labels = compute_heads_importance(
-        args, model, eval_dataloader, compute_entropy=False, compute_importance=False, head_mask=None
+        args, model, eval_dataloader, compute_importance=False, head_mask=None
     )
     preds = np.argmax(preds, axis=1) if args.output_mode == "classification" else np.squeeze(preds)
     score_pruning = compute_metrics(args.task_name, preds, labels)[args.metric_name]

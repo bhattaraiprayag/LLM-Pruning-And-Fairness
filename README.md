@@ -46,6 +46,8 @@ Arguments:
 * server_ip: we don't want to use distant debugging, so doesn't matter to us
 * server_port: we don't want to use distant debugging, so doesn't matter to us
 
+We don't want to work with entropy -> in compute_heads_importance: compute_entropy is always False
+
 ### Magnitude Pruning:
 Magnitude pruning is implemented through the **MagnitudePrunerOneShot** class, defined in [pruning/magnitude_pruner.py](magnitude_pruner.py). This class offers three distinct methods of magnitude-based pruning:
 * L1-Unstructured: This global pruning strategy removes weights across the entire network based on their L1-norm magnitude. Can be used with *--pruning_method l1-unstructured*.
