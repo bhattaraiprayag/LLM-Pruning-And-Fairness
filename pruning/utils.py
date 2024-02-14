@@ -1,5 +1,3 @@
-# Based on code from https://github.com/sai-prasanna/bert-experiments/tree/master
-
 import os
 import logging
 import re
@@ -20,39 +18,12 @@ from transformers import glue_convert_examples_to_features as convert_examples_t
 
 ROBERTA_PRETRAINED_MODEL_ARCHIVE_MAP = {'roberta-base': "https://s3.amazonaws.com/models.huggingface.co/bert/roberta-base-pytorch_model.bin"
 }
-def get_seed(args):
-    random.seed(args.seed)
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
-    if args.n_gpu > 0:
-        torch.cuda.manual_seed_all(args.seed)
 
-#def get_seed(args):
-    #if args.seed is not None:
-        #seed = int(args.seed)
-       # random.seed(seed)
-        #np.random.seed(seed)
-
-
-#def get_seed(seed):
-    #if seed is not None:
-        #if isinstance(seed, int):
-            #return seed
-        #elif isinstance(seed, float):
-           # return int(seed)
-        #elif isinstance(seed, str):
-            #try:
-                #return int(seed)
-            #except ValueError:
-                #return seed
-        #elif isinstance(seed, bytes) or isinstance(seed, bytearray):
-            #return seed.decode("utf-8")
-
-    #random.seed(None)
-    #np.random.seed(None)
-    #torch.manual_seed(None)
-    #torch.cuda.manual_seed_all(None)
-
+def get_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
 
 class ImpactTracker:
     def __init__(self, metrics, threshold):
@@ -84,6 +55,7 @@ class ImpactTracker:
                 print(f"Significant change detected for {metric}: {change}")
 
 
+
 def check_sparsity(model):
     total_params = 0
     nonzero_params = 0
@@ -102,6 +74,7 @@ def check_sparsity(model):
 
 def get_device():
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 RobertaLayerNorm = torch.nn.LayerNorm
 
 
@@ -291,3 +264,4 @@ def glue_compute_metrics(task_name, preds, labels):
             return {"acc": simple_accuracy(preds, labels)}
         else:
             raise KeyError(task_name)
+

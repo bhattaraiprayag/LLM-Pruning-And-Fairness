@@ -1,98 +1,49 @@
-# Adapted from experiments/stereoset.py in https://github.com/McGill-NLP/bias-bench
+# Code amended from https://github.com/luohongyin/ESP/blob/main/eval_stereo.py
 
-import argparse
 import json
 import os
 
-import transformers
+import evaluation.utils.stereoset as ss
 
-from utils.stereoset import StereoSetRunner
-import utils.models as models
-from utils.experiment_id import generate_experiment_id
-from utils.model_utils import _is_generative
+def stereoset(model, tokenizer, exp_id):
 
-thisdir = os.path.dirname(os.path.realpath(__file__))
-parser = argparse.ArgumentParser(description="Runs StereoSet benchmark.")
-parser.add_argument(
-    "--persistent_dir",
-    action="store",
-    type=str,
-    default=os.path.realpath(os.path.join(thisdir, "..")),
-    help="Directory where all persistent data will be stored.",
-)
-parser.add_argument(
-    "--model",
-    action="store",
-    type=str,
-    default="RobertaForMaskedLM",
-    choices=[
-        "BertForMaskedLM",
-        "AlbertForMaskedLM",
-        "RobertaForMaskedLM",
-        "RobertaModel",
-        "GPT2LMHeadModel",
-    ],
-    help="Model to evalute (e.g., BertForMaskedLM). Typically, these correspond to a HuggingFace "
-    "class.",
-)
-parser.add_argument(
-    "--model_name_or_path",
-    action="store",
-    type=str,
-    default="roberta-base",
-    choices=["bert-base-uncased", "albert-base-v2", "roberta-base", "gpt2"],
-    help="HuggingFace model name or path (e.g., bert-base-uncased). Checkpoint from which a "
-    "model is instantiated.",
-)
-parser.add_argument(
-    "--batch_size",
-    action="store",
-    type=int,
-    default=1,
-    help="The batch size to use during StereoSet intrasentence evaluation.",
-)
-parser.add_argument(
-    "--seed",
-    action="store",
-    type=int,
-    default=None,
-    help="RNG seed. Used for logging in experiment ID.",
-)
+    # Setup
+    eval_split = 'intrasentence' # More commonly used, but can also get intersentence
+    cls_head = int(0) # Can be 0, 1 or 2 for entailment, neutral or contradiction
+    eval_mode = 'score'
 
+    # Get data
+    sent_list, data = ss.load_data('evaluation/data/stereoset/test.json', eval_split)
 
-if __name__ == "__main__":
-    args = parser.parse_args()
+    # Get output values
+    score_board, pred_board = ss.cls_evaluate(tokenizer, model, cls_head, sent_list, batch_size=4)
 
-    experiment_id = generate_experiment_id(
-        name="stereoset",
-        model=args.model,
-        model_name_or_path=args.model_name_or_path,
-        seed=args.seed,
-    )
+    # Generate scores
+    bias_type_list = ['gender', 'profession', 'race', 'religion', 'overall']
+    overall = {}
 
-    print("Running StereoSet:")
-    print(f" - persistent_dir: {args.persistent_dir}")
-    print(f" - model: {args.model}")
-    print(f" - model_name_or_path: {args.model_name_or_path}")
-    print(f" - batch_size: {args.batch_size}")
-    print(f" - seed: {args.seed}")
+    for bias_type in bias_type_list:
+        working = {}
+        lm_score, stereo_score, icat_score = ss.calculate_icat(
+            score_board if eval_mode == 'score' else pred_board,
+            sent_list, data,
+            bias_type=bias_type, input_type=eval_mode
+        )
 
-    model = getattr(models, args.model)(args.model_name_or_path)
-    model.eval()
-    tokenizer = transformers.AutoTokenizer.from_pretrained(args.model_name_or_path)
+        working['LM'] = lm_score
+        working['SS'] = stereo_score
+        working['iCAT'] = icat_score
+        overall[bias_type] = working
 
-    runner = StereoSetRunner(
-        intrasentence_model=model,
-        tokenizer=tokenizer,
-        input_file=f"{args.persistent_dir}/evaluation/data/stereoset/test.json",
-        model_name_or_path=args.model_name_or_path,
-        batch_size=args.batch_size,
-        is_generative=_is_generative(args.model),
-    )
-    results = runner()
+    # Save whole output file
+    os.makedirs(f'results/run{exp_id}', exist_ok=True)
+    with open(f'results/run{exp_id}/stereoset.json', 'w') as f:
+        json.dump(overall, f, indent=2)
 
-    os.makedirs(f"{args.persistent_dir}/evaluation/results/stereoset", exist_ok=True)
-    with open(
-        f"{args.persistent_dir}/evaluation/results/stereoset/{experiment_id}.json", "w"
-    ) as f:
-        json.dump(results, f, indent=2)
+    # Return desired values for table
+    results = {}
+    results['StereoSet_LM_gender']=overall['gender']['LM']
+    results['StereoSet_SS_gender'] = overall['gender']['SS']
+
+    return results
+
