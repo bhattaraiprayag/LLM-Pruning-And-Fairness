@@ -20,7 +20,7 @@ Variables that can be changed are: masking threshold (Define the metric threshol
 
 Arguments:
 * data_dir: not needed in final function because the data is not stored locally but loaded from the hub
-* model_name_or_path: directly have the model as argument of the final function
+* ~~model_name_or_path: directly have the model as argument of the final function~~
 * model_type: always 'roberta'
 * task_name: argument of final function
 * output_dir: define this based on id (id as argument of final function)
@@ -37,14 +37,14 @@ Arguments:
 * use_train_data: not needed because we just always directly use the correct validation set 
 * masking_threshold: might need to be added to pipeline (and results df) as exp run argument 
 * masking_amount: might need to be added to pipeline (and results df) as exp run argument
-* metric_name: we always want to use the default metric of the glue task, so this is probably not relevant to us (?)
+* ~~metric_name: we always want to use the default metric of the glue task, so this is probably not relevant to us (?)~~
 * max_seq_length: default 126 (everywhere else we've set this to 512, so maybe we should change this here, but CHECK IF THIS MAKES A DIFFERENCE)
-* batch_size: default 1
+* batch_size: default 1 -> always set it to 1
 * seed: argument of final function
 * local_rank: ???
-* no_cuda: we always want to use CUDA when available
-* server_ip: we don't want to use distant debugging, so doesn't matter to us
-* server_port: we don't want to use distant debugging, so doesn't matter to us
+* ~~no_cuda: we always want to use CUDA when available~~
+* ~~server_ip: we don't want to use distant debugging, so doesn't matter to us~~
+* ~~server_port: we don't want to use distant debugging, so doesn't matter to us~~
 
 We don't want to work with entropy -> in compute_heads_importance: compute_entropy is always False
 

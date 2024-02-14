@@ -14,6 +14,7 @@ from transformers import glue_processors as processors
 from transformers import glue_output_modes as output_modes, RobertaConfig, RobertaForSequenceClassification, \
     RobertaTokenizer
 from utils import glue_compute_metrics as compute_metrics
+from utils import get_device
 
 logger = logging.getLogger(__name__)
 logging.getLogger("experiment_impact_tracker.compute_tracker.ImpactTracker").disabled = True
@@ -221,3 +222,42 @@ def prune_heads(args, model, eval_dataloader, head_mask):
     )
     logger.info("Pruning: score with masking: %f score with pruning: %f", score_masking, score_pruning)
     logger.info("Pruning: speed ratio (new timing / original timing): %f percents", original_time / new_time * 100)
+
+
+def structured_pruning(model, tokenizer, seed, task):
+    # Setup devices and distributed training
+    device = get_device()
+    n_gpu = 1
+    torch.distributed.init_process_group(backend="nccl")  # Initializes the distributed backend
+
+    # Setup logging
+    logging.basicConfig(level=logging.INFO)
+    logger.info("device: {} n_gpu: {}".format(device, n_gpu))
+
+    # Set seed
+    get_seed(seed)
+
+    # change task name stsb to sts-b (necessary for predefined functions)
+    if task == "stsb":
+        task = "sts-b"
+
+    # set different variables related to task
+    metric_name = {
+        "mnli": "acc",
+        "sts-b": "corr",
+    }[task]
+    processor = processors[task]()
+    output_mode = output_modes[task]
+    label_list = processor.get_labels()
+    num_labels = len(label_list)
+
+    # Prepare dataset for the GLUE task
+    val_data = load_and_cache_examples(args, task, tokenizer, evaluate=True)
+    true_eval_len = len(val_data)
+    # use subset of data if needed for debugging
+    if args.data_subset > 0:
+        eval_data = Subset(eval_data, list(range(min(args.data_subset, len(eval_data)))))
+    eval_sampler = SequentialSampler(eval_data) if args.local_rank == -1 else DistributedSampler(eval_data)
+    eval_dataloader = DataLoader(eval_data, sampler=eval_sampler, batch_size=1)
+
+
