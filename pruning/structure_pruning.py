@@ -14,8 +14,7 @@ from tqdm import tqdm # display progress bars during long-running operations
 from utils import load_and_cache_examples, ImpactTracker, get_seed
 import transformers
 from transformers import glue_processors as processors
-from transformers import glue_output_modes as output_modes, RobertaConfig, RobertaForSequenceClassification, \
-    RobertaTokenizer
+from transformers import glue_output_modes as output_modes, RobertaConfig, RobertaForSequenceClassification, RobertaTokenizer
 from utils import glue_compute_metrics as compute_metrics
 
 logger = logging.getLogger(__name__)
@@ -135,7 +134,7 @@ def compute_heads_importance(
     return attn_entropy, head_importance, preds, labels
 
 # masks specific attention heads in a Transformer model based on their importance scores.
-# The goal of masking is to identify and remove less important heads to improve the efficiency andgeneralizability of the model.
+# The goal of masking is to identify and remove less important heads to improve the efficiency and generalizability of the model.
 def mask_heads(args, model, eval_dataloader):
     """ This method shows how to mask head (set some heads to zero), to test the effect on the network,
         based on the head importance scores, as described in Michel et al. (http://arxiv.org/abs/1905.10650)
@@ -435,14 +434,14 @@ def main():
     MODEL_CLASSES["roberta"] = (RobertaConfig, RobertaForSequenceClassification, MODEL_CLASSES["roberta"][1])
 
     config = config_class.from_pretrained(
-        args.config_name if args.config_name else args.model_name_or_path,
+        args.model_name_or_path,
         num_labels=num_labels,
         finetuning_task=args.task_name,
         output_attentions=True,
         cache_dir=args.cache_dir if args.cache_dir else None,
     )
     tokenizer = tokenizer_class.from_pretrained(
-        args.tokenizer_name if args.tokenizer_name else args.model_name_or_path,
+        args.model_name_or_path,
         cache_dir=args.cache_dir if args.cache_dir else None,
     )
     #model = model_class.from_pretrained(
