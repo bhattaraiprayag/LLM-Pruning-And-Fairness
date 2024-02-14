@@ -386,9 +386,6 @@ def main():
     # Set seeds
     get_seed(args.seed)
 
-    metrics = ["accuracy", "fairness_index"]
-    threshold = 0.15
-
     # Prepare GLUE task
     # We will be using mnli & sts-b
     args.task_name = args.task_name.lower()
