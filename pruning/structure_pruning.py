@@ -12,7 +12,6 @@ from torch.utils.data import DataLoader, SequentialSampler, Subset, random_split
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm # display progress bars during long-running operations
 from utils import load_and_cache_examples, ImpactTracker, get_seed
-import transformers
 from transformers import glue_processors as processors
 from transformers import glue_output_modes as output_modes, RobertaConfig, RobertaForSequenceClassification, RobertaTokenizer
 from utils import glue_compute_metrics as compute_metrics
@@ -386,19 +385,9 @@ def main():
 
     # Set seeds
     get_seed(args)
-    #tracker = ImpactTracker(args.output_dir)
-    #tracker.launch_impact_monitor()
 
     metrics = ["accuracy", "fairness_index"]
-    #threshold = 0.1
     threshold = 0.15
-    tracker = ImpactTracker(metrics, threshold)
-  #  model = transformers.RobertaForSequenceClassification.from_pretrained(
-        #"/Users/mariamamir/TeamProject/final_models//sts-b", use_safetensors=True, local_files_only=True)
-
-    # Assuming model is the pruned model
-    #tracker.launch_impact_monitor(model)
-    #model.evaluate(metrics)
 
     # Prepare GLUE task
     # We will be using mnli & sts-b
@@ -444,12 +433,7 @@ def main():
         args.model_name_or_path,
         cache_dir=args.cache_dir if args.cache_dir else None,
     )
-    #model = model_class.from_pretrained(
-        #args.model_name_or_path,
-        #from_tf=bool(".ckpt" in args.model_name_or_path),
-        #config=config,
-        #cache_dir=args.cache_dir if args.cache_dir else None,
-   # )
+
     model = model_class.from_pretrained(
         args.model_name_or_path,  # Provide the path to your trained model directory
         config=config,  # Pass the configuration object if needed
