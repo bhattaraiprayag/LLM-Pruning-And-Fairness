@@ -12,14 +12,15 @@ To install the necessary packages in a conda environment, follow the instruction
 In our project, we focus on exploring the impact of various pruning techniques on the biasness of RoBERTa-base. Pruning, a method to reduce model size and computational load, involves selectively removing parameters (weights), or neurons, from the neural network. We have implemented and experimented with different types of pruning strategies, starting with magnitude-based methods and structure Pruning.
 
 ### Structure Pruning:
-Structural pruning is a technique for compressing neural networks by removing entire groups of parameters, or filters, based on their structural relationships. 
--**Importance Pruning** A technique for compressing neural networks by removing parameters based on their importance scores. Importance scores are measures of how important each parameter is to the overall performance of the network. 
-Variables that we chenge to get the best performance are: masking threshold (Define the metric threshold for stopping masking) and masking amount (The number of heads to mask). 
+Structural pruning is implemented in [pruning/structure_pruning.py](structure_pruning.py). 
+
+Variables that can be changed are: masking threshold (Define the metric threshold for stopping masking) and masking amount (The number of heads to mask). 
+
 ### Magnitude Pruning:
-Magnitude pruning is a method for reducing the size and complexity of an LLM/neural networks by selectively removing parameters (weights) based on their magnitudes. Our **MagnitudePrunerOneShot** class, defined in *magnitude_pruner.py*, is central to our pruning strategy. This class offers three distinct methods of magnitude-based pruning:
-- **L1-Unstructured**: This global pruning strategy removes weights across the entire network based on their L1-norm magnitude. Can be used with *--pruning_method l1-unstructured*.
-- **L1-Unstructured (Linear)**: Targets only the linear layers of the model, pruning weights based on their L1-norm. Can be used with *--pruning_method l1-unstructured-linear*.
-- **L1-Unstructured Invert**: (To be implemented) Aimed at exploring inverted criteria for pruning. IN PROGRESS.
+Magnitude pruning is implemented through the **MagnitudePrunerOneShot** class, defined in [pruning/magnitude_pruner.py](magnitude_pruner.py). This class offers three distinct methods of magnitude-based pruning:
+* L1-Unstructured: This global pruning strategy removes weights across the entire network based on their L1-norm magnitude. Can be used with *--pruning_method l1-unstructured*.
+* L1-Unstructured (Linear): Targets only the linear layers of the model, pruning weights based on their L1-norm. Can be used with *--pruning_method l1-unstructured-linear*.
+* Random-Unstructured: Randomly prunes weights to the specified sparsity
 
 We ensure that each pruning process begins with a consistent state by setting a seed for reproducibility. Post-pruning, we evaluate and report the sparsity levels of the model to understand the extent of weight reduction.
 
@@ -32,8 +33,8 @@ Our performance.py script encapsulates the evaluation pipeline:
 * Dataset Loading: We load the validation datasets for MNLI and STS-B, accommodating both matched and mismatched scenarios for MNLI.
 * Evaluation Functionality: The evaluate_metrics function orchestrates the evaluation process. It leverages the evaluate_model function to perform task-specific assessments, returning a dictionary of key performance metrics.
 * Metrics Computation:
-  * For MNLI: We report accuracy for both matched and mismatched datasets.
-  * For STS-B: We measure performance using Spearman’s rank correlation coefficient and Pearson correlation coefficient.
+  - For MNLI: We report accuracy for both matched and mismatched datasets.
+  - For STS-B: We measure performance using Spearman’s rank correlation coefficient and Pearson correlation coefficient.
 The evaluation process involves tokenizing the datasets and feeding them through the model using Hugging Face's Trainer API. We then compute the metrics using the predictions and labels.
 
 ### Bias evaluation
@@ -41,12 +42,12 @@ The evaluation process involves tokenizing the datasets and feeding them through
 We have implemented a number of measures of bias.
 
 As measures of the intrinsic bias of the models we have:
-- SEAT & WEAT
-- StereoSet
+* SEAT & WEAT
+* StereoSet
 
 As measures of the extrinsic bias of the models we have:
-- Bias NLI
-- Bias STS - incomplete
+* Bias NLI
+* Bias STS
 
 #### SEAT and WEAT
 
@@ -55,14 +56,14 @@ This is implemented based on the code published in [BiasBench](https://github.co
 The evaluation can be conducted by running the seatandweat function contained in [seat.py](evaluation/seat.py).
 
 The following files in [utils](evaluation/utils/) are used:
-- [utils/seat.py](evaluation/utils/seat.py) - This contains functions and classes from [BiasBench](https://github.com/McGill-NLP/bias-bench) for reading in the test data and carrying out the tests. It also contains newly implemented functions to aggregate the individual test outputs by computing the average absolute effect sizes for the different types of biases.
-- [utils/weat.py](evaluation/utils/weat.py) - This comes from [BiasBench](https://github.com/McGill-NLP/bias-bench) and contains functions for carrying out the WEAT tests and producing statistics on the output
+* [utils/seat.py](evaluation/utils/seat.py): This contains functions and classes from [BiasBench](https://github.com/McGill-NLP/bias-bench) for reading in the test data and carrying out the tests. It also contains newly implemented functions to aggregate the individual test outputs by computing the average absolute effect sizes for the different types of biases.
+* [utils/weat.py](evaluation/utils/weat.py): This comes from [BiasBench](https://github.com/McGill-NLP/bias-bench) and contains functions for carrying out the WEAT tests and producing statistics on the output
 
 The function returns two average absolute effect sizes for gender bias, one for SEAT and one for WEAT.
 
 Additionally, it saves two files in the results folder of a particular experiment run:
-- seatandweat_raw.json: contains the p-values and effect sizes of each individual test
-- seatandweat_aggregated.json: contains the average absolute effect sizes for the different types if biases (SEAT: gender, race, illness, religion; WEAT: gender, race, illness)
+* seatandweat_raw.json: contains the p-values and effect sizes of each individual test
+* seatandweat_aggregated.json: contains the average absolute effect sizes for the different types if biases (SEAT: gender, race, illness, religion; WEAT: gender, race, illness)
 
 The local run-time is ~10 minutes.
 
