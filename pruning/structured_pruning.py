@@ -1,4 +1,4 @@
-# Based on code from https://github.com/sai-prasanna/bert-experiments/tree/master
+# Based on https://github.com/huggingface/transformers/blob/main/examples/research_projects/bertology/run_bertology.py
 
 import argparse
 import logging
@@ -224,15 +224,16 @@ def prune_heads(args, model, eval_dataloader, head_mask):
     logger.info("Pruning: speed ratio (new timing / original timing): %f percents", original_time / new_time * 100)
 
 
-def structured_pruning(model, tokenizer, seed, task):
+def structured_pruning(model, tokenizer, seed, task, device):
     # Setup devices and distributed training
+    local_rank = device
     device = get_device()
     n_gpu = 1
     torch.distributed.init_process_group(backend="nccl")  # Initializes the distributed backend
 
     # Setup logging
     logging.basicConfig(level=logging.INFO)
-    logger.info("device: {} n_gpu: {}".format(device, n_gpu))
+    logger.info("device: {} n_gpu: {}, distributed: {}".format(device, n_gpu, bool(local_rank != -1)))
 
     # Set seed
     get_seed(seed)
@@ -256,8 +257,8 @@ def structured_pruning(model, tokenizer, seed, task):
     true_eval_len = len(val_data)
     # use subset of data if needed for debugging
     if args.data_subset > 0:
-        eval_data = Subset(eval_data, list(range(min(args.data_subset, len(eval_data)))))
-    eval_sampler = SequentialSampler(eval_data) if args.local_rank == -1 else DistributedSampler(eval_data)
-    eval_dataloader = DataLoader(eval_data, sampler=eval_sampler, batch_size=1)
+        eval_data = Subset(val_data, list(range(min(args.data_subset, len(val_data)))))
+    eval_sampler = SequentialSampler(val_data) if args.local_rank == -1 else DistributedSampler(val_data)
+    eval_dataloader = DataLoader(val_data, sampler=eval_sampler, batch_size=1)
 
 

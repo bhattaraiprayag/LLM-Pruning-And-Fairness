@@ -1,4 +1,4 @@
-# Based on code from https://github.com/sai-prasanna/bert-experiments/tree/master
+# Based on https://github.com/huggingface/transformers/blob/main/examples/research_projects/bertology/run_bertology.py
 
 #!/usr/bin/env python3
 
