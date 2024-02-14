@@ -14,7 +14,37 @@ In our project, we focus on exploring the impact of various pruning techniques o
 ### Structure Pruning:
 Structural pruning is implemented in [pruning/structure_pruning.py](structure_pruning.py). 
 
-Variables that can be changed are: masking threshold (Define the metric threshold for stopping masking) and masking amount (The number of heads to mask). 
+Variables that can be changed are: masking threshold (Define the metric threshold for stopping masking) and masking amount (The number of heads to mask).
+
+#### Turning structure_pruning.py into a function:
+
+Arguments:
+* data_dir:
+* model_name_or_path:
+* model_type:
+* task_name:
+* output_dir:
+* config_name: default 'roberta-base'
+* tokenizer_name: default 'roberta-base'
+* cache_dir: 
+* data_subset: might be helpful to keep for debugging
+* overwrite_output_dir:
+* overwrite_cache:
+* save_mask_all_iterations:
+* dont_normalize_importance_by_layer: ???
+* dont_normalize_global_importance: ???
+* try_masking: always True in our use case (?)
+* use_train_data: not needed because we just always directly use the correct validation set 
+* masking_threshold: 
+* masking_amount: 
+* metric_name:
+* max_seq_length: default 126 (everywhere else we've set this to 512, so maybe we should change this here, but CHECK IF THIS MAKES A DIFFERENCE)
+* batch_size: default 1
+* seed:
+* local_rank:
+* no_cuda: we always want to use CUDA when available
+* server_ip: we don't want to use distant debugging, so doesn't matter to us
+* server_port: we don't want to use distant debugging, so doesn't matter to us
 
 ### Magnitude Pruning:
 Magnitude pruning is implemented through the **MagnitudePrunerOneShot** class, defined in [pruning/magnitude_pruner.py](magnitude_pruner.py). This class offers three distinct methods of magnitude-based pruning:
