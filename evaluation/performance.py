@@ -19,15 +19,46 @@ from datasets import load_dataset
 #     else:
 #         raise ValueError(f'No dataset found for task {task}')
 
-def load_eval_dataset(task):    # ONLY WORKS WITH split='validation'
+def load_eval_dataset(task, model_no):    # ONLY WORKS WITH split='validation'
     """Loads the evaluation dataset based on the specified task."""
     if task == 'mnli':
-        return (
-            load_dataset('glue', 'mnli', split='validation_matched[-50%:]'),
-            load_dataset('glue', 'mnli', split='validation_mismatched[-50%:]')
-        )
+        if model_no == 1: # uses original split of the data
+            return (
+                load_dataset('glue', 'mnli', split='validation_matched[-50%:]'),
+                load_dataset('glue', 'mnli', split='validation_mismatched[-50%:]')
+            )
+        else: # uses shuffled split based on seed
+            full_dataset = load_dataset(
+                "glue",
+                "mnli",
+                split=['train+validation_matched', 'validation_mismatched[:50%]', 'validation_mismatched[-50%:]']
+            )
+            # 2.5% test_matched + validation_matched (keep the same ratio as in the original split)
+            train_testvalid = full_dataset[0].train_test_split(test_size=0.025, shuffle=True, seed=model_no)
+            # Split test_matched + validation_matched in half test_matched, half validation_matched
+            test_valid = train_testvalid['test'].train_test_split(test_size=0.5, shuffle=True, seed=model_no)
+            # return test portion (matched and mismatchend)
+            return(
+                test_valid['train'],
+                full_dataset[2]
+            )
+
     elif task == 'stsb':
-        return load_dataset('glue', 'stsb', split='validation[-50%:]'),
+        if model_no == 1: # uses original split of the data
+            return load_dataset('glue', 'stsb', split='validation[-50%:]')
+        else: # uses shuffled split based on seed
+            full_dataset = load_dataset(
+                "glue",
+                "stsb",
+                split='train+validation'
+            )
+            # 20% test + validation (keep the same ratio as in the original split)
+            train_testvalid = full_dataset.train_test_split(test_size=0.2, shuffle=True, seed=model_no)
+            # Split test + valid in half test, half valid
+            test_valid = train_testvalid['test'].train_test_split(test_size=0.5, shuffle=True, seed=model_no)
+            # return test portion
+            return test_valid['test']
+
     else:
         raise ValueError(f'No evaluation dataset found for task {task}')
 
@@ -41,8 +72,7 @@ def evaluate_metrics(model, tokenizer, task, eval_datasets, exp_id):
         mnli_mismatched = evaluate_model(model, tokenizer, task, eval_mismatched, exp_id)
         results_dict['Matched Acc'], results_dict['Mismatched Acc'] = mnli_matched['eval_accuracy'], mnli_mismatched['eval_accuracy']
     elif task == 'stsb':
-        eval_dataset = eval_datasets[0]
-        eval_results = evaluate_model(model, tokenizer, task, eval_dataset, exp_id)
+        eval_results = evaluate_model(model, tokenizer, task, eval_datasets, exp_id)
         results_dict['Spearmanr'], results_dict['Pearson'] = eval_results['eval_spearmanr'], eval_results['eval_pearson']
     else:
         raise ValueError(f'No evaluation metrics found for task {task}')
@@ -50,7 +80,7 @@ def evaluate_metrics(model, tokenizer, task, eval_datasets, exp_id):
     return results_dict
 
 
-def evaluate_model(model, tokenizer, task_name, eval_dataset, exp_id):
+def evaluate_model(model, tokenizer, task_name, eval_datasets, exp_id):
     # tokenization
     def preprocess_function(examples, task_name=task_name):
         if task_name == "mnli":
@@ -62,7 +92,7 @@ def evaluate_model(model, tokenizer, task_name, eval_dataset, exp_id):
         else:
             raise ValueError(f"Task {task_name} not yet supported")
     
-    eval_dataset = eval_dataset.map(preprocess_function, batched=True)
+    eval_dataset = eval_datasets.map(preprocess_function, batched=True)
 
     # define compute metrics function
     def compute_metrics(p: EvalPrediction):
