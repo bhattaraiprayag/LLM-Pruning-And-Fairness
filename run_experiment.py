@@ -112,9 +112,6 @@ def main():
     # load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_path)
 
-    # create pipeline
-    pipe = TextClassificationPipeline(model=model, tokenizer=tokenizer, top_k=None, max_length=512, truncation=True, padding=True, device=exp_args.device)
-
     # pruning (skipped if pruning == None)
     if exp_args.pruning_method != "None":
         pruner = MagnitudePrunerOneShot(model, exp_args.seed, exp_args.pruning_method, exp_args.sparsity_level)
@@ -137,7 +134,7 @@ def main():
     res_seatandweat = seatandweat(model, tokenizer, id, exp_args.seed)
     res_stereoset = stereoset(model, tokenizer, id)
     if exp_args.task == 'mnli':
-        res_bias = bias_nli(pipe, id)
+        res_bias = bias_nli(model, tokenizer, id)
     else:
         res_bias = bias_sts(model, tokenizer, id)
 

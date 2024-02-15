@@ -6,7 +6,7 @@ import os
 from tqdm import tqdm
 from evaluation.utils.bias_sts import get_device
 
-def bias_nli(model, tokenizer, exp_id):
+def bias_nli(model, tokenizer, exp_id, device):
     # Input: model and tokenizer with the transformers pipeline containing the model and tokenizer
     # Output: results dictionary with net neutral and fraction neutral scores, also saves csv with predictions
 
