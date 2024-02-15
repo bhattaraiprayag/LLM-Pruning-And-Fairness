@@ -19,9 +19,6 @@ from utils import get_device
 logger = logging.getLogger(__name__)
 logging.getLogger("experiment_impact_tracker.compute_tracker.ImpactTracker").disabled = True
 
-MODEL_CLASSES = {"roberta": (RobertaConfig, RobertaForSequenceClassification, RobertaTokenizer),
-                 }
-
 
 # Used to log and visualize information about attention heads
 def print_2d_tensor(tensor):
@@ -260,5 +257,3 @@ def structured_pruning(model, tokenizer, seed, task, device):
         eval_data = Subset(val_data, list(range(min(args.data_subset, len(val_data)))))
     eval_sampler = SequentialSampler(val_data) if args.local_rank == -1 else DistributedSampler(val_data)
     eval_dataloader = DataLoader(val_data, sampler=eval_sampler, batch_size=1)
-
-
