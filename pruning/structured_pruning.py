@@ -249,11 +249,20 @@ def structured_pruning(model, tokenizer, seed, task, device):
     label_list = processor.get_labels()
     num_labels = len(label_list)
 
-    # Prepare dataset for the GLUE task
+    # Prepare dataset
     val_data = load_and_cache_examples(args, task, tokenizer, evaluate=True)
     true_eval_len = len(val_data)
     # use subset of data if needed for debugging
-    if args.data_subset > 0:
-        eval_data = Subset(val_data, list(range(min(args.data_subset, len(val_data)))))
+    # subset_size = 100
+    # eval_data = Subset(val_data, list(range(min(subset_size, len(val_data)))))
     eval_sampler = SequentialSampler(val_data) if args.local_rank == -1 else DistributedSampler(val_data)
     eval_dataloader = DataLoader(val_data, sampler=eval_sampler, batch_size=1)
+
+    # perform pruning
+    head_mask = mask_heads(args, model, eval_dataloader)
+    prune_heads(args, model, eval_dataloader, head_mask)
+    pruned_model_dir = f'{args.output_dir}/pruned_model/'
+    if not os.path.exists(pruned_model_dir):
+        os.makedirs(pruned_model_dir)
+    model.save_pretrained(pruned_model_dir)
+    tokenizer.save_pretrained(pruned_model_dir)
