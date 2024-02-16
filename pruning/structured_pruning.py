@@ -31,20 +31,13 @@ def structured_pruning(model, tokenizer, seed, task, device, masking_amount, mas
     if task == "stsb":
         task = "sts-b"
 
-    # set different variables related to task
-
-    processor = processors[task]()
-    output_mode = output_modes[task]
-    label_list = processor.get_labels()
-    num_labels = len(label_list)
-
     # Prepare dataset
     data_dir =
     val_data = load_examples(task, tokenizer, data_dir)
     # use subset of data if needed for debugging
     # subset_size = 100
     # eval_data = Subset(val_data, list(range(min(subset_size, len(val_data)))))
-    eval_sampler = SequentialSampler(val_data) if args.local_rank == -1 else DistributedSampler(val_data)
+    eval_sampler = SequentialSampler(val_data) if local_rank == -1 else DistributedSampler(val_data)
     eval_dataloader = DataLoader(val_data, sampler=eval_sampler, batch_size=1)
 
     # set output directory

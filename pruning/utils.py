@@ -1,18 +1,14 @@
 import os
 import logging
-import re
 import random
 from datetime import datetime
 import numpy as np
 import torch
 from tqdm import tqdm  # display progress bars during long-running operations
 from sklearn.metrics import matthews_corrcoef
-from torch import threshold
-from transformers import RobertaModel, RobertaConfig
 from transformers import glue_processors as processors
 from torch.utils.data import TensorDataset
 from transformers.data.metrics import simple_accuracy, acc_and_f1, pearson_and_spearman
-from transformers.modeling_utils import PreTrainedModel
 from transformers import glue_output_modes as output_modes
 from transformers import glue_convert_examples_to_features as convert_examples_to_features
 
