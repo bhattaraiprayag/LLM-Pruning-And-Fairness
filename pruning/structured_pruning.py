@@ -9,7 +9,7 @@ import torch
 from torch.utils.data import DataLoader, SequentialSampler, Subset
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm  # display progress bars during long-running operations
-from utils import load_examples, get_seed
+from utils import load_examples, get_seed, print_2d_tensor
 from transformers import glue_processors as processors
 from transformers import glue_output_modes as output_modes, RobertaConfig, RobertaForSequenceClassification, \
     RobertaTokenizer
@@ -20,29 +20,21 @@ logger = logging.getLogger(__name__)
 logging.getLogger("experiment_impact_tracker.compute_tracker.ImpactTracker").disabled = True
 
 
-# Used to log and visualize information about attention heads
-def print_2d_tensor(tensor):
-    """ Print a 2D tensor """
-    logger.info("lv, h >\t" + "\t".join(f"{x + 1}" for x in range(len(tensor))))
-    for row in range(len(tensor)):
-        if tensor.dtype != torch.long:
-            logger.info(f"layer {row + 1}:\t" + "\t".join(f"{x:.5f}" for x in tensor[row].cpu().data))
-        else:
-            logger.info(f"layer {row + 1}:\t" + "\t".join(f"{x:d}" for x in tensor[row].cpu().data))
+
 
 
 # Evaluate the importance of attention heads in a Transformer model by computing head importance scores.
-def compute_heads_importance(args, model, eval_dataloader, compute_importance=True, head_mask=None):
+def compute_heads_importance(model, eval_dataloader, device, local_rank, output_dir, compute_importance=True, head_mask=None):
     """ This method shows how to compute
         head importance scores according to http://arxiv.org/abs/1905.10650
     """
     # Prepare our tensors
     n_layers, n_heads = model.roberta.config.num_hidden_layers, model.roberta.config.num_attention_heads
-    head_importance = torch.zeros(n_layers, n_heads).to(args.device)
-    attn_entropy = torch.zeros(n_layers, n_heads).to(args.device)
+    head_importance = torch.zeros(n_layers, n_heads).to(device)
+    attn_entropy = torch.zeros(n_layers, n_heads).to(device)
 
     if head_mask is None and compute_importance:
-        head_mask = torch.ones(n_layers, n_heads).to(args.device)
+        head_mask = torch.ones(n_layers, n_heads).to(device)
         head_mask.requires_grad_(requires_grad=True)
     elif compute_importance:
         head_mask = head_mask.clone().detach()
@@ -51,8 +43,8 @@ def compute_heads_importance(args, model, eval_dataloader, compute_importance=Tr
     preds = None
     labels = None
     tot_tokens = 0.0
-    for step, batch in enumerate(tqdm(eval_dataloader, desc="Iteration", disable=args.local_rank not in [-1, 0])):
-        batch = tuple(t.to(args.device) for t in batch)
+    for step, batch in enumerate(tqdm(eval_dataloader, desc="Iteration", disable=local_rank not in [-1, 0])):
+        batch = tuple(t.to(device) for t in batch)
         input_ids, input_mask, segment_ids, label_ids = batch
 
         # Do a forward pass (not with torch.no_grad() since we need gradients for importance score - see below)
@@ -95,14 +87,14 @@ def compute_heads_importance(args, model, eval_dataloader, compute_importance=Tr
                     head_importance.max() - head_importance.min())
 
         # Print/save matrices
-        np.save(os.path.join(args.output_dir, "head_importance.npy"), head_importance.detach().cpu().numpy())
+        np.save(os.path.join(output_dir, "head_importance.npy"), head_importance.detach().cpu().numpy())
 
         logger.info("Head importance scores")
         print_2d_tensor(head_importance)
         logger.info("Head ranked by importance scores")
-        head_ranks = torch.zeros(head_importance.numel(), dtype=torch.long, device=args.device)
+        head_ranks = torch.zeros(head_importance.numel(), dtype=torch.long, device=device)
         head_ranks[head_importance.view(-1).sort(descending=True)[1]] = torch.arange(
-            head_importance.numel(), device=args.device
+            head_importance.numel(), device=device
         )
         head_ranks = head_ranks.view_as(head_importance)
         print_2d_tensor(head_ranks)
@@ -111,11 +103,11 @@ def compute_heads_importance(args, model, eval_dataloader, compute_importance=Tr
 
 
 # masks specific attention heads in a Transformer model based on their importance scores.
-def mask_heads(args, model, eval_dataloader):
+def mask_heads(args, model, eval_dataloader, device, local_rank, output_dir):
     """ This method shows how to mask head (set some heads to zero), to test the effect on the network,
         based on the head importance scores, as described in Michel et al. (http://arxiv.org/abs/1905.10650)
     """
-    _, head_importance, preds, labels = compute_heads_importance(args, model, eval_dataloader)
+    _, head_importance, preds, labels = compute_heads_importance(model, eval_dataloader, device, local_rank, output_dir)
     preds = np.argmax(preds, axis=1) if args.output_mode == "classification" else np.squeeze(preds)
     original_score = compute_metrics(args.task_name, preds, labels)[args.metric_name]
     logger.info("Pruning: original score: %f, threshold: %f", original_score, original_score * args.masking_threshold)
@@ -158,7 +150,7 @@ def mask_heads(args, model, eval_dataloader):
 
         # Compute metric and head importance again
         _, head_importance, preds, labels = compute_heads_importance(
-            args, model, eval_dataloader, head_mask=new_head_mask
+            model, eval_dataloader, device, local_rank, output_dir, head_mask=new_head_mask
         )
         preds = np.argmax(preds, axis=1) if args.output_mode == "classification" else np.squeeze(preds)
         current_score = compute_metrics(args.task_name, preds, labels)[args.metric_name]
@@ -262,5 +254,5 @@ def structured_pruning(model, tokenizer, seed, task, device):
     output_dir =
 
     # perform pruning
-    head_mask = mask_heads(args, model, eval_dataloader)
+    head_mask = mask_heads(model, eval_dataloader, )
     prune_heads(args, model, eval_dataloader, head_mask)
