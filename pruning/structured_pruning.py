@@ -9,7 +9,7 @@ import torch
 from torch.utils.data import DataLoader, SequentialSampler, Subset
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm  # display progress bars during long-running operations
-from utils import load_and_cache_examples, get_seed
+from utils import load_examples, get_seed
 from transformers import glue_processors as processors
 from transformers import glue_output_modes as output_modes, RobertaConfig, RobertaForSequenceClassification, \
     RobertaTokenizer
@@ -250,19 +250,17 @@ def structured_pruning(model, tokenizer, seed, task, device):
     num_labels = len(label_list)
 
     # Prepare dataset
-    val_data = load_and_cache_examples(args, task, tokenizer, evaluate=True)
-    true_eval_len = len(val_data)
+    data_dir =
+    val_data = load_examples(task, tokenizer, data_dir)
     # use subset of data if needed for debugging
     # subset_size = 100
     # eval_data = Subset(val_data, list(range(min(subset_size, len(val_data)))))
     eval_sampler = SequentialSampler(val_data) if args.local_rank == -1 else DistributedSampler(val_data)
     eval_dataloader = DataLoader(val_data, sampler=eval_sampler, batch_size=1)
 
+    # set output directory
+    output_dir =
+
     # perform pruning
     head_mask = mask_heads(args, model, eval_dataloader)
     prune_heads(args, model, eval_dataloader, head_mask)
-    pruned_model_dir = f'{args.output_dir}/pruned_model/'
-    if not os.path.exists(pruned_model_dir):
-        os.makedirs(pruned_model_dir)
-    model.save_pretrained(pruned_model_dir)
-    tokenizer.save_pretrained(pruned_model_dir)
