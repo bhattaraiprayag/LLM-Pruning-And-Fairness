@@ -17,22 +17,28 @@ def bias_nli(model, tokenizer, exp_id):
         test_dict = csv.DictReader(csv_file)
         pair_list = []
         word_list = []
+        prediction = []
         # Get all premise/hypothesis pairs in a list
         for row in tqdm(test_dict, desc="Loading bias-nli test sentences"):
             pair_list.append((row["premise"],row["hypothesis"]))
             word_list.append([row['premise_filler_word'], row['hypothesis_filler_word'], row["premise"],row["hypothesis"]])
 
+            if len(pair_list)==2000:
+
+
             # # # DEBUGGING SWITCH: Work with less rows
             # if len(pair_list) >= 1000:
             #     break
 
-    # Make predictions with model
-    # prediction = model_pipe(pair_list)
-    batch_size = max(1, len(pair_list) // 10)
-    prediction = []
-    for i in tqdm(range(0, len(pair_list), batch_size), desc="Making predictions"):
-        inputs = tokenizer(pair_list[i:i+batch_size], max_length=512,
-                           truncation=True, padding=True, return_tensors='pt')
+                # Make predictions with model
+
+                inputs = tokenizer(pair_list, max_length=512, truncation=True, padding=True, return_tensors='pt')
+                inputs.to(device)
+                preds = model(**inputs).logits.softmax(dim=1)
+                prediction.extend(preds.tolist())
+                pair_list = []
+
+        inputs = tokenizer(pair_list, max_length=512, truncation=True, padding=True, return_tensors='pt')
         inputs.to(device)
         preds = model(**inputs).logits.softmax(dim=1)
         prediction.extend(preds.tolist())
@@ -48,7 +54,7 @@ def bias_nli(model, tokenizer, exp_id):
 
     # Calculate output scores
     results = {}
-    results['BiasNLI_NN'] = [sum(i) for i in zip(*prediction)][1]/len(pair_list)
-    results['BiasNLI_FN'] = sum([1 for i in prediction if max(i)==i[1]])/len(pair_list)
+    results['BiasNLI_NN'] = [sum(i) for i in zip(*prediction)][1]/len(word_list)
+    results['BiasNLI_FN'] = sum([1 for i in prediction if max(i)==i[1]])/len(word_list)
 
     return results
