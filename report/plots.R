@@ -101,6 +101,8 @@ acc_vs_bias_all <- function(data, base_folder){
 ### Bias over sparsity range ####
 
 spars_vs_bias_plot <- function(data, bias_measure, base_folder, optimum, task){
+  low_limit <- if_else(bias_measure=='BiasSTS', -0.25, 0)
+  
   output <-
     ggplot(data, aes(x=sparsity_level, y=.data[[bias_measure]], group=pruning_method, colour=pruning_method)) +
     geom_line(linewidth=2) +
@@ -109,7 +111,7 @@ spars_vs_bias_plot <- function(data, bias_measure, base_folder, optimum, task){
     scale_colour_manual(values=colours) +
     scale_x_continuous(expand = c(0,0)) +
     scale_y_continuous(expand = c(0,0),
-                       limits = c(0,1)) +
+                       limits = c(low_limit, 1)) +
     theme_bw() + 
     guides(colour=guide_legend(title='Pruning:')) +
     coord_cartesian(clip='off')
@@ -129,6 +131,12 @@ spars_vs_bias_all <- function(data, base_folder){
   spars_vs_bias_plot(mnli, 'StereoSet_SS_gender', base_folder, 0.5, task='mnli')
   spars_vs_bias_plot(mnli, 'BiasNLI_NN', base_folder, 1, task='mnli')
   spars_vs_bias_plot(mnli, 'BiasNLI_FN', base_folder, 1, task='mnli')
+  stsb <- data %>% filter(task=='stsb')
+  spars_vs_bias_plot(stsb, 'SEAT_gender', base_folder, 0, task='stsb')
+  spars_vs_bias_plot(stsb, 'WEAT_gender', base_folder, 0, task='stsb')
+  spars_vs_bias_plot(stsb, 'StereoSet_LM_gender', base_folder, 1, task='stsb')
+  spars_vs_bias_plot(stsb, 'StereoSet_SS_gender', base_folder, 0.5, task='stsb')
+  spars_vs_bias_plot(stsb, 'BiasSTS', base_folder, 0, task='stsb')
 }
 
 ### Performance over increasing sparsity
