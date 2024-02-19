@@ -71,7 +71,7 @@ acc_vs_bias_plot <- function(data, acc_measure, bias_measure, base_folder, optim
                        limits = c(0,1)) +
     theme_bw() + 
     guides(colour=guide_legend(title='Pruning:'),
-           alpha=guide_legend(title='Inverse sparsity')) +
+           alpha=guide_legend(title='Density')) +
     coord_cartesian(clip='off')
     
   
