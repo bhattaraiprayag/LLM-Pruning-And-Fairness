@@ -119,8 +119,6 @@ zero_spars <- function(data){
 }
 
 spars_vs_bias_plot <- function(data, bias_measure, base_folder, optimum, task){
-  low_limit <- if_else(bias_measure=='BiasSTS', -0.25, 0)
-  
   output <-
     data %>%
     zero_spars() %>%
@@ -133,7 +131,7 @@ spars_vs_bias_plot <- function(data, bias_measure, base_folder, optimum, task){
     scale_fill_manual(values=colours) +
     scale_x_continuous(expand = c(0,0)) +
     scale_y_continuous(expand = c(0,0),
-                       limits = c(low_limit, 1)) +
+                       limits = c(0,1)) +
     theme_bw() + 
     guides(colour=guide_legend(title='Pruning:'),
            fill=guide_legend(title='Pruning:')) +
