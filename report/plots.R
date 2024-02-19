@@ -61,7 +61,7 @@ results_group <- results_data %>%
 # Function for plotting bias measures against model performance measures
 acc_vs_bias_plot <- function(data, acc_measure, bias_measure, base_folder, optimum, task){
   output <-
-    ggplot(data, aes(x=.data[[acc_measure]], y=.data[[bias_measure]], group=pruning_method, colour=pruning_method, alpha=1-sparsity_level)) +
+    ggplot(data, aes(x=.data[[acc_measure]], y=.data[[bias_measure]], group=pruning_method, colour=pruning_method, shape=pruning_method, alpha=1-sparsity_level)) +
     geom_point(size=4) +
     geom_hline(yintercept=optimum, linewidth=2, colour=colours[8], linetype='dashed') +
     scale_colour_manual(values=colours) +
@@ -71,9 +71,10 @@ acc_vs_bias_plot <- function(data, acc_measure, bias_measure, base_folder, optim
                        limits = c(0,1)) +
     theme_bw() + 
     guides(colour=guide_legend(title='Pruning:'),
+           shape=guide_legend(title='Pruning:'),
            alpha=guide_legend(title='Density')) +
     coord_cartesian(clip='off')
-    
+  
   
   ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/ab_', task, '_', acc_measure, '_', bias_measure, '.png'),
          plot = output,
