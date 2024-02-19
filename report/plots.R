@@ -129,21 +129,30 @@ perf_stsb <- function(data, pruning_method, base_folder){
            pruning_method==pruning_method) %>%
     group_by(sparsity) %>%
     summarise(spearmanr = mean(Spearmanr),
-              pearson = mean(Pearson)) %>%
+              pearson = mean(Pearson),
+              spearmanr_max = max(Spearmanr),
+              pearson_max = max(Pearson),
+              spearmanr_min = min(Spearmanr),
+              pearson_min = min(Pearson)) %>%
     pivot_longer(cols = c(spearmanr, pearson),
                  names_to = 'metric',
-                 values_to = 'performance')
+                 values_to = 'performance') %>%
+    mutate(maxi = if_else(metric=='spearmanr', spearmanr_max, pearson_max),
+           mini = if_else(metric=='spearmanr', spearmanr_min, pearson_min))
   
   output <-
     ggplot(working, aes(x=sparsity, y=performance, group=metric, colour=metric)) +
     geom_line(linewidth=2) +
+    geom_ribbon(aes(x = sparsity, ymax = maxi, ymin = mini, group=metric, fill=metric), alpha = 0.3, colour = NA) +
+    scale_fill_manual(values=colours) +
     scale_colour_manual(values=colours) +
     scale_x_continuous(expand = c(0,0),
                        limits = c(0,1)) +
     scale_y_continuous(expand = c(0,0),
                        limits = c(NA,1)) +
     theme_bw() + 
-    guides(colour=guide_legend(title='Metric:')) +
+    guides(colour=guide_legend(title='Metric:'),
+           fill=guide_legend(title='Metric:')) +
     coord_cartesian(clip='off')
   
   ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/pc_stsb_', pruning_method, '.png'),
@@ -161,21 +170,30 @@ perf_mnli <- function(data, pruning_method, base_folder){
            pruning_method==pruning_method) %>%
     group_by(sparsity) %>%
     summarise(matched = mean(`Matched Acc`),
-              mismatched = mean(`Mismatched Acc`)) %>%
+              mismatched = mean(`Mismatched Acc`),
+              matched_max = max(`Matched Acc`),
+              mismatched_max = max(`Mismatched Acc`),
+              matched_min = min(`Matched Acc`),
+              mismatched_min = min(`Mismatched Acc`)) %>%
     pivot_longer(cols = c(matched, mismatched),
                  names_to = 'accuracy',
-                 values_to = 'performance')
+                 values_to = 'performance') %>%
+    mutate(maxi = if_else(accuracy=='matched', matched_max, mismatched_max),
+           mini = if_else(accuracy=='matched', matched_min, mismatched_min))
   
   output <-
     ggplot(working, aes(x=sparsity, y=performance, group=accuracy, colour=accuracy)) +
     geom_line(linewidth=2) +
+    geom_ribbon(aes(x = sparsity, ymax = maxi, ymin = mini, group=accuracy, fill=accuracy), alpha = 0.3, colour = NA) +
+    scale_fill_manual(values=colours) +
     scale_colour_manual(values=colours) +
     scale_x_continuous(expand = c(0,0),
                        limits = c(0,1)) +
     scale_y_continuous(expand = c(0,0),
                        limits = c(0,1)) +
     theme_bw() + 
-    guides(colour=guide_legend(title='Accuracy:')) +
+    guides(colour=guide_legend(title='Accuracy:'),
+           fill=guide_legend(title='Accuracy:')) +
     coord_cartesian(clip='off')
   
   ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/pc_mnli_', pruning_method, '.png'),
