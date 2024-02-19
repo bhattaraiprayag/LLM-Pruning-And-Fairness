@@ -115,15 +115,10 @@ def compute_heads_importance(model, eval_dataloader, device, local_rank, output_
     if compute_importance:
         # Normalize
         head_importance /= tot_tokens
-        # Layerwise importance normalization
-        if not args.dont_normalize_importance_by_layer:
-            exponent = 2
-            norm_by_layer = torch.pow(torch.pow(head_importance, exponent).sum(-1), 1 / exponent)
-            head_importance /= norm_by_layer.unsqueeze(-1) + 1e-20
-
-        if not args.dont_normalize_global_importance:
-            head_importance = (head_importance - head_importance.min()) / (
-                    head_importance.max() - head_importance.min())
+        # Layer-wise importance normalization
+        exponent = 2
+        norm_by_layer = torch.pow(torch.pow(head_importance, exponent).sum(-1), 1 / exponent)
+        head_importance /= norm_by_layer.unsqueeze(-1) + 1e-20
 
         # Print/save matrices
         np.save(os.path.join(output_dir, "head_importance.npy"), head_importance.detach().cpu().numpy())
