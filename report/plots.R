@@ -10,7 +10,7 @@ library(tidyr)
 library(readr)
 
 # Basic settings
-base_folder <- SET FOLDER LOCATION
+base_folder <- SET BASE FOLDER
 colours = c('#332288', '#117733', '#CC6677', '#882255', '#88CCEE', '#DDCC77', '#AA4499', '#44AA99')
 
 # Load in the data
@@ -20,7 +20,7 @@ results_data <- read_csv(paste0(base_folder,'LLM-Pruning-And-Fairness/results/re
 
 # Group up based on the actual categories - still has both tasks
 results_group <- results_data %>%
-  group_by(task, pruning_method, sparsity_level, temperature) %>%
+  group_by(task, pruning_method, sparsity_level) %>%
   summarise(SEAT_gender = mean(SEAT_gender),
          WEAT_gender = mean(WEAT_gender),
          StereoSet_LM_gender = mean(StereoSet_LM_gender),
@@ -74,7 +74,7 @@ acc_vs_bias_all <- function(data, base_folder){
 spars_vs_bias_plot <- function(data, bias_measure, base_folder, optimum, task){
   output <-
     ggplot(data, aes(x=sparsity_level, y=.data[[bias_measure]], group=pruning_method, colour=pruning_method)) +
-    geom_line(size=2) +
+    geom_line(linewidth=2) +
     geom_point(size=2) +
     geom_hline(yintercept=optimum, linewidth=2, colour=colours[8], linetype='dashed') +
     scale_colour_manual(values=colours) +
@@ -102,8 +102,97 @@ spars_vs_bias_all <- function(data, base_folder){
   spars_vs_bias_plot(mnli, 'BiasNLI_FN', base_folder, 1, task='mnli')
 }
 
+### Performance over increasing sparsity
+
+# Loading performance data
+performance_path <- paste0(base_folder, 'LLM-Pruning-And-Fairness/results/performance')
+
+read_plus <- function(flnm, path) {
+  read_csv(paste0(path, '/', flnm), show_col_types = FALSE) %>%
+    mutate(task = str_split_i(flnm, '_', 1),
+           model_no = str_split_i(flnm, '_', 2),
+           pruning_method = str_split_i(flnm, '_', 3))
+}
+
+perf_data  <-
+  list.files(path = performance_path,
+             pattern = "\\.csv$") %>%
+  map_df(~read_plus(., performance_path)) %>%
+  rename(sparsity=1) %>%
+  mutate(pruning_method = str_remove(pruning_method, '\\.csv'))
+
+# STSB
+
+perf_stsb <- function(data, pruning_method, base_folder){
+  working <- data %>%
+    filter(task=='stsb',
+           pruning_method==pruning_method) %>%
+    group_by(sparsity) %>%
+    summarise(spearmanr = mean(Spearmanr),
+              pearson = mean(Pearson)) %>%
+    pivot_longer(cols = c(spearmanr, pearson),
+                 names_to = 'metric',
+                 values_to = 'performance')
+  
+  output <-
+    ggplot(working, aes(x=sparsity, y=performance, group=metric, colour=metric)) +
+    geom_line(linewidth=2) +
+    scale_colour_manual(values=colours) +
+    scale_x_continuous(expand = c(0,0),
+                       limits = c(0,1)) +
+    scale_y_continuous(expand = c(0,0),
+                       limits = c(NA,1)) +
+    theme_bw() + 
+    guides(colour=guide_legend(title='Metric:')) +
+    coord_cartesian(clip='off')
+  
+  ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/pc_stsb_', pruning_method, '.png'),
+         plot = output,
+         width = 2100,
+         height = 1400,
+         units = "px")
+}
+
+# MNLI
+
+perf_mnli <- function(data, pruning_method, base_folder){
+  working <- data %>%
+    filter(task=='mnli',
+           pruning_method==pruning_method) %>%
+    group_by(sparsity) %>%
+    summarise(matched = mean(`Matched Acc`),
+              mismatched = mean(`Mismatched Acc`)) %>%
+    pivot_longer(cols = c(matched, mismatched),
+                 names_to = 'accuracy',
+                 values_to = 'performance')
+  
+  output <-
+    ggplot(working, aes(x=sparsity, y=performance, group=accuracy, colour=accuracy)) +
+    geom_line(linewidth=2) +
+    scale_colour_manual(values=colours) +
+    scale_x_continuous(expand = c(0,0),
+                       limits = c(0,1)) +
+    scale_y_continuous(expand = c(0,0),
+                       limits = c(0,1)) +
+    theme_bw() + 
+    guides(colour=guide_legend(title='Accuracy:')) +
+    coord_cartesian(clip='off')
+  
+  ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/pc_mnli_', pruning_method, '.png'),
+         plot = output,
+         width = 2100,
+         height = 1400,
+         units = "px")
+}
+
+perf_all <- function(data, base_folder){
+  perf_stsb(data, 'l1-unstructured', base_folder)
+  perf_mnli(data, 'l1-unstructured', base_folder)
+}
+
 
 ### Actually running all the functions ####
 acc_vs_bias_all(results_group, base_folder)
 spars_vs_bias_all(results_group, base_folder)
+perf_all(perf_data, base_folder)
 
