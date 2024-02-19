@@ -102,11 +102,29 @@ acc_vs_bias_all <- function(data, base_folder){
 
 ### Bias over sparsity range ####
 
+# Function for including the base model at the start of all lines
+zero_spars <- function(data){
+  working <- data %>% filter(str_starts(pruning_method, 'initial'))
+  
+  output <- data %>% filter(!str_starts(pruning_method, 'initial'))
+  
+  pruning_methods <- output$pruning_method %>% unique()
+  
+  for(i in pruning_methods){
+    output <- output %>%
+      add_row(working %>% mutate(pruning_method=i))
+  }
+  
+  return(output)
+}
+
 spars_vs_bias_plot <- function(data, bias_measure, base_folder, optimum, task){
   low_limit <- if_else(bias_measure=='BiasSTS', -0.25, 0)
   
   output <-
-    ggplot(data, aes(x=sparsity_level, y=.data[[bias_measure]], group=pruning_method, colour=pruning_method)) +
+    data %>%
+    zero_spars() %>%
+    ggplot(aes(x=sparsity_level, y=.data[[bias_measure]], group=pruning_method, colour=pruning_method)) +
     geom_line(linewidth=2) +
     geom_ribbon(aes(x = sparsity_level, ymax = .data[[paste0(bias_measure, '_max')]], ymin = .data[[paste0(bias_measure, '_min')]], group=pruning_method, fill=pruning_method), alpha = 0.3, colour = NA) +
     geom_point(size=2) +
