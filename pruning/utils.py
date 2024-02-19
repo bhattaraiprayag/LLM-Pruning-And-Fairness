@@ -1,6 +1,7 @@
 import os
 import logging
 import random
+import csv
 from datetime import datetime
 import numpy as np
 import torch
@@ -11,6 +12,7 @@ from torch.utils.data import TensorDataset
 from transformers.data.metrics import simple_accuracy, acc_and_f1, pearson_and_spearman
 from transformers import glue_output_modes as output_modes
 from transformers import glue_convert_examples_to_features as convert_examples_to_features
+from transformers import InputExample
 
 ROBERTA_PRETRAINED_MODEL_ARCHIVE_MAP = {
     'roberta-base': "https://s3.amazonaws.com/models.huggingface.co/bert/roberta-base-pytorch_model.bin"
@@ -255,6 +257,23 @@ def prune_heads(model, eval_dataloader, device, local_rank, output_dir, task, he
     logger.info("Pruning: speed ratio (new timing / original timing): %f percents", original_time / new_time * 100)
 
 
+def create_examples(lines):
+    """
+    Creates examples for dev set.
+    Based on _create_examples class method of stsb and mnli processor
+    """
+    examples = []
+    for i, line in enumerate(lines):
+        if i == 0:
+            continue
+        guid = f"dev-{line[-1]}"
+        text_a = line[0]
+        text_b = line[1]
+        label = line[2]
+        examples.append(InputExample(guid=guid, text_a=text_a, text_b=text_b, label=label))
+    return examples
+
+
 def load_examples(task, tokenizer, data_dir):
     processor = processors[task]()
     output_mode = output_modes[task]
@@ -265,9 +284,12 @@ def load_examples(task, tokenizer, data_dir):
     if task == "mnli":
         # HACK(label indices are swapped in RoBERTa pretrained model)
         label_list[1], label_list[2] = label_list[2], label_list[1]
-    examples = (
-        processor.get_dev_examples(data_dir)
-    )
+
+    with open(f'{data_dir}/dev.tsv', "r", encoding="utf-8-sig") as f:
+        data = list(csv.reader(f, delimiter="\t"))
+        examples = (
+            create_examples(data)
+        )
 
     features = convert_examples_to_features(
         examples,
