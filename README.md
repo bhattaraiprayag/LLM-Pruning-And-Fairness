@@ -16,29 +16,31 @@ Structural pruning is implemented in [pruning/structure_pruning.py](structure_pr
 
 Variables that can be changed are: masking threshold (Define the metric threshold for stopping masking) and masking amount (The number of heads to mask).
 
+For performance evaluation within the structured pruning approach the corresponding validation set of the used model is utilized. The data files can be saved using the script [training/glue_data/save_data.py]().
+
 #### Turning structure_pruning.py into a function:
 
 Arguments:
 * data_dir: not needed in final function because the data is not stored locally but loaded from the hub
 * ~~model_name_or_path: directly have the model as argument of the final function~~
-* model_type: always 'roberta'
+* ~~model_type: always 'roberta'~~
 * task_name: argument of final function
 * output_dir: define this based on id (id as argument of final function)
 * config_name: default 'roberta-base'
-* tokenizer_name: default 'roberta-base'
+* ~~tokenizer_name: default 'roberta-base'~~
 * cache_dir: not relevant??
-* data_subset: might be helpful to keep for debugging
+* ~~data_subset: might be helpful to keep for debugging~~
 * overwrite_output_dir: not relevant because output dir depends on id and id is set automatically 
 * overwrite_cache: not relevant id cache_dir is not relevant
-* save_mask_all_iterations: "Saves the masks and importance scores in all iterations" I don't think that's necessary for us?
-* dont_normalize_importance_by_layer: **???** 
-* dont_normalize_global_importance: **???**
-* try_masking: always True in our use case (?)
-* use_train_data: not needed because we just always directly use the correct validation set 
+* ~~save_mask_all_iterations: "Saves the masks and importance scores in all iterations"~~ I don't think that's necessary for us
+* dont_normalize_importance_by_layer: False ???
+* dont_normalize_global_importance: True ???
+* ~~try_masking: always True in our use case (?)~~
+* ~~use_train_data: not needed because we just always directly use the correct validation set~~ 
 * masking_threshold: might need to be added to pipeline (and results df) as exp run argument 
 * masking_amount: might need to be added to pipeline (and results df) as exp run argument
 * ~~metric_name: we always want to use the default metric of the glue task, so this is probably not relevant to us (?)~~
-* max_seq_length: default 126 (everywhere else we've set this to 512, so maybe we should change this here, but CHECK IF THIS MAKES A DIFFERENCE)
+* ~~max_seq_length: default 126 (everywhere else we've set this to 512 -> change this to 512 here as well~~ 
 * batch_size: default 1 -> always set it to 1
 * seed: argument of final function
 * local_rank: ???
