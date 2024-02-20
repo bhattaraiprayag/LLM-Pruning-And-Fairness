@@ -218,12 +218,6 @@ def prune_heads(model, eval_dataloader, device, local_rank, output_dir, task, he
     }[task]
     output_mode = output_modes[task]
 
-    # check sparsity before pruning
-    logger.info(
-        "Sparsity after masking (before pruning): %.2f",
-        check_sparsity(model)
-    )
-
 
     # Try pruning and test time speedup
     # Pruning is like masking but we actually remove the masked weights
@@ -260,7 +254,7 @@ def prune_heads(model, eval_dataloader, device, local_rank, output_dir, task, he
         "Pruning: original num of params: %.2e, after pruning %.2e, sparsity: %.2f",
         original_num_params,
         pruned_num_params,
-        pruned_num_params / original_num_params * 100,
+        sparsity,
     )
     logger.info("Pruning: score with masking: %f score with pruning: %f", score_masking, score_pruning)
     logger.info("Pruning: speed ratio (new timing / original timing): %f percents", original_time / new_time * 100)
