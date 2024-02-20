@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 logging.getLogger("experiment_impact_tracker.compute_tracker.ImpactTracker").disabled = True
 
 
-def structured_pruning(model, tokenizer, seed, task, device, masking_amount, masking_threshold, exp_id, model_no):
+def structured_pruning(model, tokenizer, seed, task, device, masking_threshold, exp_id, model_no):
     # Setup devices and distributed training
     local_rank = device
     device = get_device()
@@ -42,6 +42,9 @@ def structured_pruning(model, tokenizer, seed, task, device, masking_amount, mas
     # set output directory
     output_dir = f'results/run{exp_id}/s-pruning'
     os.makedirs(output_dir, exist_ok=True)
+
+    # set masking amount to 0.1 (default of original code)
+    masking_amount = 0.1
 
     # perform pruning
     head_mask = mask_heads(model, eval_dataloader, device, local_rank, output_dir, task, masking_amount, masking_threshold)
