@@ -2,6 +2,7 @@
 
 import logging
 import os
+import torch
 from torch.utils.data import DataLoader, SequentialSampler, Subset  # Subset needed if you uncomment line when preparing the dataset
 from torch.utils.data.distributed import DistributedSampler
 from pruning.utils import load_examples, get_seed, mask_heads, prune_heads, check_sparsity
@@ -16,7 +17,7 @@ def structured_pruning(model, tokenizer, seed, task, device, masking_amount, mas
     local_rank = device
     device = get_device()
     n_gpu = 1
-    #torch.distributed.init_process_group(backend="nccl")  # Initializes the distributed backend
+    torch.distributed.init_process_group(backend="nccl")  # Initializes the distributed backend
 
     # Setup logging
     logging.basicConfig(level=logging.INFO)
