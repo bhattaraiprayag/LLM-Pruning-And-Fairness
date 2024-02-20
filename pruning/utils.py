@@ -218,6 +218,13 @@ def prune_heads(model, eval_dataloader, device, local_rank, output_dir, task, he
     }[task]
     output_mode = output_modes[task]
 
+    # check sparsity before pruning
+    logger.info(
+        "Sparsity after masking (before pruning): %.2f",
+        check_sparsity(model)
+    )
+
+
     # Try pruning and test time speedup
     # Pruning is like masking but we actually remove the masked weights
     before_time = datetime.now()
@@ -234,7 +241,7 @@ def prune_heads(model, eval_dataloader, device, local_rank, output_dir, task, he
         heads_to_mask = [h[0] for h in (1 - head_mask[layer].long()).nonzero().tolist()]
         heads_to_prune[layer] = heads_to_mask
     assert sum(len(h) for h in heads_to_prune.values()) == (1 - head_mask.long()).sum().item()
-    logger.info(f"{heads_to_prune}")
+    logger.info(f"Heads to prune: {heads_to_prune}")
     model.prune_heads(heads_to_prune)
     pruned_num_params = sum(p.numel() for p in model.parameters())
 
@@ -246,14 +253,19 @@ def prune_heads(model, eval_dataloader, device, local_rank, output_dir, task, he
     score_pruning = glue_compute_metrics(task, preds, labels)[metric_name]
     new_time = datetime.now() - before_time
 
+    # calculate sparsity after pruning
+    sparsity = 1 - pruned_num_params / original_num_params
+
     logger.info(
-        "Pruning: original num of params: %.2e, after pruning %.2e (%.1f percents)",
+        "Pruning: original num of params: %.2e, after pruning %.2e, sparsity: %.2f",
         original_num_params,
         pruned_num_params,
         pruned_num_params / original_num_params * 100,
     )
     logger.info("Pruning: score with masking: %f score with pruning: %f", score_masking, score_pruning)
     logger.info("Pruning: speed ratio (new timing / original timing): %f percents", original_time / new_time * 100)
+
+    return sparsity
 
 
 def create_examples(lines):
