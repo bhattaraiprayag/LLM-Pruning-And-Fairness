@@ -17,7 +17,7 @@ def structured_pruning(model, tokenizer, seed, task, device, masking_threshold, 
     local_rank = device
     device = get_device()
     n_gpu = 1
-    torch.distributed.init_process_group(backend="nccl")  # Initializes the distributed backend
+    # torch.distributed.init_process_group(backend="nccl")  # Initializes the distributed backend
 
     # Setup logging
     logging.basicConfig(level=logging.INFO)
