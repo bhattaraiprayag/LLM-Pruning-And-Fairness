@@ -1,6 +1,6 @@
 import os
-from magnitude_pruner import MagnitudePrunerOneShot
-from structured_pruning import structured_pruning
+from pruning.magnitude_pruner import MagnitudePrunerOneShot
+from pruning.structured_pruning import structured_pruning
 
 
 def pruning(exp_args, model, tokenizer, exp_id, experiment_dir):
