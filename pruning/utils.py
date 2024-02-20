@@ -121,7 +121,7 @@ def compute_heads_importance(model, eval_dataloader, device, local_rank, output_
         head_importance /= norm_by_layer.unsqueeze(-1) + 1e-20
 
         # Print/save matrices
-        np.save(os.path.join(output_dir, "head_importance.npy"), head_importance.detach().cpu().numpy())
+        np.savetxt(os.path.join(output_dir, "head_importance.npy"), head_importance.detach().cpu().numpy())
 
         logger.info("Head importance scores")
         print_2d_tensor(head_importance)
@@ -157,7 +157,11 @@ def mask_heads(model, eval_dataloader, device, local_rank, output_dir, task, mas
     current_score = original_score
     i = 0
     while current_score >= original_score * masking_threshold:
-        head_mask = new_head_mask.clone()  # save current head mask
+        head_mask = new_head_mask.clone()
+        # save current head mask
+        np.savetxt(os.path.join(output_dir, f"head_mask_{i}.npy"), head_mask.detach().cpu().numpy())
+        np.savetxt(os.path.join(output_dir, f"head_importance_{i}.npy"), head_importance.detach().cpu().numpy())
+
         i += 1
         # heads from least important to most - keep only not-masked heads
         head_importance[head_mask == 0.0] = float("Inf")
@@ -199,7 +203,7 @@ def mask_heads(model, eval_dataloader, device, local_rank, output_dir, task, mas
 
     logger.info("Final head mask")
     print_2d_tensor(head_mask)
-    np.save(os.path.join(output_dir, "head_mask.npy"), head_mask.detach().cpu().numpy())
+    np.savetxt(os.path.join(output_dir, "head_mask.npy"), head_mask.detach().cpu().numpy())
 
     return head_mask
 
