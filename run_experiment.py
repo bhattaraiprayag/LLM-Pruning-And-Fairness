@@ -13,8 +13,8 @@ from transformers import (
 
 from dataclasses import dataclass, field, asdict
 from typing import Optional
-from pruning.utils import get_seed, get_device
-from pruning.magnitude_pruner import MagnitudePrunerOneShot
+from pruning.pruning import pruning
+from pruning.utils import get_device, get_seed
 from evaluation.performance import load_eval_dataset, evaluate_metrics
 from evaluation.seat import seatandweat
 from evaluation.stereoset import stereoset
@@ -31,6 +31,7 @@ class ExperimentArguments:
     - task
     - pruning_method
     - sparsity_level
+    - masking_threshold
     - device
     - temperature
     ...
@@ -51,7 +52,12 @@ class ExperimentArguments:
 
     sparsity_level: Optional[float] = field(
         default=0,
-        metadata={"help": "Specify desired sparsity level. From 0 to 1.)"},  # add all options
+        metadata={"help": "Specify desired sparsity level. From 0 to 1.)"},
+    )
+
+    masking_threshold: Optional[float] = field(
+        default=None,
+        metadata={"help": "Structured pruning: Masking threshold in term of metrics (stop masking when metric < threshold * original metric value)."},
     )
 
     device: int = field(
@@ -117,15 +123,9 @@ def main():
 
     # pruning (skipped if pruning == None)
     if exp_args.pruning_method != "None":
-        pruner = MagnitudePrunerOneShot(model, exp_args.seed, exp_args.pruning_method, exp_args.sparsity_level)
-        pruner.prune()
-
-        # save pruned model
-        pruned_model_dir = f'{experiment_dir}/pruned_model/'
-        if not os.path.exists(pruned_model_dir):
-            os.makedirs(pruned_model_dir)
-        model.save_pretrained(pruned_model_dir)
-        tokenizer.save_pretrained(pruned_model_dir)
+        returned_sparsity = pruning(exp_args, model, tokenizer, id, experiment_dir)
+        if returned_sparsity is not None:
+            exp_args.sparsity_level = returned_sparsity
 
     # evaluate model "performance" (not fairness)
     eval_datasets = load_eval_dataset(exp_args.task)
