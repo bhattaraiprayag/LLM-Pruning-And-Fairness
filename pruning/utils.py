@@ -285,7 +285,7 @@ def load_examples(task, tokenizer, data_dir):
 
     # Load data features from dataset file
     logger.info("Creating features from dataset file at %s", data_dir)
-    label_list = processor.get_labels()
+    label_list = ['0', '1', '2'] if task == 'mnli' else None
     if task == "mnli":
         # HACK(label indices are swapped in RoBERTa pretrained model)
         label_list[1], label_list[2] = label_list[2], label_list[1]
