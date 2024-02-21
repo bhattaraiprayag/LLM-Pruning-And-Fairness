@@ -262,7 +262,7 @@ def prune_heads(model, eval_dataloader, device, local_rank, output_dir, task, he
     return sparsity
 
 
-def create_examples(lines):
+def create_examples(lines, task):
     """
     Creates examples for dev set.
     Based on _create_examples class method of stsb and mnli processor
@@ -275,6 +275,11 @@ def create_examples(lines):
         text_a = line[0]
         text_b = line[1]
         label = line[2]
+        # for mnli turn label ids to label names
+        if task == 'mnli':
+            id2label = {0: "entailment", 1: "neutral", 2: "contradiction"}
+            label = id2label.get(label)
+
         examples.append(InputExample(guid=guid, text_a=text_a, text_b=text_b, label=label))
     return examples
 
@@ -285,15 +290,12 @@ def load_examples(task, tokenizer, data_dir):
 
     # Load data features from dataset file
     logger.info("Creating features from dataset file at %s", data_dir)
-    label_list = ['0', '1', '2'] if task == 'mnli' else None
-    if task == "mnli":
-        # HACK(label indices are swapped in RoBERTa pretrained model)
-        label_list[1], label_list[2] = label_list[2], label_list[1]
+    label_list = ['entailment', 'neutral', 'contradiction'] if task == 'mnli' else None
 
     with open(f'{data_dir}/dev.tsv', "r", encoding="utf-8-sig") as f:
         data = list(csv.reader(f, delimiter="\t"))
         examples = (
-            create_examples(data)
+            create_examples(data, task)
         )
 
     features = convert_examples_to_features(
