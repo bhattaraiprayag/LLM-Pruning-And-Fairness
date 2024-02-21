@@ -277,8 +277,8 @@ def create_examples(lines, task):
         label = line[2]
         # for mnli turn label ids to label names
         if task == 'mnli':
-            id2label = {0: "entailment", 1: "neutral", 2: "contradiction"}
-            label = id2label.get(label)
+            id2label = {'0': "entailment", '1': "neutral", '2': "contradiction"}
+            label = id2label[label]
 
         examples.append(InputExample(guid=guid, text_a=text_a, text_b=text_b, label=label))
     return examples
