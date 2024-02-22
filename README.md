@@ -116,7 +116,7 @@ The current settings use the 'intrasentence' setup.
 
 The local run-time is ~15 minutes.
 
-#### Bias NLI
+#### Bias-NLI
 
 This is implemented based on code published in [On Measuring and Mitigating Biased Inferences of Word Embeddings](https://github.com/sunipa/On-Measuring-and-Mitigating-Biased-Inferences-of-Word-Embeddings/tree/master/word_lists).
 
@@ -130,3 +130,13 @@ Other options could be selected for `--p` and `--h`, but we are using this setti
 The files used for this are in the [bias_nli folder](evaluation/bias_nli).
 
 There is then a function to produce the scores when it is given a model and tokenizer. It will return a dictionary with net neutral and fraction neutral values.
+
+#### Bias-STS
+
+## Report
+
+The graphs for the report are produced using [plots.R](report/plots.R) in R. The base folder where the repo is stored must be manually included in the code. They are saved to the figures folder.
+
+The tables for the report based on data are produced using the functions in [tables.py](report/tables.py). They are saved to the tables folder in a latex folder.
+
+[seat_weat.py](report/seat_weat.py) and [stereoset.py](report/stereoset.py) are both able to gather the extra data saved for each of those bias measures in the individual folders for each run. They are combined into a single csv. This data can then be analysed further.
