@@ -8,6 +8,7 @@ def get_id_info(filepath):
     new_df = results_df[['ID', 'date', 'device', 'seed', 'task', 'pruning_method', 'sparsity_level', 'model_no']]
     return new_df
 
+# Get info about one specific run
 def run_info(run_no):
     # Get all run info
     id_info = get_id_info('results/results.csv')
@@ -16,3 +17,16 @@ def run_info(run_no):
     id_row = id_info[id_info['ID']==run_no]
 
     return(id_row.to_dict('records')[0])
+
+# Compose info about a run into a sentence
+def run_phrase(dict_in):
+    task = dict_in['task'].upper()
+    model_no = dict_in['model_no']
+    if pd.isna(dict_in['pruning_method']):
+        action = 'without pruning'
+    else:
+        pruning_method = dict_in['pruning_method']
+        sparsity = dict_in['sparsity_level']
+        action = f'after {pruning_method} with {sparsity} sparsity'
+
+    return f'This is the result for {task} model {model_no} {action}.'
