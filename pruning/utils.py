@@ -305,7 +305,7 @@ def load_examples(task, tokenizer, data_dir):
 
     # Load data features from dataset file
     logger.info("Creating features from dataset file at %s", data_dir)
-    label_list = ['entailment', 'neutral', 'contradiction'] if task == 'mnli' else None
+    label_list = ['entailment', 'neutral', 'contradiction'] if task == 'mnli' else processor.get_labels()
 
     with open(f'{data_dir}/dev.tsv', "r", encoding="utf-8-sig") as f:
         data = list(csv.reader(f, delimiter="\t"))
