@@ -1,8 +1,11 @@
 import pandas as pd
+from utils import run_info, run_phrase
 
 ### Table for Bias NLI base model analysis
-
 def bnli_table(run_no):
+    # Get info about run
+    info_run = run_info(run_no)
+    info_sent = run_phrase(info_run)
 
     # Load data
     data_bnli = pd.read_csv(f'results/run{run_no}/bias_nli.csv')
@@ -26,7 +29,7 @@ def bnli_table(run_no):
     latex = output_bnli.to_latex(index=False,
                                  column_format='lccc',
                                  label=f'tab:bnli{run_no}',
-                                 caption=f'Results from Bias-NLI for the job titles that most entail or contradict gendered words.')
+                                 caption=f'Results from Bias-NLI for the job titles that most entail or contradict gendered words. {info_sent}')
     # Save the LaTeX output
     with open(f"report/tables/bnli{run_no}.tex", "w") as f:
         f.write(latex)
