@@ -2,8 +2,10 @@ import pandas as pd
 from utils import run_info, run_phrase
 
 ### Table for overview of all MNLI results
-results = pd.read_csv('results/results.csv')
-results = results[results['task']=='mnli']
+def mnli_overview(filepath):
+    results = pd.read_csv(filepath)
+    results = results[results['task']=='mnli']
+
 
 ### Table for Bias NLI base model analysis
 def bnli_table(run_no):
