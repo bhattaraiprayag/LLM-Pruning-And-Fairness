@@ -26,10 +26,11 @@ def mnli_overview(filepath):
     output.sort_values(by=['Pruning method', 'Sparsity level'], inplace=True)
 
     latex = output.to_latex(index=False,
-                            column_format='lllcccccccc',
+                            column_format='p{0.16\textwidth}p{0.06\textwidth}p{0.07\textwidth}p{0.07\textwidth}p{0.07\textwidth}p{0.07\textwidth}p{0.07\textwidth}p{0.04\textwidth}p{0.04\textwidth}p{0.07\textwidth}p{0.07\textwidth}',
                             label=f'tab:mnli_all',
                             caption=f'Results from the MNLI models. Where the masking threshold was specified for structured pruning, the average sparsity level is shown.',
-                            na_rep='-')
+                            na_rep='-',
+                            float_format="%.3f")
     # Save the LaTeX output
     with open(f"report/tables/mnli.tex", "w") as f:
         f.write(latex)
