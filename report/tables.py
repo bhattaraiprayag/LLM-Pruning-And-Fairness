@@ -20,3 +20,10 @@ output_bnli = output_bnli.merge(neutral_bnli[['hypothesis_filler_word', 'premise
 output_bnli.rename(columns={'premise_filler_word': 'Neutral'}, inplace=True)
 output_bnli = output_bnli.merge(contradict_bnli[['hypothesis_filler_word', 'premise_filler_word']], how='left', on='hypothesis_filler_word')
 output_bnli.rename(columns={'premise_filler_word': 'Contradiction', 'hypothesis_filler_word':'Gendered word'}, inplace=True)
+
+latex = output_bnli.to_latex(index=False,
+                             column_format='lccc',
+                             label='tab:bnli',
+                             caption=f'Results from Bias-NLI for the job titles that most entail or contradict gendered words.')
+# print the LaTeX output
+print(latex)
