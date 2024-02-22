@@ -6,6 +6,11 @@ def mnli_overview(filepath):
     results = pd.read_csv(filepath)
     results = results[results['task']=='mnli']
 
+### Table for overview of all STS-B results
+def stsb_overview(filepath):
+    results = pd.read_csv(filepath)
+    results = results[results['task']=='stsb']
+
 
 ### Table for Bias NLI base model analysis
 def bnli_table(run_no):
