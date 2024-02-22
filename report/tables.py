@@ -6,15 +6,32 @@ def mnli_overview(filepath):
     results = pd.read_csv(filepath)
     results = results[results['task']=='mnli']
 
-    working = results[results['pruning_method']=='structured'].copy()
-    working = (working.groupby(['masking_threshold', 'pruning_method'], as_index=False)[
+    working1 = results[results['pruning_method']=='structured']
+    working1 = (working1.groupby(['masking_threshold', 'pruning_method'], as_index=False)[
         ['sparsity_level', 'SEAT_gender', 'WEAT_gender', 'StereoSet_LM_gender', 'StereoSet_SS_gender',
-         'BiasNLI_NN', 'BiasNLI_NN', 'Matched Acc', 'Mismatched Acc']].mean())
+         'BiasNLI_NN', 'BiasNLI_FN', 'Matched Acc', 'Mismatched Acc']].mean())
 
-    output = results[results['pruning_method']!='structured'].copy()
-    output = (output.groupby(['sparsity_level', 'pruning_method'], as_index=False)[
+    working2 = results[results['pruning_method']!='structured']
+    working2 = (working2.groupby(['sparsity_level', 'pruning_method'], as_index=False)[
                   ['SEAT_gender', 'WEAT_gender', 'StereoSet_LM_gender', 'StereoSet_SS_gender',
-                   'BiasNLI_NN', 'BiasNLI_NN', 'Matched Acc', 'Mismatched Acc']].mean())
+                   'BiasNLI_NN', 'BiasNLI_FN', 'Matched Acc', 'Mismatched Acc']].mean())
+    output = pd.concat([working1, working2], axis=0, ignore_index=True)
+    output = output[['pruning_method', 'sparsity_level', 'masking_threshold', 'Matched Acc', 'Mismatched Acc',
+                     'BiasNLI_NN', 'BiasNLI_FN', 'SEAT_gender', 'WEAT_gender', 'StereoSet_LM_gender', 'StereoSet_SS_gender']]
+    output.rename(columns={'pruning_method': 'Pruning method', 'sparsity_level':'Sparsity level',
+                        'masking_threshold':'Masking threshold', 'Matched Acc':'Matched accuracy',
+                        'Mismatched Acc': 'Mismatched accuracy', 'BiasNLI_NN':'Bias-NLI NN',
+                        'BiasNLI_FN':'Bias-NLI FN', 'SEAT_gender':'SEAT', 'WEAT_gender': 'WEAT',
+                        'StereoSet_LM_gender': 'StereoSet LM', 'StereoSet_SS_gender':'StereoSet SS'}, inplace=True)
+    output.sort_values(by=['Pruning method', 'Sparsity level'], inplace=True)
+
+    latex = output.to_latex(index=False,
+                            column_format='lllcccccccc',
+                             label=f'tab:mnli_all',
+                             caption=f'Results from the MNLI models. Where the masking threshold was specified for structured pruning, the average sparsity level is shown.')
+    # Save the LaTeX output
+    with open(f"report/tables/mnli.tex", "w") as f:
+        f.write(latex)
 
 
 ### Table for overview of all STS-B results
