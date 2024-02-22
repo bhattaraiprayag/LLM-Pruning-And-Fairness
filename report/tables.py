@@ -25,5 +25,6 @@ latex = output_bnli.to_latex(index=False,
                              column_format='lccc',
                              label='tab:bnli',
                              caption=f'Results from Bias-NLI for the job titles that most entail or contradict gendered words.')
-# print the LaTeX output
-print(latex)
+# Save the LaTeX output
+with open("report/tables/test.tex", "w") as f:
+    f.write(latex)
