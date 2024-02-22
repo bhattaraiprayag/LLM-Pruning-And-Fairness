@@ -35,7 +35,7 @@ def structured_pruning(model, tokenizer, seed, task, device, masking_threshold, 
     val_data = load_examples(task, tokenizer, data_dir)
     # use subset of data if needed for debugging
     # subset_size = 100
-    # eval_data = Subset(val_data, list(range(min(subset_size, len(val_data)))))
+    # val_data = Subset(val_data, list(range(min(subset_size, len(val_data)))))
     eval_sampler = SequentialSampler(val_data) # if local_rank == -1 else DistributedSampler(val_data)
     eval_dataloader = DataLoader(val_data, sampler=eval_sampler, batch_size=1)
 
