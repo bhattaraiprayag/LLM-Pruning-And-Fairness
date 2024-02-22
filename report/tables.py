@@ -6,6 +6,17 @@ def mnli_overview(filepath):
     results = pd.read_csv(filepath)
     results = results[results['task']=='mnli']
 
+    working = results[results['pruning_method']=='structured'].copy()
+    working = (working.groupby(['masking_threshold', 'pruning_method'], as_index=False)[
+        ['sparsity_level', 'SEAT_gender', 'WEAT_gender', 'StereoSet_LM_gender', 'StereoSet_SS_gender',
+         'BiasNLI_NN', 'BiasNLI_NN', 'Matched Acc', 'Mismatched Acc']].mean())
+
+    output = results[results['pruning_method']!='structured'].copy()
+    output = (output.groupby(['sparsity_level', 'pruning_method'], as_index=False)[
+                  ['SEAT_gender', 'WEAT_gender', 'StereoSet_LM_gender', 'StereoSet_SS_gender',
+                   'BiasNLI_NN', 'BiasNLI_NN', 'Matched Acc', 'Mismatched Acc']].mean())
+
+
 ### Table for overview of all STS-B results
 def stsb_overview(filepath):
     results = pd.read_csv(filepath)
