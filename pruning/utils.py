@@ -13,11 +13,80 @@ from transformers.data.metrics import simple_accuracy, acc_and_f1, pearson_and_s
 from transformers import glue_output_modes as output_modes
 from transformers import glue_convert_examples_to_features as convert_examples_to_features
 from transformers import InputExample
+from datasets import load_dataset, DatasetDict
+
 
 ROBERTA_PRETRAINED_MODEL_ARCHIVE_MAP = {
     'roberta-base': "https://s3.amazonaws.com/models.huggingface.co/bert/roberta-base-pytorch_model.bin"
 }
 
+def load_data_hub(task, model_no):
+    if task == 'mnli':
+        if model_no == 1:
+            raw_datasets = load_dataset(
+                "glue",
+                'mnli',
+                split=['train', 'validation_matched[:50%]',
+                       'validation_mismatched[:50%]',
+                       'validation_matched[-50%:]',
+                       'validation_mismatched[-50%:]'
+                       ]
+            )
+            datasets = DatasetDict({'train': raw_datasets[0],
+                                        'validation_matched': raw_datasets[1],
+                                        'validation_mismatched': raw_datasets[2],
+                                        'test_matched': raw_datasets[3],
+                                        'test_mismatched': raw_datasets[4]
+                                        })
+        else:
+            raw_datasets = load_dataset(
+                "glue",
+                "mnli",
+                split=['train+validation_matched', 'validation_mismatched[:50%]', 'validation_mismatched[-50%:]']
+            )
+            # 2.5% test_matched + validation_matched (keep the same ratio as in the original split)
+            train_testvalid = raw_datasets[0].train_test_split(test_size=0.025, shuffle=True, seed=model_no)
+            # Split test_matched + validation_matched in half test_matched, half validation_matched
+            test_valid = train_testvalid['test'].train_test_split(test_size=0.5, shuffle=True, seed=model_no)
+            # gather everything into a single DatasetDict
+            datasets = DatasetDict({
+                'train': train_testvalid['train'],
+                'test_matched': test_valid['test'],
+                'validation_matched': test_valid['train'],
+                'test_mismatched': raw_datasets[1],
+                'validation_mismatched': raw_datasets[2]
+            })
+    elif task == 'stsb':
+        if model_no == 1:
+            raw_datasets = load_dataset(
+                "glue",
+                'stsb',
+                split=['train',
+                       'validation[:50%]',
+                       'validation[-50%:]'
+                       ]
+            )
+            datasets = DatasetDict({'train': raw_datasets[0],
+                                        'validation': raw_datasets[1],
+                                        'test': raw_datasets[2]
+                                        })
+        else:
+            raw_datasets = load_dataset(
+                "glue",
+                "stsb",
+                split='train+validation'
+            )
+            # 20% test + validation (keep the same ratio as in the original split)
+            train_testvalid = raw_datasets.train_test_split(test_size=0.2, shuffle=True, seed=model_no)
+            # Split test + valid in half test, half valid
+            test_valid = train_testvalid['test'].train_test_split(test_size=0.5, shuffle=True, seed=model_no)
+            # gather everything into a single DatasetDict
+            datasets = DatasetDict({
+                'train': train_testvalid['train'],
+                'test': test_valid['test'],
+                'validation': test_valid['train']})
+
+    return datasets
 
 def get_seed(seed):
     random.seed(seed)
