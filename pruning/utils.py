@@ -15,10 +15,10 @@ from transformers import glue_convert_examples_to_features as convert_examples_t
 from transformers import InputExample
 from datasets import load_dataset, DatasetDict
 
-
 ROBERTA_PRETRAINED_MODEL_ARCHIVE_MAP = {
     'roberta-base': "https://s3.amazonaws.com/models.huggingface.co/bert/roberta-base-pytorch_model.bin"
 }
+
 
 def load_data_hub(task, model_no):
     if task == 'mnli':
@@ -33,11 +33,11 @@ def load_data_hub(task, model_no):
                        ]
             )
             datasets = DatasetDict({'train': raw_datasets[0],
-                                        'validation_matched': raw_datasets[1],
-                                        'validation_mismatched': raw_datasets[2],
-                                        'test_matched': raw_datasets[3],
-                                        'test_mismatched': raw_datasets[4]
-                                        })
+                                    'validation_matched': raw_datasets[1],
+                                    'validation_mismatched': raw_datasets[2],
+                                    'test_matched': raw_datasets[3],
+                                    'test_mismatched': raw_datasets[4]
+                                    })
         else:
             raw_datasets = load_dataset(
                 "glue",
@@ -67,9 +67,9 @@ def load_data_hub(task, model_no):
                        ]
             )
             datasets = DatasetDict({'train': raw_datasets[0],
-                                        'validation': raw_datasets[1],
-                                        'test': raw_datasets[2]
-                                        })
+                                    'validation': raw_datasets[1],
+                                    'test': raw_datasets[2]
+                                    })
         else:
             raw_datasets = load_dataset(
                 "glue",
@@ -87,6 +87,7 @@ def load_data_hub(task, model_no):
                 'validation': test_valid['train']})
 
     return datasets
+
 
 def get_seed(seed):
     random.seed(seed)
@@ -286,7 +287,6 @@ def prune_heads(model, eval_dataloader, device, local_rank, output_dir, task, he
         "sts-b": "corr",
     }[task]
     output_mode = output_modes[task]
-
 
     # Try pruning and test time speedup
     # Pruning is like masking but we actually remove the masked weights
