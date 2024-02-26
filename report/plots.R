@@ -160,7 +160,7 @@ spars_vs_bias_all <- function(data, base_folder){
   spars_vs_bias_plot(stsb, 'BiasSTS', base_folder, 0, task='stsb')
 }
 
-### Performance over increasing sparsity
+### Performance over increasing sparsity ####
 
 # Loading performance data
 performance_path <- paste0(base_folder, 'LLM-Pruning-And-Fairness/results/performance')
