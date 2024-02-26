@@ -103,7 +103,7 @@ def main():
         performance[i] = res_performance
 
     if exp_args.pruning_method=='random-unstructured':
-        filename = f'{exp_args.task}_{exp_args.model_no}_{exp_args.pruning_method}_{exp.args.seed}'
+        filename = f'{exp_args.task}_{exp_args.model_no}_{exp_args.pruning_method}_{exp_args.seed}'
     else:
         filename = f'{exp_args.task}_{exp_args.model_no}_{exp_args.pruning_method}'
 
