@@ -160,7 +160,7 @@ spars_vs_bias_all <- function(data, base_folder){
   spars_vs_bias_plot(stsb, 'BiasSTS', base_folder, 0, task='stsb')
 }
 
-### Performance over increasing sparsity
+### Performance over increasing sparsity ####
 
 # Loading performance data
 performance_path <- paste0(base_folder, 'LLM-Pruning-And-Fairness/results/performance')
@@ -169,7 +169,8 @@ read_plus <- function(flnm, path) {
   read_csv(paste0(path, '/', flnm), show_col_types = FALSE) %>%
     mutate(task = str_split_i(flnm, '_', 1),
            model_no = str_split_i(flnm, '_', 2),
-           pruning_method = str_split_i(flnm, '_', 3))
+           pruning_method = str_split_i(flnm, '_', 3),
+           seed = str_split_i(flnm, '_', 4))
 }
 
 perf_data  <-
@@ -177,7 +178,8 @@ perf_data  <-
              pattern = "\\.csv$") %>%
   map_df(~read_plus(., performance_path)) %>%
   rename(sparsity=1) %>%
-  mutate(pruning_method = str_remove(pruning_method, '\\.csv'))
+  mutate(pruning_method = str_remove(pruning_method, '\\.csv'),
+         seed = as.integer(str_remove(seed, '\\.csv')))
 
 # STSB
 

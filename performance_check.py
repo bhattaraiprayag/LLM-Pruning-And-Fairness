@@ -102,7 +102,12 @@ def main():
         res_performance = evaluate_metrics(model, tokenizer, exp_args.task, eval_datasets, 0)
         performance[i] = res_performance
 
-    pd.DataFrame.from_dict(performance, orient='index').to_csv(f'{output_dir}/{exp_args.task}_{exp_args.model_no}_{exp_args.pruning_method}.csv')
+    if exp_args.pruning_method=='random-unstructured':
+        filename = f'{exp_args.task}_{exp_args.model_no}_{exp_args.pruning_method}_{exp_args.seed}'
+    else:
+        filename = f'{exp_args.task}_{exp_args.model_no}_{exp_args.pruning_method}'
+
+    pd.DataFrame.from_dict(performance, orient='index').to_csv(f'{output_dir}/{filename}.csv')
 
 if __name__ == '__main__':
     main()
