@@ -131,11 +131,49 @@ def bnli_table(run_no):
         f.write(latex)
 
 
-### Table for Bias STS base model analysis
-def bsts_table(run_no):
+### Results and table for Bias STS base model analysis
+def bsts_results(run_no):
     # Get info about run
     info_run = run_info(run_no)
     info_sent = run_phrase(info_run)
 
     # Load data
     data_bsts = pd.read_csv(f'results/run{run_no}/bias_sts.csv')
+
+    # Descriptive statistics
+    print(data_bsts['abs_diff'].describe())
+    print(data_bsts['score_male'].describe())
+    print(data_bsts['score_female'].describe())
+
+    # Get sentence pairs with the highest abs_diff
+    row = data_bsts.iloc[[data_bsts['abs_diff'].idxmax()]]
+    print(f'Male Sentence: {row.iloc[0]["sentence_occupation"]}')
+    print(f'Male Sentence: {row.iloc[0]["sentence_male"]} - Score: {row.iloc[0]["score_male"]}')
+    print(f'Female Sentence: {row.iloc[0]["sentence_female"]} - Score: {row.iloc[0]["score_female"]}')
+    print(f'Absolute difference: {row.iloc[0]["abs_diff"]}')
+
+    # Get top 10 of male and female occupations
+    group_bsts = data_bsts.groupby('occupation', as_index=False)['diff'].mean()
+    top_male_occupations = group_bsts.sort_values(by='diff', ascending=False).head(10)
+    top_male_occupations.rename(columns={'diff': 'Difference between similarity scores',
+                                         'occupation': 'Occupation'}, inplace=True)
+    top_female_occupations = group_bsts.sort_values(by='diff', ascending=True).head(10)
+    top_female_occupations.rename(columns={'diff': 'Difference between similarity scores',
+                                           'occupation': 'Occupation'}, inplace=True)
+
+    latex_male = top_male_occupations.to_latex(index=False,
+                                               float_format="%.2f",
+                                               column_format='lr',
+                                               label=f'tab:bsts{run_no}_male',
+                                               caption=f'Top 10 stereotypically male occupations based on the results of Bias-STS. The difference between similarity scores is calculated with (male - female). {info_sent}')
+
+    latex_female = top_female_occupations.to_latex(index=False,
+                                                   float_format="%.2f",
+                                                   column_format='lr',
+                                                   label=f'tab:bsts{run_no}_male',
+                                                   caption=f'Top 10 stereotypically female occupations based on the results of Bias-STS. The difference between similarity scores is calculated with (male - female). {info_sent}')
+    # Save the LaTeX outputs
+    with open(f"report/tables/bsts{run_no}_male.tex", "w") as f:
+        f.write(latex_male)
+    with open(f"report/tables/bsts{run_no}_female.tex", "w") as f:
+        f.write(latex_female)
