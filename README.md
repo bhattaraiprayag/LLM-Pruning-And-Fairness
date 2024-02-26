@@ -68,13 +68,15 @@ We ensure that each pruning process begins with a consistent state by setting a 
 ### Performance evaluation
 To gauge the performance of our pruned models, we turn to our benchmark tasks: the Multi-Genre Natural Language Inference (MNLI) and the Semantic Textual Similarity Benchmark (STS-B). These tasks allow us to assess the model's understanding of language and its ability to capture semantic relationships, respectively.
 
-Our performance.py script encapsulates the evaluation pipeline:
+Our [performance.py](evaluation/performance.py) script encapsulates the evaluation pipeline:
 * Dataset Loading: We load the validation datasets for MNLI and STS-B, accommodating both matched and mismatched scenarios for MNLI.
 * Evaluation Functionality: The evaluate_metrics function orchestrates the evaluation process. It leverages the evaluate_model function to perform task-specific assessments, returning a dictionary of key performance metrics.
 * Metrics Computation:
   - For MNLI: We report accuracy for both matched and mismatched datasets.
   - For STS-B: We measure performance using Spearman’s rank correlation coefficient and Pearson correlation coefficient.
 The evaluation process involves tokenizing the datasets and feeding them through the model using Hugging Face's Trainer API. We then compute the metrics using the predictions and labels.
+
+[performance_check.py](performance_check.py) allows for testing these metrics over a range of pruning depths. Whilst the focus of the results overall is the model biases, if the model performance is unusable then the results would be useless. This script requires one of the fine-tuned models and then prunes to a range of sparsity levels and saved the results.
 
 ### Bias evaluation
 
