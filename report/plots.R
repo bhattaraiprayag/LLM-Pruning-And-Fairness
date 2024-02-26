@@ -178,7 +178,8 @@ perf_data  <-
              pattern = "\\.csv$") %>%
   map_df(~read_plus(., performance_path)) %>%
   rename(sparsity=1) %>%
-  mutate(pruning_method = str_remove(pruning_method, '\\.csv'))
+  mutate(pruning_method = str_remove(pruning_method, '\\.csv'),
+         seed = as.integer(str_remove(seed, '\\.csv')))
 
 # STSB
 
