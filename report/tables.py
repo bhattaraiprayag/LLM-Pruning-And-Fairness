@@ -53,6 +53,44 @@ def stsb_overview(filepath):
     results = pd.read_csv(filepath)
     results = results[results['task']=='stsb']
 
+    # Group just for structured pruning, where the sparsity needs to be averaged
+    working1 = results[results['pruning_method'] == 'structured']
+    working1 = (working1.groupby(['masking_threshold', 'pruning_method'], as_index=False)[
+                    ['sparsity_level', 'SEAT_gender', 'WEAT_gender', 'StereoSet_LM_gender', 'StereoSet_SS_gender',
+                     'BiasSTS', 'Spearmanr', 'Pearson']].mean())
+
+    # Group for everything else, where the target sparsity was an input
+    working2 = results[results['pruning_method'] != 'structured']
+    working2 = (working2.groupby(['sparsity_level', 'pruning_method'], as_index=False)[
+                    ['SEAT_gender', 'WEAT_gender', 'StereoSet_LM_gender', 'StereoSet_SS_gender',
+                     'BiasSTS', 'Spearmanr', 'Pearson']].mean())
+
+    # Combine into a single table
+    output = pd.concat([working1, working2], axis=0, ignore_index=True)
+    # Reorder columns
+    output = output[['pruning_method', 'sparsity_level', 'masking_threshold', 'Spearmanr', 'Pearson',
+                     'BiasSTS', 'SEAT_gender', 'WEAT_gender', 'StereoSet_LM_gender', 'StereoSet_SS_gender']]
+    # Rename columns
+    output.rename(columns={'pruning_method': 'Pruning method', 'sparsity_level': 'Sparsity level',
+                           'masking_threshold': 'Masking threshold', 'Spearmanr': 'Spearman rank',
+                           'BiasSTS': 'Bias-STS', 'SEAT_gender': 'SEAT', 'WEAT_gender': 'WEAT',
+                           'StereoSet_LM_gender': 'StereoSet LM', 'StereoSet_SS_gender': 'StereoSet SS'}, inplace=True)
+    # Sort rows
+    output.sort_values(by=['Pruning method', 'Sparsity level'], inplace=True)
+
+    # Convert to latex
+    latex = output.to_latex(index=False,
+                            column_format='p{0.16\\textwidth}p{0.06\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}p{0.04\\textwidth}p{0.04\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}',
+                            label=f'tab:stsb_all',
+                            caption=f'Results from the STSB models. Where the masking threshold was specified for structured pruning, the average sparsity level is shown.',
+                            na_rep='-',
+                            float_format="%.3f")
+    # Change to table* so it is page wide instead of confined to column
+    latex = latex.replace('table', 'table*')
+    # Save the LaTeX output
+    with open(f"report/tables/mnli.tex", "w") as f:
+        f.write(latex)
+
 
 ### Table for Bias NLI base model analysis
 def bnli_table(run_no):
