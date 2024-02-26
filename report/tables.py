@@ -88,7 +88,7 @@ def stsb_overview(filepath):
     # Change to table* so it is page wide instead of confined to column
     latex = latex.replace('table', 'table*')
     # Save the LaTeX output
-    with open(f"report/tables/mnli.tex", "w") as f:
+    with open(f"report/tables/stsb.tex", "w") as f:
         f.write(latex)
 
 
