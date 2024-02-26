@@ -102,7 +102,7 @@ def main():
         res_performance = evaluate_metrics(model, tokenizer, exp_args.task, eval_datasets, 0)
         performance[i] = res_performance
 
-    pd.DataFrame.from_dict(performance, orient='index').to_csv(f'{output_dir}/{exp_args.task}_{exp_args.model_no}_{exp_args.pruning_method}.csv')
+    pd.DataFrame.from_dict(performance, orient='index').to_csv(f'{output_dir}/{exp_args.task}_{exp_args.model_no}_{exp_args.pruning_method}_{exp.args.seed}.csv')
 
 if __name__ == '__main__':
     main()
