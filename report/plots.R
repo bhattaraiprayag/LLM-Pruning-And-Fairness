@@ -169,7 +169,8 @@ read_plus <- function(flnm, path) {
   read_csv(paste0(path, '/', flnm), show_col_types = FALSE) %>%
     mutate(task = str_split_i(flnm, '_', 1),
            model_no = str_split_i(flnm, '_', 2),
-           pruning_method = str_split_i(flnm, '_', 3))
+           pruning_method = str_split_i(flnm, '_', 3),
+           seed = str_split_i(flnm, '_', 4))
 }
 
 perf_data  <-
