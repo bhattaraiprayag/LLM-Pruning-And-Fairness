@@ -2,39 +2,41 @@ import pandas as pd
 from utils import run_info, run_phrase
 import re
 
+
 ### Table for overview of all MNLI results
 def mnli_overview(filepath):
     # Read in data
     results = pd.read_csv(filepath)
-    results = results[results['task']=='mnli']
+    results = results[results['task'] == 'mnli']
 
     # Group just for structured pruning, where the sparsity needs to be averaged
-    working1 = results[results['pruning_method']=='structured']
+    working1 = results[results['pruning_method'] == 'structured']
     working1 = (working1.groupby(['masking_threshold', 'pruning_method'], as_index=False)[
-        ['sparsity_level', 'SEAT_gender', 'WEAT_gender', 'StereoSet_LM_gender', 'StereoSet_SS_gender',
-         'BiasNLI_NN', 'BiasNLI_FN', 'Matched Acc', 'Mismatched Acc']].mean())
+                    ['sparsity_level', 'SEAT_gender', 'WEAT_gender', 'StereoSet_LM_gender', 'StereoSet_SS_gender',
+                     'BiasNLI_NN', 'BiasNLI_FN', 'Matched Acc', 'Mismatched Acc']].mean())
 
     # Group for everything else, where the target sparsity was an input
-    working2 = results[results['pruning_method']!='structured']
+    working2 = results[results['pruning_method'] != 'structured']
     working2 = (working2.groupby(['sparsity_level', 'pruning_method'], as_index=False)[
-                  ['SEAT_gender', 'WEAT_gender', 'StereoSet_LM_gender', 'StereoSet_SS_gender',
-                   'BiasNLI_NN', 'BiasNLI_FN', 'Matched Acc', 'Mismatched Acc']].mean())
+                    ['SEAT_gender', 'WEAT_gender', 'StereoSet_LM_gender', 'StereoSet_SS_gender',
+                     'BiasNLI_NN', 'BiasNLI_FN', 'Matched Acc', 'Mismatched Acc']].mean())
 
     # Combine into a single table
     output = pd.concat([working1, working2], axis=0, ignore_index=True)
     # Reorder columns
     output = output[['pruning_method', 'sparsity_level', 'masking_threshold', 'Matched Acc', 'Mismatched Acc',
-                     'BiasNLI_NN', 'BiasNLI_FN', 'SEAT_gender', 'WEAT_gender', 'StereoSet_LM_gender', 'StereoSet_SS_gender']]
+                     'BiasNLI_NN', 'BiasNLI_FN', 'SEAT_gender', 'WEAT_gender', 'StereoSet_LM_gender',
+                     'StereoSet_SS_gender']]
     # Rename columns
-    output.rename(columns={'pruning_method': 'Pruning method', 'sparsity_level':'Sparsity level',
-                        'masking_threshold':'Masking threshold', 'Matched Acc':'Matched accuracy',
-                        'Mismatched Acc': 'Mismatched accuracy', 'BiasNLI_NN':'Bias-NLI NN',
-                        'BiasNLI_FN':'Bias-NLI FN', 'SEAT_gender':'SEAT', 'WEAT_gender': 'WEAT',
-                        'StereoSet_LM_gender': 'StereoSet LM', 'StereoSet_SS_gender':'StereoSet SS'}, inplace=True)
+    output.rename(columns={'pruning_method': 'Pruning method', 'sparsity_level': 'Sparsity level',
+                           'masking_threshold': 'Masking threshold', 'Matched Acc': 'Matched accuracy',
+                           'Mismatched Acc': 'Mismatched accuracy', 'BiasNLI_NN': 'Bias-NLI NN',
+                           'BiasNLI_FN': 'Bias-NLI FN', 'SEAT_gender': 'SEAT', 'WEAT_gender': 'WEAT',
+                           'StereoSet_LM_gender': 'StereoSet LM', 'StereoSet_SS_gender': 'StereoSet SS'}, inplace=True)
     # Sort rows
     output.sort_values(by=['Pruning method', 'Sparsity level'], inplace=True)
 
-    #Convert to latex
+    # Convert to latex
     latex = output.to_latex(index=False,
                             column_format='p{0.16\\textwidth}p{0.06\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}p{0.04\\textwidth}p{0.04\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}',
                             label=f'tab:mnli_all',
@@ -51,7 +53,7 @@ def mnli_overview(filepath):
 ### Table for overview of all STS-B results
 def stsb_overview(filepath):
     results = pd.read_csv(filepath)
-    results = results[results['task']=='stsb']
+    results = results[results['task'] == 'stsb']
 
     # Group just for structured pruning, where the sparsity needs to be averaged
     working1 = results[results['pruning_method'] == 'structured']
@@ -112,10 +114,13 @@ def bnli_table(run_no):
     # Final table
     output_bnli = entail_bnli[['hypothesis_filler_word', 'premise_filler_word']].copy()
     output_bnli.rename(columns={'premise_filler_word': 'Entailment'}, inplace=True)
-    output_bnli = output_bnli.merge(neutral_bnli[['hypothesis_filler_word', 'premise_filler_word']], how='left', on='hypothesis_filler_word')
+    output_bnli = output_bnli.merge(neutral_bnli[['hypothesis_filler_word', 'premise_filler_word']], how='left',
+                                    on='hypothesis_filler_word')
     output_bnli.rename(columns={'premise_filler_word': 'Neutral'}, inplace=True)
-    output_bnli = output_bnli.merge(contradict_bnli[['hypothesis_filler_word', 'premise_filler_word']], how='left', on='hypothesis_filler_word')
-    output_bnli.rename(columns={'premise_filler_word': 'Contradiction', 'hypothesis_filler_word':'Gendered word'}, inplace=True)
+    output_bnli = output_bnli.merge(contradict_bnli[['hypothesis_filler_word', 'premise_filler_word']], how='left',
+                                    on='hypothesis_filler_word')
+    output_bnli.rename(columns={'premise_filler_word': 'Contradiction', 'hypothesis_filler_word': 'Gendered word'},
+                       inplace=True)
 
     latex = output_bnli.to_latex(index=False,
                                  column_format='lccc',
@@ -124,3 +129,13 @@ def bnli_table(run_no):
     # Save the LaTeX output
     with open(f"report/tables/bnli{run_no}.tex", "w") as f:
         f.write(latex)
+
+
+### Table for Bias STS base model analysis
+def bsts_table(run_no):
+    # Get info about run
+    info_run = run_info(run_no)
+    info_sent = run_phrase(info_run)
+
+    # Load data
+    data_bsts = pd.read_csv(f'results/run{run_no}/bias_sts.csv')
