@@ -11,10 +11,10 @@ To install the necessary packages in a conda environment, follow the instruction
 ### Overview
 In our project, we focus on exploring the impact of various pruning techniques on the biasness of RoBERTa-base. Pruning, a method to reduce model size and computational load, involves selectively removing parameters (weights), or neurons, from the neural network. We have implemented and experimented with different types of pruning strategies, starting with magnitude-based methods and structure Pruning.
 
-### Structure Pruning:
-Structural pruning is implemented in [structure_pruning.py](pruning/structure_pruning.py). 
+### Structured Pruning:
+Structured pruning is implemented in [structure_pruning.py](pruning/structure_pruning.py). 
 
-Variables that can be changed are: masking threshold (Define the metric threshold for stopping masking) and masking amount (The number of heads to mask).
+Variables that can be changed are: masking threshold (define the metric threshold for stopping masking) and masking amount (the number of heads to mask).
 
 For performance evaluation within the structured pruning approach the corresponding validation set of the used model is utilized. The data files can be saved using the script [save_data.py](training/glue_data/save_data.py).
 
