@@ -183,10 +183,10 @@ perf_data  <-
 
 # STSB
 
-perf_stsb <- function(data, pruning_method, base_folder){
+perf_stsb <- function(data, pruning_method_set, base_folder){
   working <- data %>%
     filter(task=='stsb',
-           pruning_method==pruning_method) %>%
+           pruning_method==pruning_method_set) %>%
     group_by(sparsity) %>%
     summarise(spearmanr = mean(Spearmanr),
               pearson = mean(Pearson),
@@ -215,7 +215,7 @@ perf_stsb <- function(data, pruning_method, base_folder){
            fill=guide_legend(title='Metric:')) +
     coord_cartesian(clip='off')
   
-  ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/pc_stsb_', pruning_method, '.png'),
+  ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/pc_stsb_', pruning_method_set, '.png'),
          plot = output,
          width = 2100,
          height = 1400,
@@ -224,10 +224,10 @@ perf_stsb <- function(data, pruning_method, base_folder){
 
 # MNLI
 
-perf_mnli <- function(data, pruning_method, base_folder){
+perf_mnli <- function(data, pruning_method_set, base_folder){
   working <- data %>%
     filter(task=='mnli',
-           pruning_method==pruning_method) %>%
+           pruning_method==pruning_method_set) %>%
     group_by(sparsity) %>%
     summarise(matched = mean(`Matched Acc`),
               mismatched = mean(`Mismatched Acc`),
@@ -256,7 +256,7 @@ perf_mnli <- function(data, pruning_method, base_folder){
            fill=guide_legend(title='Accuracy:')) +
     coord_cartesian(clip='off')
   
-  ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/pc_mnli_', pruning_method, '.png'),
+  ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/pc_mnli_', pruning_method_set, '.png'),
          plot = output,
          width = 2100,
          height = 1400,
