@@ -266,6 +266,8 @@ perf_mnli <- function(data, pruning_method, base_folder){
 perf_all <- function(data, base_folder){
   perf_stsb(data, 'l1-unstructured', base_folder)
   perf_mnli(data, 'l1-unstructured', base_folder)
+  perf_stsb(data, 'random-unstructured', base_folder)
+  perf_mnli(data, 'random-unstructured', base_folder)
 }
 
 
