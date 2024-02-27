@@ -19,42 +19,87 @@ results_data <- read_csv(paste0(base_folder,'LLM-Pruning-And-Fairness/results/re
   mutate(pruning_method = coalesce(pruning_method, paste0('initial ', task, ' model')))
 
 # Group up based on the actual categories - still has both tasks
+
+# First structured pruning
+sp_group <- results_data %>%
+  filter(pruning_method=='structured') %>%
+  group_by(task, pruning_method, masking_threshold) %>%
+  summarise(sparsity_level = mean(sparsity_level),
+            SEAT_gender_max = max(SEAT_gender),
+            SEAT_gender_min = min(SEAT_gender),
+            SEAT_gender = mean(SEAT_gender),
+            WEAT_gender_max = max(WEAT_gender),
+            WEAT_gender_min = min(WEAT_gender),
+            WEAT_gender = mean(WEAT_gender),
+            StereoSet_LM_gender_max = max(StereoSet_LM_gender),
+            StereoSet_LM_gender_min = min(StereoSet_LM_gender),
+            StereoSet_LM_gender = mean(StereoSet_LM_gender),
+            StereoSet_SS_gender_max = max(StereoSet_SS_gender),
+            StereoSet_SS_gender_min = min(StereoSet_SS_gender),
+            StereoSet_SS_gender = mean(StereoSet_SS_gender),
+            BiasNLI_NN_max = max(BiasNLI_NN, na.rm = T),
+            BiasNLI_NN_min = min(BiasNLI_NN, na.rm = T),
+            BiasNLI_NN = mean(BiasNLI_NN, na.rm = T),
+            BiasNLI_FN_max = max(BiasNLI_FN, na.rm = T),
+            BiasNLI_FN_min = min(BiasNLI_FN, na.rm = T),
+            BiasNLI_FN = mean(BiasNLI_FN, na.rm = T),
+            BiasSTS_max = max(BiasSTS, na.rm = T),
+            BiasSTS_min = min(BiasSTS, na.rm = T),
+            BiasSTS = mean(BiasSTS, na.rm = T),
+            Matched_Acc_max = max(`Matched Acc`, na.rm = T),
+            Matched_Acc_min = min(`Matched Acc`, na.rm = T),
+            Matched_Acc = mean(`Matched Acc`, na.rm = T),
+            Mismatched_Acc_max = max(`Mismatched Acc`, na.rm = T),
+            Mismatched_Acc_min = min(`Mismatched Acc`, na.rm = T),
+            Mismatched_Acc = mean(`Mismatched Acc`, na.rm = T),
+            Spearmanr_max = max(Spearmanr, na.rm = T),
+            Spearmanr_min = min(Spearmanr, na.rm = T),
+            Spearmanr = mean(Spearmanr, na.rm = T),
+            Pearson_max = max(Pearson, na.rm = T),
+            Pearson_min = min(Pearson, na.rm = T),
+            Pearson = mean(Pearson, na.rm = T)) %>%
+  ungroup() %>%
+  select(-masking_threshold)
+
+# Then everything else
 results_group <- results_data %>%
+  filter(pruning_method!='structured') %>%
   group_by(task, pruning_method, sparsity_level) %>%
   summarise(SEAT_gender_max = max(SEAT_gender),
             SEAT_gender_min = min(SEAT_gender),
             SEAT_gender = mean(SEAT_gender),
-         WEAT_gender_max = max(WEAT_gender),
-         WEAT_gender_min = min(WEAT_gender),
-         WEAT_gender = mean(WEAT_gender),
-         StereoSet_LM_gender_max = max(StereoSet_LM_gender),
-         StereoSet_LM_gender_min = min(StereoSet_LM_gender),
-         StereoSet_LM_gender = mean(StereoSet_LM_gender),
-         StereoSet_SS_gender_max = max(StereoSet_SS_gender),
-         StereoSet_SS_gender_min = min(StereoSet_SS_gender),
-         StereoSet_SS_gender = mean(StereoSet_SS_gender),
-         BiasNLI_NN_max = max(BiasNLI_NN, na.rm = T),
-         BiasNLI_NN_min = min(BiasNLI_NN, na.rm = T),
-         BiasNLI_NN = mean(BiasNLI_NN, na.rm = T),
-         BiasNLI_FN_max = max(BiasNLI_FN, na.rm = T),
-         BiasNLI_FN_min = min(BiasNLI_FN, na.rm = T),
-         BiasNLI_FN = mean(BiasNLI_FN, na.rm = T),
-         BiasSTS_max = max(BiasSTS, na.rm = T),
-         BiasSTS_min = min(BiasSTS, na.rm = T),
-         BiasSTS = mean(BiasSTS, na.rm = T),
-         Matched_Acc_max = max(`Matched Acc`, na.rm = T),
-         Matched_Acc_min = min(`Matched Acc`, na.rm = T),
-         Matched_Acc = mean(`Matched Acc`, na.rm = T),
-         Mismatched_Acc_max = max(`Mismatched Acc`, na.rm = T),
-         Mismatched_Acc_min = min(`Mismatched Acc`, na.rm = T),
-         Mismatched_Acc = mean(`Mismatched Acc`, na.rm = T),
-         Spearmanr_max = max(Spearmanr, na.rm = T),
-         Spearmanr_min = min(Spearmanr, na.rm = T),
-         Spearmanr = mean(Spearmanr, na.rm = T),
-         Pearson_max = max(Pearson, na.rm = T),
-         Pearson_min = min(Pearson, na.rm = T),
-         Pearson = mean(Pearson, na.rm = T)) %>%
-  ungroup()
+            WEAT_gender_max = max(WEAT_gender),
+            WEAT_gender_min = min(WEAT_gender),
+            WEAT_gender = mean(WEAT_gender),
+            StereoSet_LM_gender_max = max(StereoSet_LM_gender),
+            StereoSet_LM_gender_min = min(StereoSet_LM_gender),
+            StereoSet_LM_gender = mean(StereoSet_LM_gender),
+            StereoSet_SS_gender_max = max(StereoSet_SS_gender),
+            StereoSet_SS_gender_min = min(StereoSet_SS_gender),
+            StereoSet_SS_gender = mean(StereoSet_SS_gender),
+            BiasNLI_NN_max = max(BiasNLI_NN, na.rm = T),
+            BiasNLI_NN_min = min(BiasNLI_NN, na.rm = T),
+            BiasNLI_NN = mean(BiasNLI_NN, na.rm = T),
+            BiasNLI_FN_max = max(BiasNLI_FN, na.rm = T),
+            BiasNLI_FN_min = min(BiasNLI_FN, na.rm = T),
+            BiasNLI_FN = mean(BiasNLI_FN, na.rm = T),
+            BiasSTS_max = max(BiasSTS, na.rm = T),
+            BiasSTS_min = min(BiasSTS, na.rm = T),
+            BiasSTS = mean(BiasSTS, na.rm = T),
+            Matched_Acc_max = max(`Matched Acc`, na.rm = T),
+            Matched_Acc_min = min(`Matched Acc`, na.rm = T),
+            Matched_Acc = mean(`Matched Acc`, na.rm = T),
+            Mismatched_Acc_max = max(`Mismatched Acc`, na.rm = T),
+            Mismatched_Acc_min = min(`Mismatched Acc`, na.rm = T),
+            Mismatched_Acc = mean(`Mismatched Acc`, na.rm = T),
+            Spearmanr_max = max(Spearmanr, na.rm = T),
+            Spearmanr_min = min(Spearmanr, na.rm = T),
+            Spearmanr = mean(Spearmanr, na.rm = T),
+            Pearson_max = max(Pearson, na.rm = T),
+            Pearson_min = min(Pearson, na.rm = T),
+            Pearson = mean(Pearson, na.rm = T)) %>%
+  ungroup() %>%
+  bind_rows(sp_group)
 
 ### Bias against performance ####
 
