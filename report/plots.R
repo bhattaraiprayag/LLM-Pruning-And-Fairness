@@ -289,12 +289,39 @@ perf_mnli <- function(data, pruning_method_set, base_folder){
          units = "px")
 }
 
+perf_mnli_compare <- function(data, base_folder){
+  working <- data %>%
+    filter(task=='mnli') %>%
+    group_by(pruning_method, sparsity) %>%
+    summarise(matched = mean(`Matched Acc`))
+  
+  output <-
+    ggplot(working, aes(x=sparsity, y=matched, group=pruning_method, colour=pruning_method)) +
+    geom_line(linewidth=2) +
+    scale_fill_manual(values=colours) +
+    scale_colour_manual(values=colours) +
+    scale_x_continuous(expand = c(0,0),
+                       limits = c(0,1)) +
+    scale_y_continuous(expand = c(0,0),
+                       limits = c(0,1)) +
+    theme_bw() + 
+    guides(colour=guide_legend(title='Accuracy:')) +
+    coord_cartesian(clip='off')
+  
+  ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/pc_mnli_compare.png'),
+         plot = output,
+         width = 2100,
+         height = 1400,
+         units = "px")
+}
+
 perf_all <- function(data, base_folder){
   perf_stsb(data, 'l1-unstructured', base_folder)
   perf_mnli(data, 'l1-unstructured', base_folder)
   perf_stsb(data, 'random-unstructured', base_folder)
   perf_mnli(data, 'random-unstructured', base_folder)
   perf_stsb_compare(data, base_folder)
+  perf_mnli_compare(data, base_folder)
 }
 
 
