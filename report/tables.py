@@ -203,14 +203,14 @@ def sweat_overview(filepath):
     # Rename columns
     output.rename(columns={'task': 'Task', 'pruning_method': 'Pruning method', 'sparsity_level': 'Sparsity level',
                            'masking_threshold': 'Masking threshold', 'seat_gender': 'SEAT gender', 'seat_race': 'SEAT race',
-                           'seat_illness': 'SEAT illness', 'seat_religion': 'SEAT religion', 'weat_gender': 'WEAT gender',
+                           'seat_illness': 'SEAT illness', 'seat_religion': 'SEAT\\newline religion', 'weat_gender': 'WEAT gender',
                            'weat_race': 'WEAT race', 'weat_illness': 'WEAT illness'}, inplace=True)
     # Sort rows
     output.sort_values(by=['Task', 'Pruning method', 'Sparsity level'], inplace=True)
 
     # Convert to latex
     latex = output.to_latex(index=False,
-                            column_format='p{0.06\\textwidth}p{0.16\\textwidth}p{0.06\\textwidth}p{0.07\\textwidth}p{0.06\\textwidth}p{0.05\\textwidth}p{0.05\\textwidth}p{0.07\\textwidth}p{0.06\\textwidth}p{0.05\\textwidth}p{0.05\\textwidth}',
+                            column_format='p{0.06\\textwidth}p{0.16\\textwidth}p{0.06\\textwidth}p{0.07\\textwidth}p{0.06\\textwidth}p{0.05\\textwidth}p{0.05\\textwidth}p{0.06\\textwidth}p{0.06\\textwidth}p{0.05\\textwidth}p{0.05\\textwidth}',
                             label=f'tab:sweat_all',
                             caption=f'Results from the SEAT and WEAT tests, relating to a range of different biases. Where the masking threshold was specified for structured pruning, the average sparsity level is shown.',
                             na_rep='-',
