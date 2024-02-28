@@ -5,7 +5,7 @@ def get_id_info(filepath):
     # Read in current results data frame
     results_df = pd.read_csv(filepath)
     # Keep just the columns of interest
-    new_df = results_df[['ID', 'date', 'device', 'seed', 'task', 'pruning_method', 'sparsity_level', 'model_no']]
+    new_df = results_df[['ID', 'date', 'device', 'seed', 'task', 'pruning_method', 'sparsity_level', 'model_no', 'masking_threshold']]
     return new_df
 
 # Get info about one specific run
