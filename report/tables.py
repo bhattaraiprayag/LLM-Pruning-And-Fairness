@@ -177,3 +177,46 @@ def bsts_results(run_no):
         f.write(latex_male)
     with open(f"report/tables/bsts{run_no}_female.tex", "w") as f:
         f.write(latex_female)
+
+### Table for looking at SEAT/WEAT results, including non-gender
+def sweat_overview(filepath):
+    # Read in data
+    results = pd.read_csv(filepath)
+
+    # Group just for structured pruning, where the sparsity needs to be averaged
+    working1 = results[results['pruning_method'] == 'structured']
+    working1 = (working1.groupby(['masking_threshold', 'pruning_method', 'task'], as_index=False)[
+                    ['sparsity_level', 'seat_gender', 'seat_race', 'seat_illness', 'seat_religion',
+                     'weat_gender', 'weat_race', 'weat_illness']].mean())
+
+    # Group for everything else, where the target sparsity was an input
+    working2 = results[results['pruning_method'] != 'structured']
+    working2 = (working2.groupby(['sparsity_level', 'pruning_method', 'task'], as_index=False)[
+                    ['seat_gender', 'seat_race', 'seat_illness', 'seat_religion',
+                     'weat_gender', 'weat_race', 'weat_illness']].mean())
+
+    # Combine into a single table
+    output = pd.concat([working1, working2], axis=0, ignore_index=True)
+    # Reorder columns
+    output = output[['task', 'pruning_method', 'sparsity_level', 'masking_threshold', 'seat_gender', 'seat_race', 'seat_illness', 'seat_religion',
+                     'weat_gender', 'weat_race', 'weat_illness']]
+    # Rename columns
+    output.rename(columns={'task': 'Task', 'pruning_method': 'Pruning method', 'sparsity_level': 'Sparsity level',
+                           'masking_threshold': 'Masking threshold', 'seat_gender': 'SEAT gender', 'seat_race': 'SEAT race',
+                           'seat_illness': 'SEAT illness', 'seat_religion': 'SEAT religion', 'weat_gender': 'WEAT gender',
+                           'weat_race': 'WEAT race', 'weat_illness': 'WEAT illness'}, inplace=True)
+    # Sort rows
+    output.sort_values(by=['Task', 'Pruning method', 'Sparsity level'], inplace=True)
+
+    # Convert to latex
+    latex = output.to_latex(index=False,
+                            column_format='p{0.06\\textwidth}p{0.16\\textwidth}p{0.06\\textwidth}p{0.07\\textwidth}p{0.06\\textwidth}p{0.05\\textwidth}p{0.05\\textwidth}p{0.06\\textwidth}p{0.06\\textwidth}p{0.05\\textwidth}p{0.05\\textwidth}',
+                            label=f'tab:sweat_all',
+                            caption=f'Results from the SEAT and WEAT tests, relating to a range of different biases. Where the masking threshold was specified for structured pruning, the average sparsity level is shown.',
+                            na_rep='-',
+                            float_format="%.3f")
+    # Change to table* so it is page wide instead of confined to column
+    latex = latex.replace('table', 'table*')
+    # Save the LaTeX output
+    with open(f"report/tables/sweat.tex", "w") as f:
+        f.write(latex)
