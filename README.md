@@ -11,12 +11,12 @@ To install the necessary packages in a conda environment, follow the instruction
 ### Overview
 In our project, we focus on exploring the impact of various pruning techniques on the biasness of RoBERTa-base. Pruning, a method to reduce model size and computational load, involves selectively removing parameters (weights), or neurons, from the neural network. We have implemented and experimented with different types of pruning strategies, starting with magnitude-based methods and structure Pruning.
 
-### Structure Pruning:
-Structural pruning is implemented in [pruning/structure_pruning.py](structure_pruning.py). 
+### Structured Pruning:
+Structured pruning is implemented in [structure_pruning.py](pruning/structure_pruning.py). 
 
-Variables that can be changed are: masking threshold (Define the metric threshold for stopping masking) and masking amount (The number of heads to mask).
+Variables that can be changed are: masking threshold (define the metric threshold for stopping masking) and masking amount (the number of heads to mask).
 
-For performance evaluation within the structured pruning approach the corresponding validation set of the used model is utilized. The data files can be saved using the script [training/glue_data/save_data.py]().
+For performance evaluation within the structured pruning approach the corresponding validation set of the used model is utilized. The data files can be saved using the script [save_data.py](training/glue_data/save_data.py).
 
 #### Turning structure_pruning.py into a function:
 
@@ -68,13 +68,15 @@ We ensure that each pruning process begins with a consistent state by setting a 
 ### Performance evaluation
 To gauge the performance of our pruned models, we turn to our benchmark tasks: the Multi-Genre Natural Language Inference (MNLI) and the Semantic Textual Similarity Benchmark (STS-B). These tasks allow us to assess the model's understanding of language and its ability to capture semantic relationships, respectively.
 
-Our performance.py script encapsulates the evaluation pipeline:
+Our [performance.py](evaluation/performance.py) script encapsulates the evaluation pipeline:
 * Dataset Loading: We load the validation datasets for MNLI and STS-B, accommodating both matched and mismatched scenarios for MNLI.
 * Evaluation Functionality: The evaluate_metrics function orchestrates the evaluation process. It leverages the evaluate_model function to perform task-specific assessments, returning a dictionary of key performance metrics.
 * Metrics Computation:
   - For MNLI: We report accuracy for both matched and mismatched datasets.
   - For STS-B: We measure performance using Spearman’s rank correlation coefficient and Pearson correlation coefficient.
 The evaluation process involves tokenizing the datasets and feeding them through the model using Hugging Face's Trainer API. We then compute the metrics using the predictions and labels.
+
+[performance_check.py](performance_check.py) allows for testing these metrics over a range of pruning depths. Whilst the focus of the results overall is the model biases, if the model performance is unusable then the results would be useless. This script requires one of the fine-tuned models and then prunes to a range of sparsity levels and saved the results.
 
 ### Bias evaluation
 
@@ -116,7 +118,7 @@ The current settings use the 'intrasentence' setup.
 
 The local run-time is ~15 minutes.
 
-#### Bias NLI
+#### Bias-NLI
 
 This is implemented based on code published in [On Measuring and Mitigating Biased Inferences of Word Embeddings](https://github.com/sunipa/On-Measuring-and-Mitigating-Biased-Inferences-of-Word-Embeddings/tree/master/word_lists).
 
@@ -130,3 +132,13 @@ Other options could be selected for `--p` and `--h`, but we are using this setti
 The files used for this are in the [bias_nli folder](evaluation/bias_nli).
 
 There is then a function to produce the scores when it is given a model and tokenizer. It will return a dictionary with net neutral and fraction neutral values.
+
+#### Bias-STS
+
+## Report
+
+The graphs for the report are produced using [plots.R](report/plots.R) in R. The base folder where the repo is stored must be manually included in the code. They are saved to the figures folder.
+
+The tables for the report based on data are produced using the functions in [tables.py](report/tables.py). They are saved to the tables folder in a latex folder.
+
+[seat_weat.py](report/seat_weat.py) and [stereoset.py](report/stereoset.py) are both able to gather the extra data saved for each of those bias measures in the individual folders for each run. They are combined into a single csv. This data can then be analysed further.

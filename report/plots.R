@@ -19,42 +19,87 @@ results_data <- read_csv(paste0(base_folder,'LLM-Pruning-And-Fairness/results/re
   mutate(pruning_method = coalesce(pruning_method, paste0('initial ', task, ' model')))
 
 # Group up based on the actual categories - still has both tasks
+
+# First structured pruning
+sp_group <- results_data %>%
+  filter(pruning_method=='structured') %>%
+  group_by(task, pruning_method, masking_threshold) %>%
+  summarise(sparsity_level = mean(sparsity_level),
+            SEAT_gender_max = max(SEAT_gender),
+            SEAT_gender_min = min(SEAT_gender),
+            SEAT_gender = mean(SEAT_gender),
+            WEAT_gender_max = max(WEAT_gender),
+            WEAT_gender_min = min(WEAT_gender),
+            WEAT_gender = mean(WEAT_gender),
+            StereoSet_LM_gender_max = max(StereoSet_LM_gender),
+            StereoSet_LM_gender_min = min(StereoSet_LM_gender),
+            StereoSet_LM_gender = mean(StereoSet_LM_gender),
+            StereoSet_SS_gender_max = max(StereoSet_SS_gender),
+            StereoSet_SS_gender_min = min(StereoSet_SS_gender),
+            StereoSet_SS_gender = mean(StereoSet_SS_gender),
+            BiasNLI_NN_max = max(BiasNLI_NN, na.rm = T),
+            BiasNLI_NN_min = min(BiasNLI_NN, na.rm = T),
+            BiasNLI_NN = mean(BiasNLI_NN, na.rm = T),
+            BiasNLI_FN_max = max(BiasNLI_FN, na.rm = T),
+            BiasNLI_FN_min = min(BiasNLI_FN, na.rm = T),
+            BiasNLI_FN = mean(BiasNLI_FN, na.rm = T),
+            BiasSTS_max = max(BiasSTS, na.rm = T),
+            BiasSTS_min = min(BiasSTS, na.rm = T),
+            BiasSTS = mean(BiasSTS, na.rm = T),
+            Matched_Acc_max = max(`Matched Acc`, na.rm = T),
+            Matched_Acc_min = min(`Matched Acc`, na.rm = T),
+            Matched_Acc = mean(`Matched Acc`, na.rm = T),
+            Mismatched_Acc_max = max(`Mismatched Acc`, na.rm = T),
+            Mismatched_Acc_min = min(`Mismatched Acc`, na.rm = T),
+            Mismatched_Acc = mean(`Mismatched Acc`, na.rm = T),
+            Spearmanr_max = max(Spearmanr, na.rm = T),
+            Spearmanr_min = min(Spearmanr, na.rm = T),
+            Spearmanr = mean(Spearmanr, na.rm = T),
+            Pearson_max = max(Pearson, na.rm = T),
+            Pearson_min = min(Pearson, na.rm = T),
+            Pearson = mean(Pearson, na.rm = T)) %>%
+  ungroup() %>%
+  select(-masking_threshold)
+
+# Then everything else
 results_group <- results_data %>%
+  filter(pruning_method!='structured') %>%
   group_by(task, pruning_method, sparsity_level) %>%
   summarise(SEAT_gender_max = max(SEAT_gender),
             SEAT_gender_min = min(SEAT_gender),
             SEAT_gender = mean(SEAT_gender),
-         WEAT_gender_max = max(WEAT_gender),
-         WEAT_gender_min = min(WEAT_gender),
-         WEAT_gender = mean(WEAT_gender),
-         StereoSet_LM_gender_max = max(StereoSet_LM_gender),
-         StereoSet_LM_gender_min = min(StereoSet_LM_gender),
-         StereoSet_LM_gender = mean(StereoSet_LM_gender),
-         StereoSet_SS_gender_max = max(StereoSet_SS_gender),
-         StereoSet_SS_gender_min = min(StereoSet_SS_gender),
-         StereoSet_SS_gender = mean(StereoSet_SS_gender),
-         BiasNLI_NN_max = max(BiasNLI_NN, na.rm = T),
-         BiasNLI_NN_min = min(BiasNLI_NN, na.rm = T),
-         BiasNLI_NN = mean(BiasNLI_NN, na.rm = T),
-         BiasNLI_FN_max = max(BiasNLI_FN, na.rm = T),
-         BiasNLI_FN_min = min(BiasNLI_FN, na.rm = T),
-         BiasNLI_FN = mean(BiasNLI_FN, na.rm = T),
-         BiasSTS_max = max(BiasSTS, na.rm = T),
-         BiasSTS_min = min(BiasSTS, na.rm = T),
-         BiasSTS = mean(BiasSTS, na.rm = T),
-         Matched_Acc_max = max(`Matched Acc`, na.rm = T),
-         Matched_Acc_min = min(`Matched Acc`, na.rm = T),
-         Matched_Acc = mean(`Matched Acc`, na.rm = T),
-         Mismatched_Acc_max = max(`Mismatched Acc`, na.rm = T),
-         Mismatched_Acc_min = min(`Mismatched Acc`, na.rm = T),
-         Mismatched_Acc = mean(`Mismatched Acc`, na.rm = T),
-         Spearmanr_max = max(Spearmanr, na.rm = T),
-         Spearmanr_min = min(Spearmanr, na.rm = T),
-         Spearmanr = mean(Spearmanr, na.rm = T),
-         Pearson_max = max(Pearson, na.rm = T),
-         Pearson_min = min(Pearson, na.rm = T),
-         Pearson = mean(Pearson, na.rm = T)) %>%
-  ungroup()
+            WEAT_gender_max = max(WEAT_gender),
+            WEAT_gender_min = min(WEAT_gender),
+            WEAT_gender = mean(WEAT_gender),
+            StereoSet_LM_gender_max = max(StereoSet_LM_gender),
+            StereoSet_LM_gender_min = min(StereoSet_LM_gender),
+            StereoSet_LM_gender = mean(StereoSet_LM_gender),
+            StereoSet_SS_gender_max = max(StereoSet_SS_gender),
+            StereoSet_SS_gender_min = min(StereoSet_SS_gender),
+            StereoSet_SS_gender = mean(StereoSet_SS_gender),
+            BiasNLI_NN_max = max(BiasNLI_NN, na.rm = T),
+            BiasNLI_NN_min = min(BiasNLI_NN, na.rm = T),
+            BiasNLI_NN = mean(BiasNLI_NN, na.rm = T),
+            BiasNLI_FN_max = max(BiasNLI_FN, na.rm = T),
+            BiasNLI_FN_min = min(BiasNLI_FN, na.rm = T),
+            BiasNLI_FN = mean(BiasNLI_FN, na.rm = T),
+            BiasSTS_max = max(BiasSTS, na.rm = T),
+            BiasSTS_min = min(BiasSTS, na.rm = T),
+            BiasSTS = mean(BiasSTS, na.rm = T),
+            Matched_Acc_max = max(`Matched Acc`, na.rm = T),
+            Matched_Acc_min = min(`Matched Acc`, na.rm = T),
+            Matched_Acc = mean(`Matched Acc`, na.rm = T),
+            Mismatched_Acc_max = max(`Mismatched Acc`, na.rm = T),
+            Mismatched_Acc_min = min(`Mismatched Acc`, na.rm = T),
+            Mismatched_Acc = mean(`Mismatched Acc`, na.rm = T),
+            Spearmanr_max = max(Spearmanr, na.rm = T),
+            Spearmanr_min = min(Spearmanr, na.rm = T),
+            Spearmanr = mean(Spearmanr, na.rm = T),
+            Pearson_max = max(Pearson, na.rm = T),
+            Pearson_min = min(Pearson, na.rm = T),
+            Pearson = mean(Pearson, na.rm = T)) %>%
+  ungroup() %>%
+  bind_rows(sp_group)
 
 ### Bias against performance ####
 
@@ -160,7 +205,7 @@ spars_vs_bias_all <- function(data, base_folder){
   spars_vs_bias_plot(stsb, 'BiasSTS', base_folder, 0, task='stsb')
 }
 
-### Performance over increasing sparsity
+### Performance over increasing sparsity ####
 
 # Loading performance data
 performance_path <- paste0(base_folder, 'LLM-Pruning-And-Fairness/results/performance')
@@ -169,7 +214,8 @@ read_plus <- function(flnm, path) {
   read_csv(paste0(path, '/', flnm), show_col_types = FALSE) %>%
     mutate(task = str_split_i(flnm, '_', 1),
            model_no = str_split_i(flnm, '_', 2),
-           pruning_method = str_split_i(flnm, '_', 3))
+           pruning_method = str_split_i(flnm, '_', 3),
+           seed = str_split_i(flnm, '_', 4))
 }
 
 perf_data  <-
@@ -177,14 +223,15 @@ perf_data  <-
              pattern = "\\.csv$") %>%
   map_df(~read_plus(., performance_path)) %>%
   rename(sparsity=1) %>%
-  mutate(pruning_method = str_remove(pruning_method, '\\.csv'))
+  mutate(pruning_method = str_remove(pruning_method, '\\.csv'),
+         seed = as.integer(str_remove(seed, '\\.csv')))
 
 # STSB
 
-perf_stsb <- function(data, pruning_method, base_folder){
+perf_stsb <- function(data, pruning_method_set, base_folder){
   working <- data %>%
     filter(task=='stsb',
-           pruning_method==pruning_method) %>%
+           pruning_method==pruning_method_set) %>%
     group_by(sparsity) %>%
     summarise(spearmanr = mean(Spearmanr),
               pearson = mean(Pearson),
@@ -213,7 +260,33 @@ perf_stsb <- function(data, pruning_method, base_folder){
            fill=guide_legend(title='Metric:')) +
     coord_cartesian(clip='off')
   
-  ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/pc_stsb_', pruning_method, '.png'),
+  ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/pc_stsb_', pruning_method_set, '.png'),
+         plot = output,
+         width = 2100,
+         height = 1400,
+         units = "px")
+}
+
+perf_stsb_compare <- function(data, base_folder){
+  working <- data %>%
+    filter(task=='stsb') %>%
+    group_by(pruning_method, sparsity) %>%
+    summarise(spearmanr = mean(Spearmanr))
+  
+  output <-
+    ggplot(working, aes(x=sparsity, y=spearmanr, group=pruning_method, colour=pruning_method)) +
+    geom_line(linewidth=2) +
+    scale_fill_manual(values=colours) +
+    scale_colour_manual(values=colours) +
+    scale_x_continuous(expand = c(0,0),
+                       limits = c(0,1)) +
+    scale_y_continuous(expand = c(0,0),
+                       limits = c(NA,1)) +
+    theme_bw() + 
+    guides(colour=guide_legend(title='Metric:')) +
+    coord_cartesian(clip='off')
+  
+  ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/pc_stsb_compare.png'),
          plot = output,
          width = 2100,
          height = 1400,
@@ -222,10 +295,10 @@ perf_stsb <- function(data, pruning_method, base_folder){
 
 # MNLI
 
-perf_mnli <- function(data, pruning_method, base_folder){
+perf_mnli <- function(data, pruning_method_set, base_folder){
   working <- data %>%
     filter(task=='mnli',
-           pruning_method==pruning_method) %>%
+           pruning_method==pruning_method_set) %>%
     group_by(sparsity) %>%
     summarise(matched = mean(`Matched Acc`),
               mismatched = mean(`Mismatched Acc`),
@@ -254,7 +327,33 @@ perf_mnli <- function(data, pruning_method, base_folder){
            fill=guide_legend(title='Accuracy:')) +
     coord_cartesian(clip='off')
   
-  ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/pc_mnli_', pruning_method, '.png'),
+  ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/pc_mnli_', pruning_method_set, '.png'),
+         plot = output,
+         width = 2100,
+         height = 1400,
+         units = "px")
+}
+
+perf_mnli_compare <- function(data, base_folder){
+  working <- data %>%
+    filter(task=='mnli') %>%
+    group_by(pruning_method, sparsity) %>%
+    summarise(matched = mean(`Matched Acc`))
+  
+  output <-
+    ggplot(working, aes(x=sparsity, y=matched, group=pruning_method, colour=pruning_method)) +
+    geom_line(linewidth=2) +
+    scale_fill_manual(values=colours) +
+    scale_colour_manual(values=colours) +
+    scale_x_continuous(expand = c(0,0),
+                       limits = c(0,1)) +
+    scale_y_continuous(expand = c(0,0),
+                       limits = c(0,1)) +
+    theme_bw() + 
+    guides(colour=guide_legend(title='Accuracy:')) +
+    coord_cartesian(clip='off')
+  
+  ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/pc_mnli_compare.png'),
          plot = output,
          width = 2100,
          height = 1400,
@@ -264,6 +363,10 @@ perf_mnli <- function(data, pruning_method, base_folder){
 perf_all <- function(data, base_folder){
   perf_stsb(data, 'l1-unstructured', base_folder)
   perf_mnli(data, 'l1-unstructured', base_folder)
+  perf_stsb(data, 'random-unstructured', base_folder)
+  perf_mnli(data, 'random-unstructured', base_folder)
+  perf_stsb_compare(data, base_folder)
+  perf_mnli_compare(data, base_folder)
 }
 
 
