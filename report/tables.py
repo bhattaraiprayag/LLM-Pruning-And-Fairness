@@ -210,7 +210,7 @@ def sweat_overview(filepath):
 
     # Convert to latex
     latex = output.to_latex(index=False,
-                            column_format='p{0.06\\textwidth}p{0.16\\textwidth}p{0.06\\textwidth}p{0.07\\textwidth}p{0.06\\textwidth}p{0.05\\textwidth}p{0.05\\textwidth}p{0.06\\textwidth}p{0.06\\textwidth}p{0.05\\textwidth}p{0.05\\textwidth}',
+                            column_format='p{0.06\\textwidth}p{0.16\\textwidth}p{0.06\\textwidth}p{0.07\\textwidth}p{0.06\\textwidth}p{0.05\\textwidth}p{0.05\\textwidth}p{0.07\\textwidth}p{0.06\\textwidth}p{0.05\\textwidth}p{0.05\\textwidth}',
                             label=f'tab:sweat_all',
                             caption=f'Results from the SEAT and WEAT tests, relating to a range of different biases. Where the masking threshold was specified for structured pruning, the average sparsity level is shown.',
                             na_rep='-',
