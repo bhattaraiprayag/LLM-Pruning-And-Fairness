@@ -75,7 +75,7 @@ class MagnitudePrunerIterative:
             if 'weight_orig' in name:
                 pruned_name = name.replace('weight_orig', 'weight')
                 if pruned_name in pruned_model.state_dict():
-                    pruned_model.state_dict()[pruned_name] = checkpoint[pruned_name]
+                    pruned_model.state_dict()[name] = checkpoint[pruned_name]
         
         # Debugging: Compare pre- and post-rewind weights for a few parameters
         for name, pre_param in pre_rewind_weights.items():
@@ -120,7 +120,7 @@ class MagnitudePrunerIterative:
             print(f'Sparsity after pruning iter #{iteration}: {check_sparsity(self.model):.4%}')
 
             if self.rewind:
-                self.rewind_weights(self.initial_checkpoint)
+                self.rewind_weights(self.model.state_dict())
                 print(f"Rewinding to initial weights after pruning iteration #{iteration}")
 
             self.train_model()
