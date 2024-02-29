@@ -72,8 +72,10 @@ class MagnitudePrunerIterative:
         pre_rewind_weights = {name: param.clone() for name, param in pruned_model.named_parameters()}
 
         for name in checkpoint.keys():
-            if 'weight_orig' not in name:
-                pruned_model.state_dict()[name] = checkpoint[name]
+            if 'weight_orig' in name:
+                pruned_name = name.replace('weight_orig', 'weight')
+                if pruned_name in pruned_model.state_dict():
+                    pruned_model.state_dict()[pruned_name] = checkpoint[name]
         
         # Debugging: Compare pre- and post-rewind weights for a few parameters
         for name, pre_param in pre_rewind_weights.items():
