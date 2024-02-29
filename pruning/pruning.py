@@ -1,6 +1,9 @@
 import os
 from pruning.magnitude_pruner import MagnitudePrunerOneShot
+from pruning.iterative_pruner import MagnitudePrunerIterative
 from pruning.structured_pruning import structured_pruning
+
+from transformers import TrainingArguments
 
 
 def pruning(exp_args, model, tokenizer, exp_id, experiment_dir):
@@ -10,9 +13,24 @@ def pruning(exp_args, model, tokenizer, exp_id, experiment_dir):
         returned_sparsity = structured_pruning(model, tokenizer, exp_args.seed, exp_args.task, exp_args.device,
                                                exp_args.masking_threshold, exp_id, exp_args.model_no)
     elif exp_args.pruning_method == 'imp':
-        # add IMP
-        # returned_sparsity =
-        raise NotImplementedError("Not implemented, yet!")
+        # Fine-tuning arguments
+        training_args = TrainingArguments(
+            output_dir=f'results/run{exp_id}',
+            num_train_epochs=3,
+            per_device_train_batch_size=16,
+            per_device_eval_batch_size=16,
+            warmup_steps=500,
+            weight_decay=0.01,
+            learning_rate=2e-5
+        )
+        # Pruning arguments
+        total_iterations=exp_args.imp_iters
+        rewind=True
+        pruning_rate_per_step=0.2
+        sparsity_level=exp_args.sparsity_level
+
+        pruner = MagnitudePrunerIterative(model, tokenizer, exp_args.task, exp_args.model_no, training_args, exp_args.device, total_iterations, rewind, pruning_rate_per_step, sparsity_level, exp_id)
+        pruner.prune()
     else:
         pruner = MagnitudePrunerOneShot(model, exp_args.seed, exp_args.pruning_method, exp_args.sparsity_level)
         pruner.prune()

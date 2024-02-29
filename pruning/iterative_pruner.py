@@ -1,56 +1,124 @@
 import torch
 import torch.nn.utils.prune as prune
-import copy
+import json
+import os
 
-from transformers import RobertaForSequenceClassification
-from pruning.utils import get_seed, check_sparsity
+from transformers import Trainer
+from pruning.utils import load_data_hub, check_sparsity
+from evaluation.performance import evaluate_metrics
 
 # Class for iterative magnitude pruning
 class MagnitudePrunerIterative:
-    def __init__(self, model, seed, sparsity_level=0.3, total_iterations=10):
+    def __init__(self, model, tokenizer, task_name, model_no, training_args, device, total_iterations, rewind, pruning_rate_per_step, sparsity_level, exp_id):
         self.model = model
-        self.seed = seed
-        self.sparsity_level = sparsity_level
+        self.tokenizer = tokenizer
+        self.task_name = task_name
+        self.model_no = model_no
+        self.training_args = training_args
+        self.device = device
         self.total_iterations = total_iterations
-        self.seed = get_seed(seed)
-        self.orig_model_state_dict = self._rewind_state_dict(model.state_dict())
-    
-    def _rewind_state_dict(self, state_dict):
-        rewind_dict = {}
-        for key in state_dict.keys():
-            if 'roberta' in key:
-                new_key = key + '_orig' if 'weight' in key else key
-                rewind_dict[new_key] = state_dict[key]
-        return rewind_dict
+        self.rewind = rewind
+        self.pruning_rate_per_step = pruning_rate_per_step
+        self.sparsity_level = sparsity_level
+        self.exp_id = exp_id
+        self.datasets = load_data_hub(self.task_name, self.model_no)
+        self.initial_checkpoint = model.state_dict()  # Assuming initial model state is stored
+        self.tokenize_data()
 
-    def prune_model(self):
-        for iteration in range(self.total_iterations):
-            px = self._calculate_pruning_amount(iteration)
-            self._perform_pruning(px)
-            self._rewind_weights()
-            sparsity = check_sparsity(self.model)
-            print(f"Iteration {iteration + 1}/{self.total_iterations}, Sparsity: {sparsity}")
+    def tokenize_data(self):
+        def preprocess_data(examples):
+            args = (
+                (examples['sentence1'],) if 'sentence2' not in examples else (examples['sentence1'], examples['sentence2'])
+            )
+            return self.tokenizer(*args, padding='max_length', max_length=128, truncation=True)
+        self.datasets = {split: dataset.map(preprocess_data, batched=True) for split, dataset in self.datasets.items()}
 
-    def _calculate_pruning_amount(self, iteration):
-        return self.sparsity_level * (iteration + 1) / self.total_iterations
-
-    def _perform_pruning(self, px):
+    def prune_model(self, pruning_rate):
         parameters_to_prune = []
-        for layer in range(12):
+        for layer in self.model.roberta.encoder.layer:
             layers = [
-                self.model.roberta.encoder.layer[layer].attention.self.query,
-                self.model.roberta.encoder.layer[layer].attention.self.key,
-                self.model.roberta.encoder.layer[layer].attention.self.value,
-                self.model.roberta.encoder.layer[layer].attention.output.dense,
-                self.model.roberta.encoder.layer[layer].intermediate.dense,
-                self.model.roberta.encoder.layer[layer].output.dense,
+                layer.attention.self.query,
+                layer.attention.self.key,
+                layer.attention.self.value,
+                layer.attention.output.dense,
+                layer.intermediate.dense,
+                layer.output.dense,
             ]
-            parameters_to_prune += [(layer, 'weight') for layer in layers]
+            parameters_to_prune.extend([(l, 'weight') for l in layers])
 
-        parameters_to_prune.append((self.model.roberta.pooler.dense, 'weight'))
-        prune.global_unstructured(parameters_to_prune, pruning_method=prune.L1Unstructured, amount=px)
+        if hasattr(self.model.roberta, 'pooler') and self.model.roberta.pooler is not None:
+            parameters_to_prune.append((self.model.roberta.pooler.dense, 'weight'))
 
-    def _rewind_weights(self):
-        model_dict = self.model.state_dict()
-        model_dict.update(self.orig_model_state_dict)
-        self.model.load_state_dict(model_dict)
+        prune.global_unstructured(
+            parameters_to_prune,
+            pruning_method=prune.L1Unstructured,
+            amount=pruning_rate,
+        )
+
+        # Debugging: Check a few weights before and after pruning
+        for layer in self.model.roberta.encoder.layer:
+            print(f"Layer {layer}: Weight sample before pruning: {layer.attention.self.query.weight.data[:5]}")
+
+    def rewind_weights(self, checkpoint):
+        pruned_model = self.model
+
+        # Debugging: Store a copy of weights before rewinding
+        pre_rewind_weights = {name: param.clone() for name, param in pruned_model.named_parameters()}
+
+        for name, param in checkpoint.items():
+            if 'weight_orig' in name:
+                pruned_name = name.replace('weight_orig', 'weight')
+                if pruned_name in pruned_model.state_dict():
+                    pruned_model.state_dict()[pruned_name].data.copy_(param.data)
+        
+        # Debugging: Compare pre- and post-rewind weights for a few parameters
+        for name, pre_param in pre_rewind_weights.items():
+            post_param = pruned_model.state_dict()[name]
+            if torch.equal(pre_param, post_param):
+                print(f"No change in weights for {name}")
+            else:
+                print(f"Weights changed for {name}")
+
+        self.model = pruned_model
+
+    def train_model(self):
+        # Debug statement
+        train_dataset = self.datasets["train"]
+        slicer = 10
+        train_dataset = train_dataset.select(range(slicer))
+
+        trainer = Trainer(
+            model=self.model,
+            args=self.training_args,
+            # train_dataset=self.datasets["train"],
+            train_dataset=train_dataset,
+            eval_dataset=self.datasets["validation"]
+        )
+
+        trainer.train()
+
+    def evaluate_model(self):
+        return evaluate_metrics(self.model, self.tokenizer, self.task_name, self.datasets["validation"], self.exp_id)
+    
+    def save_eval(self, model_state, evaluation_results, step):
+        with open(f"{self.training_args.output_dir}/eval_iter_{step}.json", 'w') as f:  # Save evaluation results for each iteration
+            json.dump(evaluation_results, f)
+
+    def prune(self):
+        eval_results = self.evaluate_model()
+        self.save_eval(self.model.state_dict(), eval_results, step=0)
+
+        for iteration in range(1, self.total_iterations + 1):
+            print(f'Sparsity before pruning iter #{iteration}: {check_sparsity(self.model):.4%}')
+            self.prune_model(self.pruning_rate_per_step)
+            print(f'Sparsity after pruning iter #{iteration}: {check_sparsity(self.model):.4%}')
+
+            if self.rewind:
+                self.rewind_weights(self.initial_checkpoint)
+                print(f"Rewinding to initial weights after pruning iteration #{iteration}")
+
+            self.train_model()
+            eval_results = self.evaluate_model()
+            self.save_eval(self.model.state_dict(), eval_results, step=iteration)
+        
+        return self.model
