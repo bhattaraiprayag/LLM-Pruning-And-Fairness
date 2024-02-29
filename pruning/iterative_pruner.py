@@ -49,6 +49,8 @@ class MagnitudePrunerIterative:
         if hasattr(self.model.roberta, 'pooler') and self.model.roberta.pooler is not None:
             parameters_to_prune.append((self.model.roberta.pooler.dense, 'weight'))
 
+        parameters_to_prune = tuple(parameters_to_prune)
+
         prune.global_unstructured(
             parameters_to_prune,
             pruning_method=prune.L1Unstructured,
@@ -69,11 +71,11 @@ class MagnitudePrunerIterative:
         # Debugging: Store a copy of weights before rewinding
         pre_rewind_weights = {name: param.clone() for name, param in pruned_model.named_parameters()}
 
-        for name, param in checkpoint.items():
+        for name in pruned_model.state_dict().keys():
             if 'weight_orig' in name:
                 pruned_name = name.replace('weight_orig', 'weight')
                 if pruned_name in pruned_model.state_dict():
-                    pruned_model.state_dict()[pruned_name].data.copy_(param.data)
+                    pruned_model.state_dict()[pruned_name] = checkpoint[pruned_name]
         
         # Debugging: Compare pre- and post-rewind weights for a few parameters
         for name, pre_param in pre_rewind_weights.items():
