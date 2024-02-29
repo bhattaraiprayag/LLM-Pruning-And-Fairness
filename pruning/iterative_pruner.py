@@ -58,6 +58,10 @@ class MagnitudePrunerIterative:
         # Debugging: Check a few weights before and after pruning
         for layer in self.model.roberta.encoder.layer:
             print(f"Layer {layer}: Weight sample before pruning: {layer.attention.self.query.weight.data[:5]}")
+            print("Sparsity in layer: {:.2f}%".format(
+                100. * float(torch.sum(layer.attention.self.query.weight == 0))
+                / float(layer.attention.self.query.weight.nelement())
+            ))
 
     def rewind_weights(self, checkpoint):
         pruned_model = self.model
