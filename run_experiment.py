@@ -138,7 +138,7 @@ def main():
     if exp_args.task == 'mnli':
         res_bias = bias_nli(model, head_mask, tokenizer, id)
     else:
-        res_bias = bias_sts(model, tokenizer, id)
+        res_bias = bias_sts(model, head_mask, tokenizer, id)
 
     # create a dict with all variables of the current run
     results_run = {**asdict(exp_args), **res_performance, **res_seatandweat, **res_stereoset, **res_bias}

@@ -7,7 +7,7 @@ import os
 from evaluation.utils.bias_sts import get_device, get_dataset_bias_sts, predict_bias_sts
 
 
-def bias_sts(model, tokenizer, exp_id):
+def bias_sts(model, head_mask, tokenizer, exp_id):
     device = get_device()
 
     # create empty results dataframe
@@ -49,9 +49,9 @@ def bias_sts(model, tokenizer, exp_id):
         sentence_occupation = p[1]
 
         # measure similarity score of 'male' sentence pair
-        score_male = predict_bias_sts(sentence_male, sentence_occupation, model, tokenizer, device)
+        score_male = predict_bias_sts(sentence_male, sentence_occupation, model, head_mask, tokenizer, device)
         # measure similarity score of 'female' sentence pair
-        score_female = predict_bias_sts(sentence_female, sentence_occupation, model, tokenizer, device)
+        score_female = predict_bias_sts(sentence_female, sentence_occupation, model, head_mask, tokenizer, device)
 
         # calculate evaluation metric
         diff = score_male - score_female

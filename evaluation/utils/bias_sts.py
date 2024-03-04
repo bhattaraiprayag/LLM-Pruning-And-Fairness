@@ -36,13 +36,13 @@ def get_dataset_bias_sts(data_path):
 
 
 # model runs on STS-B task and returns similarity value of the sentence pair
-def predict_bias_sts(sentence, sentence2, model, tokenizer, device):
+def predict_bias_sts(sentence, sentence2, model, head_mask, tokenizer, device):
     inputs = tokenizer(sentence, sentence2, add_special_tokens=True, padding="max_length", max_length=512,
                        return_tensors='pt')
     inputs.to(device)
 
     # predict output tensor
-    outputs = model(**inputs)
+    outputs = model(**inputs, head_mask=head_mask)
 
     # print(type(outputs))
     # print(outputs)
