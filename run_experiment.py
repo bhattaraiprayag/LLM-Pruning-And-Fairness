@@ -133,7 +133,7 @@ def main():
 
     # fairness evaluation
     # ideally: set up one evaluation function
-    res_seatandweat = seatandweat(model, tokenizer, id, exp_args.seed)
+    res_seatandweat = seatandweat(model, head_mask, tokenizer, id, exp_args.seed)
     res_stereoset = stereoset(model, head_mask, tokenizer, id)
     if exp_args.task == 'mnli':
         res_bias = bias_nli(model, head_mask, tokenizer, id)

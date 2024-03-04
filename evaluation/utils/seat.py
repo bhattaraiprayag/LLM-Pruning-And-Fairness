@@ -28,6 +28,7 @@ class SEATRunner:
             tokenizer,
             data_dir,
             experiment_id,
+            head_mask=None,
             n_samples=100000,
             parametric=False,
             seed=0,
@@ -39,12 +40,14 @@ class SEATRunner:
             tokenizer: HuggingFace tokenizer (e.g., BertTokenizer) used for pre-processing.
             data_dir (`str`): Path to directory containing the SEAT tests.
             experiment_id (`str`): Experiment identifier. Used for logging.
+            head_mask: array that indicates attention heads that are to be masked
             n_samples (`int`): Number of permutation test samples used when estimating p-values
                 (exact test is used if there are fewer than this many permutations).
             parametric (`bool`): Use parametric test (normal assumption) to compute p-values.
             seed (`int`): Random seed.
         """
         self._model = model
+        self._head_mask = head_mask
         self._tokenizer = tokenizer
         self._data_dir = data_dir
         self._experiment_id = experiment_id
@@ -80,16 +83,16 @@ class SEATRunner:
             encs = _load_json(os.path.join(self._data_dir, f"{test}{self.TEST_EXT}"))
 
             encs_targ1 = _encode(
-                self._model, self._tokenizer, encs["targ1"]["examples"]
+                self._model, self._head_mask, self._tokenizer, encs["targ1"]["examples"]
             )
             encs_targ2 = _encode(
-                self._model, self._tokenizer, encs["targ2"]["examples"]
+                self._model, self._head_mask, self._tokenizer, encs["targ2"]["examples"]
             )
             encs_attr1 = _encode(
-                self._model, self._tokenizer, encs["attr1"]["examples"]
+                self._model, self._head_mask, self._tokenizer, encs["attr1"]["examples"]
             )
             encs_attr2 = _encode(
-                self._model, self._tokenizer, encs["attr2"]["examples"]
+                self._model, self._head_mask, self._tokenizer, encs["attr2"]["examples"]
             )
 
             encs["targ1"]["encs"] = encs_targ1
@@ -152,13 +155,13 @@ def _load_json(sent_file):
     return all_data
 
 
-def _encode(model, tokenizer, texts):
+def _encode(model, head_mask, tokenizer, texts):
     encs = {}
     for text in texts:
         # Encode each example.
         inputs = tokenizer(text, return_tensors="pt")
         inputs = inputs.to(get_device())
-        outputs = model(**inputs, output_hidden_states=True)
+        outputs = model(**inputs, output_hidden_states=True, head_mask=head_mask)
 
         # Average over the last layer of hidden representations.
         enc = outputs.hidden_states[-1]  # line wants to get last hidden state, should be the same as the last item in hidden_states (https://stackoverflow.com/questions/61323621/how-to-understand-hidden-states-of-the-returns-in-bertmodelhuggingface-transfo)

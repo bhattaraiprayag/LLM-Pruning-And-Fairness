@@ -6,13 +6,14 @@ import os
 from evaluation.utils.seat import SEATRunner, aggregate_results
 
 
-def seatandweat(model, tokenizer, exp_id, seed):
+def seatandweat(model, head_mask, tokenizer, exp_id, seed):
     runner = SEATRunner(
         experiment_id=exp_id,
         data_dir='evaluation/data/seat',
         n_samples=1000,
         parametric=False,
         model=model,
+        head_mask=head_mask,
         tokenizer=tokenizer,
         seed=seed
     )
