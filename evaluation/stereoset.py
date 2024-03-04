@@ -5,7 +5,7 @@ import os
 
 import evaluation.utils.stereoset as ss
 
-def stereoset(model, tokenizer, exp_id):
+def stereoset(model, head_mask, tokenizer, exp_id):
 
     # Setup
     eval_split = 'intrasentence' # More commonly used, but can also get intersentence
@@ -16,7 +16,7 @@ def stereoset(model, tokenizer, exp_id):
     sent_list, data = ss.load_data('evaluation/data/stereoset/test.json', eval_split)
 
     # Get output values
-    score_board, pred_board = ss.cls_evaluate(tokenizer, model, cls_head, sent_list, batch_size=4)
+    score_board, pred_board = ss.cls_evaluate(tokenizer, model, head_mask, cls_head, sent_list, batch_size=4)
 
     # Generate scores
     bias_type_list = ['gender', 'profession', 'race', 'religion', 'overall']

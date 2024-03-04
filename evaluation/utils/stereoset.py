@@ -75,7 +75,7 @@ def mlm_evaluate(tok, model):
     pass
 
 
-def cls_evaluate(tok, model, cls_head, sent_list, batch_size=4):
+def cls_evaluate(tok, model, head_mask, cls_head, sent_list, batch_size=4):
     num_cases = len(sent_list)
     score_board = []
     pred_board = []
@@ -104,7 +104,8 @@ def cls_evaluate(tok, model, cls_head, sent_list, batch_size=4):
 
         result = model(
             input_ids=input_ids,
-            attention_mask=attention_mask
+            attention_mask=attention_mask,
+            head_mask=head_mask
         )
 
         logits, pred = proc_cls_output(
