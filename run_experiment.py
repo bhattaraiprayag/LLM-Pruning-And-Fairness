@@ -123,6 +123,8 @@ def main():
         returned_sparsity, head_mask = pruning(exp_args, model, tokenizer, id, experiment_dir)
         if returned_sparsity is not None:
             exp_args.sparsity_level = returned_sparsity
+    else:
+        head_mask = None
 
     # evaluate model "performance" (not fairness)
     eval_datasets = load_eval_dataset(exp_args.task, exp_args.model_no)
@@ -134,7 +136,7 @@ def main():
     res_seatandweat = seatandweat(model, tokenizer, id, exp_args.seed)
     res_stereoset = stereoset(model, tokenizer, id)
     if exp_args.task == 'mnli':
-        res_bias = bias_nli(model, tokenizer, id)
+        res_bias = bias_nli(model, head_mask, tokenizer, id)
     else:
         res_bias = bias_sts(model, tokenizer, id)
 
