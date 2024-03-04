@@ -5,7 +5,7 @@ import os
 import torch
 from torch.utils.data import DataLoader, SequentialSampler, Subset  # Subset needed if you uncomment line when preparing the dataset
 from torch.utils.data.distributed import DistributedSampler
-from pruning.utils import load_examples, get_seed, mask_heads, prune_heads
+from pruning.utils import load_examples, get_seed, mask_heads, prune_heads, check_sparsity
 from pruning.utils import get_device
 
 logger = logging.getLogger(__name__)
@@ -46,10 +46,13 @@ def structured_pruning(model, tokenizer, seed, task, device, masking_threshold, 
     # set masking amount to 0.1 (default of original code)
     masking_amount = 0.1
 
-    # perform pruning
+    # perform masking
     head_mask = mask_heads(model, eval_dataloader, device, local_rank, output_dir, task, masking_amount, masking_threshold)
-    sparsity = prune_heads(model, eval_dataloader, device, local_rank, output_dir, task, head_mask)
+    
+    # TO DO: Update sparsity function to work with head mask
+    sparsity = check_sparsity(model)
+    print(f'Sparsity: {sparsity}')
 
     # return the final sparsity of the model
-    return sparsity
+    return sparsity, head_mask
 

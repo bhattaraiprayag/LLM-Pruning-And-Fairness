@@ -120,7 +120,7 @@ def main():
 
     # pruning (skipped if pruning == None)
     if exp_args.pruning_method != "None":
-        returned_sparsity = pruning(exp_args, model, tokenizer, id, experiment_dir)
+        returned_sparsity, head_mask = pruning(exp_args, model, tokenizer, id, experiment_dir)
         if returned_sparsity is not None:
             exp_args.sparsity_level = returned_sparsity
 
