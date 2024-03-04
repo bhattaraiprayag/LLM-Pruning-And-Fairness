@@ -63,16 +63,16 @@ def load_eval_dataset(task, model_no):    # ONLY WORKS WITH split='validation'
         raise ValueError(f'No evaluation dataset found for task {task}')
 
 
-def evaluate_metrics(model, tokenizer, task, eval_datasets, exp_id):
+def evaluate_metrics(model, head_mask, tokenizer, task, eval_datasets, exp_id):
     """Evaluates task-specific metrics and returns results."""
     results_dict = {}
     if task == 'mnli':
         eval_matched, eval_mismatched = eval_datasets
-        mnli_matched = evaluate_model(model, tokenizer, task, eval_matched, exp_id)
-        mnli_mismatched = evaluate_model(model, tokenizer, task, eval_mismatched, exp_id)
+        mnli_matched = evaluate_model(model, head_mask, tokenizer, task, eval_matched, exp_id)
+        mnli_mismatched = evaluate_model(model, head_mask, tokenizer, task, eval_mismatched, exp_id)
         results_dict['Matched Acc'], results_dict['Mismatched Acc'] = mnli_matched['eval_accuracy'], mnli_mismatched['eval_accuracy']
     elif task == 'stsb':
-        eval_results = evaluate_model(model, tokenizer, task, eval_datasets, exp_id)
+        eval_results = evaluate_model(model, head_mask, tokenizer, task, eval_datasets, exp_id)
         results_dict['Spearmanr'], results_dict['Pearson'] = eval_results['eval_spearmanr'], eval_results['eval_pearson']
     else:
         raise ValueError(f'No evaluation metrics found for task {task}')
@@ -80,7 +80,7 @@ def evaluate_metrics(model, tokenizer, task, eval_datasets, exp_id):
     return results_dict
 
 
-def evaluate_model(model, tokenizer, task_name, eval_datasets, exp_id):
+def evaluate_model(model, head_mask, tokenizer, task_name, eval_dataset, exp_id):
     # tokenization
     def preprocess_function(examples, task_name=task_name):
         if task_name == "mnli":
@@ -91,29 +91,22 @@ def evaluate_model(model, tokenizer, task_name, eval_datasets, exp_id):
             return tokenizer(examples["sentence1"], examples["sentence2"], truncation=True, padding=True)
         else:
             raise ValueError(f"Task {task_name} not yet supported")
-    
-    eval_dataset = eval_datasets.map(preprocess_function, batched=True)
 
     # define compute metrics function
-    def compute_metrics(p: EvalPrediction):
-        preds = p.predictions[0] if isinstance(p.predictions, tuple) else p.predictions
+    def compute_metrics(preds, labels):
         preds = np.squeeze(preds) if task_name == "stsb" else np.argmax(preds, axis=1)
         metric = evaluate.load("glue", task_name)
-        return metric.compute(predictions=preds, references=p.label_ids)
+        return metric.compute(predictions=preds, references=labels)
 
-    # define trainer
-    training_args = TrainingArguments(
-        output_dir=f"./results/run{exp_id}",  # Temporary directory for storing evaluation results
-        do_train=False,
-        do_eval=True,
-    )
+    inputs = eval_dataset.map(preprocess_function, batched=True)
+    print(inputs[:5])
 
-    trainer = Trainer(
-        model=model,
-        args=training_args,
-        eval_dataset=eval_dataset,
-        compute_metrics=compute_metrics,
-        tokenizer=tokenizer,
-    )
+    outputs = model(**inputs, head_mask=head_mask)
 
-    return trainer.evaluate()
+    labels = eval_dataset['label']
+    # TO DO: get preds
+    preds = outputs[]
+
+    result = compute_metrics(preds, labels)
+
+    return result
