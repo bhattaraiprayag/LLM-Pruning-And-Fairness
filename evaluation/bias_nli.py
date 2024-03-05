@@ -40,7 +40,7 @@ def bias_nli(model, head_mask, tokenizer, exp_id):
 
         inputs = tokenizer(pair_list, max_length=512, truncation=True, padding=True, return_tensors='pt')
         inputs.to(device)
-        preds = model(**inputs).logits.softmax(dim=1)
+        preds = model(**inputs, head_mask=head_mask).logits.softmax(dim=1)
         prediction.extend(preds.tolist())
 
     # Save predictions
