@@ -90,7 +90,9 @@ def evaluate_model(model, head_mask, tokenizer, task_name, eval_dataset, exp_id)
 
     device = get_device()
 
-    for i in eval_dataset.shape:
+    pair_list = []
+
+    for i in range(eval_dataset.shape[0]):
         if task_name == "mnli":
             sent1, sent2 = "premise", "hypothesis"
         elif task_name == "stsb":
@@ -99,14 +101,12 @@ def evaluate_model(model, head_mask, tokenizer, task_name, eval_dataset, exp_id)
             raise ValueError(f"Task {task_name} not supported")
 
         row = eval_dataset[i]
-        inputs = tokenizer(row[sent1], row[sent2], max_length=512, truncation=True, padding=True)
-        inputs.to(device)
-
-        print(inputs)
+        pair_list.append((row[sent1], row[sent2]))
 
 
-
-    outputs = model(**inputs, head_mask=head_mask)
+    inputs = tokenizer(pair_list, max_length=512, truncation=True, padding=True)
+    inputs.to(device)
+    outputs = model(**inputs, head_mask=head_mask).logits
 
     print(outputs)
 
