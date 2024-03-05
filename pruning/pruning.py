@@ -21,16 +21,16 @@ def pruning(exp_args, model, tokenizer, exp_id, experiment_dir):
             per_device_eval_batch_size=16,
             warmup_steps=500,
             weight_decay=0.01,
-            learning_rate=2e-5
+            learning_rate=2e-5,
+            adam_epsilon=1e-8
         )
         # Pruning arguments
         total_iterations=exp_args.imp_iters
         rewind=True
-        pruning_rate_per_step=0.2
         sparsity_level=exp_args.sparsity_level
 
-        pruner = MagnitudePrunerIterative(model, tokenizer, exp_args.task, exp_args.model_no, training_args, exp_args.device, total_iterations, rewind, pruning_rate_per_step, sparsity_level, exp_id)
-        pruner.prune()
+        pruner = MagnitudePrunerIterative(model, exp_args.seed, tokenizer, exp_args.task, exp_args.model_no, training_args, exp_args.device, total_iterations, rewind, sparsity_level, exp_id)
+        pruner.train()
     else:
         pruner = MagnitudePrunerOneShot(model, exp_args.seed, exp_args.pruning_method, exp_args.sparsity_level)
         pruner.prune()

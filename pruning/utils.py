@@ -109,11 +109,11 @@ def check_sparsity(model):
         total_params += layer_size
         nonzero_params += layer_nonzero.item()
 
-        # Debugging: Print sparsity of each layer
-        print(f"Layer {name} sparsity: {layer_sparsity[name]:.2%}")
+        # # Debugging: Print sparsity of each layer
+        # print(f"Layer {name} sparsity: {layer_sparsity[name]:.2%}")
 
     overall_sparsity = 1 - nonzero_params / total_params
-    print(f"Overall model sparsity: {overall_sparsity:.2%}")
+    # print(f"Overall model sparsity: {overall_sparsity:.2%}")
     
     return overall_sparsity
 

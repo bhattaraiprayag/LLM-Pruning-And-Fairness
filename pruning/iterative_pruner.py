@@ -2,15 +2,19 @@ import torch
 import torch.nn.utils.prune as prune
 import json
 import os
+import tqdm
 
-from transformers import Trainer
-from pruning.utils import load_data_hub, check_sparsity
+from torch.optim import AdamW
+from transformers import Trainer, get_linear_schedule_with_warmup
+from pruning.utils import load_data_hub, check_sparsity, get_seed
 from evaluation.performance import evaluate_metrics
+
 
 # Class for iterative magnitude pruning
 class MagnitudePrunerIterative:
-    def __init__(self, model, tokenizer, task_name, model_no, training_args, device, total_iterations, rewind, pruning_rate_per_step, sparsity_level, exp_id):
+    def __init__(self, model, seed, tokenizer, task_name, model_no, training_args, device, total_iterations, rewind, sparsity_level, exp_id):
         self.model = model
+        self.seed = seed
         self.tokenizer = tokenizer
         self.task_name = task_name
         self.model_no = model_no
@@ -18,22 +22,22 @@ class MagnitudePrunerIterative:
         self.device = device
         self.total_iterations = total_iterations
         self.rewind = rewind
-        self.pruning_rate_per_step = pruning_rate_per_step
         self.sparsity_level = sparsity_level
+        self.pruning_rate_per_step = sparsity_level / total_iterations        
         self.exp_id = exp_id
         self.datasets = load_data_hub(self.task_name, self.model_no)
-        self.initial_checkpoint = model.state_dict()  # Assuming initial model state is stored
-        self.tokenize_data()
+        self.initial_checkpoint = self._create_initial_checkpoint(self.model)
+        self.tokenize()
 
-    def tokenize_data(self):
-        def preprocess_data(examples):
-            args = (
-                (examples['sentence1'],) if 'sentence2' not in examples else (examples['sentence1'], examples['sentence2'])
-            )
-            return self.tokenizer(*args, padding='max_length', max_length=128, truncation=True)
-        self.datasets = {split: dataset.map(preprocess_data, batched=True) for split, dataset in self.datasets.items()}
+    # Tokenize data
+    def tokenize(self):
+        def preprocess(examples):
+            fields = ('premise', 'hypothesis') if self.task_name == 'mnli' else ('sentence1', 'sentence2')
+            return self.tokenizer(*[examples[field] for field in fields], padding='max_length', max_length=128, truncation=True)
+        self.datasets = {split: dataset.map(preprocess, batched=True) for split, dataset in self.datasets.items()}
 
-    def prune_model(self, pruning_rate):
+    # Prune model
+    def prune(self, pruning_rate):
         parameters_to_prune = []
         for layer in self.model.roberta.encoder.layer:
             layers = [
@@ -45,86 +49,197 @@ class MagnitudePrunerIterative:
                 layer.output.dense,
             ]
             parameters_to_prune.extend([(l, 'weight') for l in layers])
-
         if hasattr(self.model.roberta, 'pooler') and self.model.roberta.pooler is not None:
             parameters_to_prune.append((self.model.roberta.pooler.dense, 'weight'))
-
         parameters_to_prune = tuple(parameters_to_prune)
-
         prune.global_unstructured(
             parameters_to_prune,
             pruning_method=prune.L1Unstructured,
             amount=pruning_rate,
         )
+        return self.model
 
-        # Debugging: Check a few weights before and after pruning
-        for layer in self.model.roberta.encoder.layer:
-            print(f"Layer {layer}: Weight sample before pruning: {layer.attention.self.query.weight.data[:5]}")
-            print("Sparsity in layer: {:.2f}%".format(
-                100. * float(torch.sum(layer.attention.self.query.weight == 0))
-                / float(layer.attention.self.query.weight.nelement())
-            ))
 
-    def rewind_weights(self, checkpoint):
-        pruned_model = self.model
+    # Rewind weights to initial checkpoint
+    def rewind_to_initial(self, iteration, total_steps):
+        model_dict = self.model.state_dict()
+        model_dict.update(self.initial_checkpoint)
+        self.model.load_state_dict(model_dict)
 
-        # Debugging: Store a copy of weights before rewinding
-        pre_rewind_weights = {name: param.clone() for name, param in pruned_model.named_parameters()}
+        mass_dict = {}
+        for key in model_dict.keys():
+            if 'mask' in key:
+                mass_dict[key] = model_dict[key]
+        torch.save(mass_dict, f"{self.training_args.output_dir}/mask_dict_{iteration+1}.pt")
 
-        for name in checkpoint.keys():
-            if 'weight_orig' in name:
-                pruned_name = name.replace('weight_orig', 'weight')
-                if pruned_name in pruned_model.state_dict():
-                    pruned_model.state_dict()[pruned_name] = checkpoint[name]
+        no_decay = ['bias', 'LayerNorm.weight']
+        optimizer_grouped_parameters = [
+            {
+                'params': [p for n, p in self.model.named_parameters() if not any(nd in n for nd in no_decay)], 'weight_decay': 0.01
+            },
+            {
+                'params': [p for n, p in self.model.named_parameters() if any(nd in n for nd in no_decay)], 'weight_decay': 0.0
+            }
+        ]
+        optimizer = AdamW(optimizer_grouped_parameters, lr=self.training_args.learning_rate, eps=self.training_args.adam_epsilon)
+        scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=self.training_args.warmup_steps, num_training_steps=total_steps)
         
-        # Debugging: Compare pre- and post-rewind weights for a few parameters
-        for name, pre_param in pre_rewind_weights.items():
-            post_param = pruned_model.state_dict()[name]
-            if torch.equal(pre_param, post_param):
-                print(f"No change in weights for {name}")
+        return self.model, optimizer, scheduler
+
+
+    # Save evaluation results
+    def save_perf_results(self, eval_results, iter):
+        filename = f"{self.training_args.output_dir}/eval_iter_{iter}.json"
+        if os.path.exists(filename):
+            filename = f"{self.training_args.output_dir}/eval_iter_{iter}_post_pruning.json"
+        with open(filename, 'w') as f:
+            json.dump(eval_results, f)
+
+
+    # See weight rate
+    def see_weight_rate(self):
+        sum_list = 0
+        zero_sum = 0
+        for ii in range(12):
+            sum_list = sum_list+float(self.model.roberta.encoder.layer[ii].attention.self.query.weight.nelement())
+            zero_sum = zero_sum+float(torch.sum(self.model.roberta.encoder.layer[ii].attention.self.query.weight == 0))
+
+            sum_list = sum_list+float(self.model.roberta.encoder.layer[ii].attention.self.key.weight.nelement())
+            zero_sum = zero_sum+float(torch.sum(self.model.roberta.encoder.layer[ii].attention.self.key.weight == 0))
+
+            sum_list = sum_list+float(self.model.roberta.encoder.layer[ii].attention.self.value.weight.nelement())
+            zero_sum = zero_sum+float(torch.sum(self.model.roberta.encoder.layer[ii].attention.self.value.weight == 0))
+
+            sum_list = sum_list+float(self.model.roberta.encoder.layer[ii].attention.output.dense.weight.nelement())
+            zero_sum = zero_sum+float(torch.sum(self.model.roberta.encoder.layer[ii].attention.output.dense.weight == 0))
+
+            sum_list = sum_list+float(self.model.roberta.encoder.layer[ii].intermediate.dense.weight.nelement())
+            zero_sum = zero_sum+float(torch.sum(self.model.roberta.encoder.layer[ii].intermediate.dense.weight == 0))
+
+            sum_list = sum_list+float(self.model.roberta.encoder.layer[ii].output.dense.weight.nelement())
+            zero_sum = zero_sum+float(torch.sum(self.model.roberta.encoder.layer[ii].output.dense.weight == 0))
+
+        # If pooler is present
+        if hasattr(self.model.roberta, 'pooler') and self.model.roberta.pooler is not None:
+            sum_list = sum_list+float(self.model.roberta.pooler.dense.weight.nelement())
+            zero_sum = zero_sum+float(torch.sum(self.model.roberta.pooler.dense.weight == 0))
+
+        return 100*zero_sum/sum_list
+
+
+    # Create initial model checkpoint
+    def _create_initial_checkpoint(self, model):
+        recover_dict = {}
+        name_list = []
+        for ii in range(12):
+            name_list.append(f'roberta.encoder.layer.{ii}.attention.self.query.weight')
+            name_list.append(f'roberta.encoder.layer.{ii}.attention.self.key.weight')
+            name_list.append(f'roberta.encoder.layer.{ii}.attention.self.value.weight')
+            name_list.append(f'roberta.encoder.layer.{ii}.attention.output.dense.weight')
+            name_list.append(f'roberta.encoder.layer.{ii}.intermediate.dense.weight')
+            name_list.append(f'roberta.encoder.layer.{ii}.output.dense.weight')
+        name_list.append('roberta.pooler.dense.weight')
+        for key in model.state_dict().keys():
+            if 'roberta' in key:
+                if key in name_list:
+                    new_key = key + '_orig'
+                else:
+                    new_key = key
+                recover_dict[new_key] = model.state_dict()[key]
+        return recover_dict
+
+
+    # Train model
+    def train(self):
+        get_seed(self.seed)
+
+        print(f"First Pruning (before finetuning)...")
+        self.prune(self.sparsity_level)
+        print(f"First Pruning complete!")
+
+        print(f"Sparsity (check_sparsity): {check_sparsity(self.model)})")
+        print(f"Sparsity (see_weight_rate): {self.see_weight_rate()}")
+
+        for iteration in range(self.total_iterations):
+            print("=====================================================")
+            print(f'Iteration: {iteration+1}')
+
+            # Debug statement (slice data if True)
+            slicer = True
+            if slicer:
+                train_dataset = self.datasets["train"]
+                train_dataset = train_dataset.select(range(10))
             else:
-                print(f"Weights changed for {name}")
+                train_dataset = self.datasets["train"]
+            
+            if self.task_name == 'mnli':
+                eval_dataset = [self.datasets["validation_matched"], self.datasets["validation_mismatched"]]
+            else:
+                eval_dataset = self.datasets["validation"]
 
-        self.model = pruned_model
+            # Initialize optimizer and scheduler
+            if iteration == 0:
+                optimizer = AdamW(
+                    self.model.parameters(),
+                    lr=self.training_args.learning_rate,
+                    eps=self.training_args.adam_epsilon
+                )
+                total_steps = len(train_dataset) * self.training_args.num_train_epochs
+                scheduler = get_linear_schedule_with_warmup(
+                    optimizer,
+                    num_warmup_steps=self.training_args.warmup_steps,
+                    num_training_steps=total_steps
+                )
+            else:
+                pass
 
-    def train_model(self):
-        # Debug statement
-        train_dataset = self.datasets["train"]
-        slicer = 10
-        train_dataset = train_dataset.select(range(slicer))
+            # Initialize trainer
+            trainer = Trainer(
+                model=self.model,
+                args=self.training_args,
+                train_dataset=train_dataset,
+                eval_dataset=eval_dataset,
+                optimizers=(optimizer, scheduler)
+            )
 
-        trainer = Trainer(
-            model=self.model,
-            args=self.training_args,
-            # train_dataset=self.datasets["train"],
-            train_dataset=train_dataset,
-            eval_dataset=self.datasets["validation"]
-        )
+            # Finetune
+            print(f'Finetuning...')
+            trainer.train()
+            print(f'Finetuning complete!')
+            print("=====================")
 
-        trainer.train()
+            # Post-Finetuning Evaluation
+            perf_finetune = evaluate_metrics(self.model, self.tokenizer, self.task_name, eval_dataset, self.exp_id)
+            self.save_perf_results(perf_finetune, iteration+1)
+            print(f"Performance after finetuning: {perf_finetune}")
+            print("=====================")
 
-    def evaluate_model(self):
-        return evaluate_metrics(self.model, self.tokenizer, self.task_name, self.datasets["validation"], self.exp_id)
-    
-    def save_eval(self, model_state, evaluation_results, step):
-        with open(f"{self.training_args.output_dir}/eval_iter_{step}.json", 'w') as f:  # Save evaluation results for each iteration
-            json.dump(evaluation_results, f)
+            # Prune
+            print(f"Pruning...")
+            self.prune(self.pruning_rate_per_step)
+            print(f"Pruning complete!")
+            print("=====================")
 
-    def prune(self):
-        eval_results = self.evaluate_model()
-        self.save_eval(self.model.state_dict(), eval_results, step=0)
+            
+            print(f"Sparsity after pruning (check_sparsity): {check_sparsity(self.model)})")
+            print(f"Sparsity after pruning (see_weight_rate): {self.see_weight_rate()}")
 
-        for iteration in range(1, self.total_iterations + 1):
-            print(f'Sparsity before pruning iter #{iteration}: {check_sparsity(self.model):.4%}')
-            self.prune_model(self.pruning_rate_per_step)
-            print(f'Sparsity after pruning iter #{iteration}: {check_sparsity(self.model):.4%}')
+            # Post-Pruning Evaluation
+            perf_prune = evaluate_metrics(self.model, self.tokenizer, self.task_name, eval_dataset, self.exp_id)
+            self.save_perf_results(perf_prune, iteration+1)
+            print(f"Performance after pruning: {perf_prune}")
+            print("=====================")
 
             if self.rewind:
-                self.rewind_weights(self.initial_checkpoint)
-                print(f"Rewinding to initial weights after pruning iteration #{iteration}")
-
-            self.train_model()
-            eval_results = self.evaluate_model()
-            self.save_eval(self.model.state_dict(), eval_results, step=iteration)
+                # Skip rewinding after the last iteration
+                if iteration < self.total_iterations - 1:
+                    print(f"Rewinding to initial weights")
+                    # self.rewind_to_initial(iteration, total_steps)
+                    _, optimizer, scheduler = self.rewind_to_initial(iteration, total_steps)
+        
+        final_sparsity_check = check_sparsity(self.model)
+        final_sparsity_swr = self.see_weight_rate()
+        print(f"Final model sparsity (check): {final_sparsity_check}%")
+        print(f"Final model sparsity (swr): {final_sparsity_swr}%")
         
         return self.model
