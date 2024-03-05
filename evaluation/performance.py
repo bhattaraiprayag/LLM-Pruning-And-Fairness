@@ -3,6 +3,7 @@ import numpy as np
 
 from transformers import Trainer, TrainingArguments, EvalPrediction
 from datasets import load_dataset
+from evaluation.utils.bias_sts import get_device
 
 
 # def load_eval_dataset(task): FOR LOADING LOCAL FILES; local test set doesn't have labels | WORK IN PROGRESS
@@ -81,32 +82,38 @@ def evaluate_metrics(model, head_mask, tokenizer, task, eval_datasets, exp_id):
 
 
 def evaluate_model(model, head_mask, tokenizer, task_name, eval_dataset, exp_id):
-    # tokenization
-    def preprocess_function(examples, task_name=task_name):
-        if task_name == "mnli":
-            # premise and hypothesis
-            return tokenizer(examples["premise"], examples["hypothesis"], truncation=True, padding=True)
-        elif task_name == "stsb":
-            # sentence pairs
-            return tokenizer(examples["sentence1"], examples["sentence2"], truncation=True, padding=True)
-        else:
-            raise ValueError(f"Task {task_name} not yet supported")
-
     # define compute metrics function
     def compute_metrics(preds, labels):
         preds = np.squeeze(preds) if task_name == "stsb" else np.argmax(preds, axis=1)
         metric = evaluate.load("glue", task_name)
         return metric.compute(predictions=preds, references=labels)
 
-    inputs = eval_dataset.map(preprocess_function, batched=True)
-    print(inputs[:5])
+    device = get_device()
+
+    for i in eval_dataset.shape:
+        if task_name == "mnli":
+            sent1, sent2 = "premise", "hypothesis"
+        elif task_name == "stsb":
+            sent1, sent2 = "sentence1", "sentence2"
+        else:
+            raise ValueError(f"Task {task_name} not supported")
+
+        row = eval_dataset[i]
+        inputs = tokenizer(row[sent1], row[sent2], max_length=512, truncation=True, padding=True)
+        inputs.to(device)
+
+        print(inputs)
+
+
 
     outputs = model(**inputs, head_mask=head_mask)
 
-    labels = eval_dataset['label']
+    print(outputs)
+
+    # labels = eval_dataset['label']
     # TO DO: get preds
-    preds = outputs[]
+    # preds = outputs[]
 
-    result = compute_metrics(preds, labels)
+    # result = compute_metrics(preds, labels)
 
-    return result
+    # return result
