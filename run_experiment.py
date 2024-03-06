@@ -15,7 +15,7 @@ from dataclasses import dataclass, field, asdict
 from typing import Optional
 from pruning.pruning import pruning
 from pruning.utils import get_device, get_seed
-from evaluation.performance import load_eval_dataset, evaluate_metrics
+from evaluation.performance import load_test_dataset, evaluate_metrics
 from evaluation.seat import seatandweat
 from evaluation.stereoset import stereoset
 from evaluation.bias_nli import bias_nli
@@ -127,8 +127,8 @@ def main():
         head_mask = None
 
     # evaluate model "performance" (not fairness)
-    eval_datasets = load_eval_dataset(exp_args.task, exp_args.model_no)
-    res_performance = evaluate_metrics(model, head_mask, tokenizer, exp_args.task, eval_datasets, id)
+    test_dataset = load_test_dataset(exp_args.task, exp_args.model_no)
+    res_performance = evaluate_metrics(model, head_mask, tokenizer, exp_args.task, test_dataset, id)
     print(res_performance)
 
     # fairness evaluation

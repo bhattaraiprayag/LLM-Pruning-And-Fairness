@@ -1,9 +1,11 @@
 import evaluate
 import numpy as np
+import torch
 
 from transformers import Trainer, TrainingArguments, EvalPrediction
 from datasets import load_dataset
 from evaluation.utils.bias_sts import get_device
+
 
 
 # def load_eval_dataset(task): FOR LOADING LOCAL FILES; local test set doesn't have labels | WORK IN PROGRESS
@@ -20,8 +22,8 @@ from evaluation.utils.bias_sts import get_device
 #     else:
 #         raise ValueError(f'No dataset found for task {task}')
 
-def load_eval_dataset(task, model_no):    # ONLY WORKS WITH split='validation'
-    """Loads the evaluation dataset based on the specified task."""
+def load_test_dataset(task, model_no):
+    """Loads the test dataset based on the specified task."""
     if task == 'mnli':
         if model_no == 1: # uses original split of the data
             return (
@@ -64,16 +66,16 @@ def load_eval_dataset(task, model_no):    # ONLY WORKS WITH split='validation'
         raise ValueError(f'No evaluation dataset found for task {task}')
 
 
-def evaluate_metrics(model, head_mask, tokenizer, task, eval_datasets, exp_id):
+def evaluate_metrics(model, head_mask, tokenizer, task, test_dataset, exp_id):
     """Evaluates task-specific metrics and returns results."""
     results_dict = {}
     if task == 'mnli':
-        eval_matched, eval_mismatched = eval_datasets
+        eval_matched, eval_mismatched = test_dataset
         mnli_matched = evaluate_model(model, head_mask, tokenizer, task, eval_matched, exp_id)
         mnli_mismatched = evaluate_model(model, head_mask, tokenizer, task, eval_mismatched, exp_id)
         results_dict['Matched Acc'], results_dict['Mismatched Acc'] = mnli_matched['eval_accuracy'], mnli_mismatched['eval_accuracy']
     elif task == 'stsb':
-        eval_results = evaluate_model(model, head_mask, tokenizer, task, eval_datasets, exp_id)
+        eval_results = evaluate_model(model, head_mask, tokenizer, task, test_dataset, exp_id)
         results_dict['Spearmanr'], results_dict['Pearson'] = eval_results['eval_spearmanr'], eval_results['eval_pearson']
     else:
         raise ValueError(f'No evaluation metrics found for task {task}')
@@ -81,7 +83,7 @@ def evaluate_metrics(model, head_mask, tokenizer, task, eval_datasets, exp_id):
     return results_dict
 
 
-def evaluate_model(model, head_mask, tokenizer, task_name, eval_dataset, exp_id):
+def evaluate_model(model, head_mask, tokenizer, task_name, test_dataset, exp_id):
     # define compute metrics function
     def compute_metrics(preds, labels):
         preds = np.squeeze(preds) if task_name == "stsb" else np.argmax(preds, axis=1)
@@ -92,7 +94,7 @@ def evaluate_model(model, head_mask, tokenizer, task_name, eval_dataset, exp_id)
 
     preds = []
 
-    for i in range(eval_dataset.shape[0]):
+    for i in range(test_dataset.shape[0]):
         # define the names of the sentence keys based on task
         if task_name == "mnli":
             sent1, sent2 = "premise", "hypothesis"
@@ -102,23 +104,17 @@ def evaluate_model(model, head_mask, tokenizer, task_name, eval_dataset, exp_id)
             raise ValueError(f"Task {task_name} not supported")
 
         # tokenize the current sentence pair
-        row = eval_dataset[i]
+        row = test_dataset[i]
         inputs = tokenizer(row[sent1], row[sent2], max_length=512, truncation=True, padding=True, return_tensors='pt')
         inputs.to(device)
 
         # do inference and get prediction
         outputs = model(**inputs, head_mask=head_mask)
-        pred = outputs[0].tolist()[0][0] if task_name == "stsb" else outputs.logits.softmax(dim=1)
+        pred = outputs[0].tolist()[0][0] if task_name == "stsb" else torch.argmax(outputs.logits.softmax(dim=1)).item()
         preds.append(pred)
 
-        if i == 0:
-            print(pred)
-
-         # stsb: outputs[0].tolist()[0][0]
-
-
-
-    # labels = eval_dataset['label']
+    # get labels from dataset
+    labels = test_dataset['label']
     # TO DO: get preds
     # preds = outputs[]
 
