@@ -66,7 +66,7 @@ def load_test_dataset(task, model_no):
         raise ValueError(f'No evaluation dataset found for task {task}')
 
 
-def evaluate_metrics(model, head_mask, tokenizer, task, test_dataset, exp_id):
+def evaluate_metrics(model, head_mask, tokenizer, task, test_dataset):
     """Evaluates task-specific metrics and returns results."""
     results_dict = {}
     if task == 'mnli':
