@@ -90,9 +90,10 @@ def evaluate_model(model, head_mask, tokenizer, task_name, eval_dataset, exp_id)
 
     device = get_device()
 
-    pair_list = []
+    preds = []
 
     for i in range(eval_dataset.shape[0]):
+        # define the names of the sentence keys based on task
         if task_name == "mnli":
             sent1, sent2 = "premise", "hypothesis"
         elif task_name == "stsb":
@@ -100,23 +101,22 @@ def evaluate_model(model, head_mask, tokenizer, task_name, eval_dataset, exp_id)
         else:
             raise ValueError(f"Task {task_name} not supported")
 
+        # tokenize the current sentence pair
         row = eval_dataset[i]
-        pair_list.append((row[sent1], row[sent2]))
-
         inputs = tokenizer(row[sent1], row[sent2], max_length=512, truncation=True, padding=True, return_tensors='pt')
         inputs.to(device)
 
+        # do inference and get prediction
         outputs = model(**inputs, head_mask=head_mask)
+        pred = outputs[0].tolist()[0][0] if task_name == "stsb" else outputs.logits.softmax(dim=1)
+        preds.append(pred)
+
         if i == 0:
-            print(outputs)
+            print(pred)
+
+         # stsb: outputs[0].tolist()[0][0]
 
 
-    '''inputs = tokenizer(pair_list, max_length=512, truncation=True, padding=True, return_tensors='pt')
-    inputs.to(device)
-
-    outputs = model(**inputs, head_mask=head_mask)
-
-    print(outputs)'''
 
     # labels = eval_dataset['label']
     # TO DO: get preds
