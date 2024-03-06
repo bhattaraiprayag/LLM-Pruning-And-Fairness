@@ -48,11 +48,12 @@ def structured_pruning(model, tokenizer, seed, task, device, masking_threshold, 
 
     # perform masking
     head_mask = mask_heads(model, eval_dataloader, device, local_rank, output_dir, task, masking_amount, masking_threshold)
+    head_mask_tensor = torch.tensor(head_mask, dtype=torch.float32)
     
     # TO DO: Update sparsity function to work with head mask
     sparsity = check_sparsity(model)
     print(f'Sparsity: {sparsity}')
 
     # return the final sparsity of the model
-    return sparsity, head_mask
+    return sparsity, head_mask_tensor
 
