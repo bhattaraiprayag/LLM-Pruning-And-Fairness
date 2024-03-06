@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from utils import run_info, run_phrase
 import re
 
@@ -16,7 +17,8 @@ def mnli_overview(filepath):
                      'BiasNLI_NN', 'BiasNLI_FN', 'Matched Acc', 'Mismatched Acc']].mean())
 
     # Group for everything else, where the target sparsity was an input
-    working2 = results[results['pruning_method'] != 'structured']
+    working2 = results[results['pruning_method'] != 'structured'].copy()
+    working2['pruning_method'] = working2['pruning_method'].replace(np.nan, 'original')
     working2 = (working2.groupby(['sparsity_level', 'pruning_method'], as_index=False)[
                     ['SEAT_gender', 'WEAT_gender', 'StereoSet_LM_gender', 'StereoSet_SS_gender',
                      'BiasNLI_NN', 'BiasNLI_FN', 'Matched Acc', 'Mismatched Acc']].mean())
@@ -62,7 +64,8 @@ def stsb_overview(filepath):
                      'BiasSTS', 'Spearmanr', 'Pearson']].mean())
 
     # Group for everything else, where the target sparsity was an input
-    working2 = results[results['pruning_method'] != 'structured']
+    working2 = results[results['pruning_method'] != 'structured'].copy()
+    working2['pruning_method'] = working2['pruning_method'].replace(np.nan, 'original')
     working2 = (working2.groupby(['sparsity_level', 'pruning_method'], as_index=False)[
                     ['SEAT_gender', 'WEAT_gender', 'StereoSet_LM_gender', 'StereoSet_SS_gender',
                      'BiasSTS', 'Spearmanr', 'Pearson']].mean())
@@ -190,7 +193,8 @@ def sweat_overview(filepath):
                      'weat_gender', 'weat_race', 'weat_illness']].mean())
 
     # Group for everything else, where the target sparsity was an input
-    working2 = results[results['pruning_method'] != 'structured']
+    working2 = results[results['pruning_method'] != 'structured'].copy()
+    working2['pruning_method'] = working2['pruning_method'].replace(np.nan, 'original')
     working2 = (working2.groupby(['sparsity_level', 'pruning_method', 'task'], as_index=False)[
                     ['seat_gender', 'seat_race', 'seat_illness', 'seat_religion',
                      'weat_gender', 'weat_race', 'weat_illness']].mean())
@@ -232,7 +236,8 @@ def stereoset_overview(filepath):
                     ['sparsity_level', 'gender', 'profession', 'race',  'religion']].mean())
 
     # Group for everything else, where the target sparsity was an input
-    working2 = results[results['pruning_method'] != 'structured']
+    working2 = results[results['pruning_method'] != 'structured'].copy()
+    working2['pruning_method'] = working2['pruning_method'].replace(np.nan, 'original')
     working2 = (working2.groupby(['sparsity_level', 'pruning_method', 'task'], as_index=False)[
                     ['gender', 'profession', 'race',  'religion']].mean())
 
