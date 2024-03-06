@@ -1,36 +1,19 @@
 import evaluate
-import numpy as np
 import torch
 
-from transformers import Trainer, TrainingArguments, EvalPrediction
 from datasets import load_dataset
 from evaluation.utils.bias_sts import get_device
 
 
-
-# def load_eval_dataset(task): FOR LOADING LOCAL FILES; local test set doesn't have labels | WORK IN PROGRESS
-#     """Loads the .tsv test datasets based on the specified task, from local folder"""
-#     mnli_path = "/training/glue_data/MNLI/"
-#     stsb_path = "/training/glue_data/STS-B/"
-#     if task == 'mnli':
-#         return (
-#             load_dataset("glue", "mnli", data_dir=mnli_path, split='test_matched'),
-#             load_dataset("glue", "mnli", data_dir=mnli_path, split='test_mismatched')
-#         )
-#     elif task == 'stsb':
-#         return load_dataset("glue", "stsb", data_dir=stsb_path, split='test')
-#     else:
-#         raise ValueError(f'No dataset found for task {task}')
-
 def load_test_dataset(task, model_no):
     """Loads the test dataset based on the specified task."""
     if task == 'mnli':
-        if model_no == 1: # uses original split of the data
+        if model_no == 1:  # uses original split of the data
             return (
                 load_dataset('glue', 'mnli', split='validation_matched[-50%:]'),
                 load_dataset('glue', 'mnli', split='validation_mismatched[-50%:]')
             )
-        else: # uses shuffled split based on seed
+        else:  # uses shuffled split based on seed
             full_dataset = load_dataset(
                 "glue",
                 "mnli",
@@ -41,15 +24,15 @@ def load_test_dataset(task, model_no):
             # Split test_matched + validation_matched in half test_matched, half validation_matched
             test_valid = train_testvalid['test'].train_test_split(test_size=0.5, shuffle=True, seed=model_no)
             # return test portion (matched and mismatchend)
-            return(
+            return (
                 test_valid['train'],
                 full_dataset[2]
             )
 
     elif task == 'stsb':
-        if model_no == 1: # uses original split of the data
+        if model_no == 1:  # uses original split of the data
             return load_dataset('glue', 'stsb', split='validation[-50%:]')
-        else: # uses shuffled split based on seed
+        else:  # uses shuffled split based on seed
             full_dataset = load_dataset(
                 "glue",
                 "stsb",
@@ -73,28 +56,29 @@ def evaluate_metrics(model, head_mask, tokenizer, task, test_dataset):
         eval_matched, eval_mismatched = test_dataset
         mnli_matched = evaluate_model(model, head_mask, tokenizer, task, eval_matched)
         mnli_mismatched = evaluate_model(model, head_mask, tokenizer, task, eval_mismatched)
-        results_dict['Matched Acc'], results_dict['Mismatched Acc'] = mnli_matched['accuracy'], mnli_mismatched['accuracy']
+        results_dict['Matched Acc'], results_dict['Mismatched Acc'] = mnli_matched['accuracy'], mnli_mismatched[
+            'accuracy']
     elif task == 'stsb':
         eval_results = evaluate_model(model, head_mask, tokenizer, task, test_dataset)
         results_dict['Spearmanr'], results_dict['Pearson'] = eval_results['spearmanr'], eval_results['pearson']
     else:
         raise ValueError(f'No evaluation metrics found for task {task}')
-    # return print(f"Task: {task.upper()} | {results_dict}")
+
     return results_dict
 
 
 def evaluate_model(model, head_mask, tokenizer, task_name, test_dataset):
     device = get_device()
 
+    # define the names of the sentence keys based on task
+    if task_name == "mnli":
+        sent1, sent2 = "premise", "hypothesis"
+    else:  # STS-B
+        sent1, sent2 = "sentence1", "sentence2"
+
     preds = []
 
     for i in range(test_dataset.shape[0]):
-        # define the names of the sentence keys based on task
-        if task_name == "mnli":
-            sent1, sent2 = "premise", "hypothesis"
-        else: #STS-B
-            sent1, sent2 = "sentence1", "sentence2"
-
         # tokenize the current sentence pair
         row = test_dataset[i]
         inputs = tokenizer(row[sent1], row[sent2], max_length=512, truncation=True, padding=True, return_tensors='pt')
@@ -105,15 +89,11 @@ def evaluate_model(model, head_mask, tokenizer, task_name, test_dataset):
         pred = outputs[0].tolist()[0][0] if task_name == "stsb" else torch.argmax(outputs.logits.softmax(dim=1)).item()
         preds.append(pred)
 
-        if i == 10:
-            break
-
     # get labels from dataset
-    labels = test_dataset['label'][:11]
+    labels = test_dataset['label']
 
-    # calculate performance metric
+    # calculate performance metric(s)
     metric = evaluate.load("glue", task_name)
     result = metric.compute(predictions=preds, references=labels)
-    print(result)
 
     return result

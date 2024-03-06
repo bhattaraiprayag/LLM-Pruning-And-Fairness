@@ -218,6 +218,7 @@ def mask_heads(model, eval_dataloader, device, local_rank, output_dir, task, mas
 
     logger.info("Final head mask")
     print_2d_tensor(final_head_mask)
+
     np.savetxt(os.path.join(output_dir, "head_mask.npy"), final_head_mask.detach().cpu().numpy())
 
     return final_head_mask
