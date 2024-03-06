@@ -103,12 +103,20 @@ def evaluate_model(model, head_mask, tokenizer, task_name, eval_dataset, exp_id)
         row = eval_dataset[i]
         pair_list.append((row[sent1], row[sent2]))
 
+        inputs = tokenizer(row[sent1], row[sent2], max_length=512, truncation=True, padding=True, return_tensors='pt')
+        inputs.to(device)
 
-    inputs = tokenizer(pair_list, max_length=512, truncation=True, padding=True)
+        outputs = model(**inputs, head_mask=head_mask)
+        if i == 0:
+            print(outputs)
+
+
+    '''inputs = tokenizer(pair_list, max_length=512, truncation=True, padding=True, return_tensors='pt')
     inputs.to(device)
-    outputs = model(**inputs, head_mask=head_mask).logits
 
-    print(outputs)
+    outputs = model(**inputs, head_mask=head_mask)
+
+    print(outputs)'''
 
     # labels = eval_dataset['label']
     # TO DO: get preds
