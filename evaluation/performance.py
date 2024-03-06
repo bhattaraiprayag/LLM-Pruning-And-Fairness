@@ -71,25 +71,19 @@ def evaluate_metrics(model, head_mask, tokenizer, task, test_dataset, exp_id):
     results_dict = {}
     if task == 'mnli':
         eval_matched, eval_mismatched = test_dataset
-        mnli_matched = evaluate_model(model, head_mask, tokenizer, task, eval_matched, exp_id)
-        mnli_mismatched = evaluate_model(model, head_mask, tokenizer, task, eval_mismatched, exp_id)
-        results_dict['Matched Acc'], results_dict['Mismatched Acc'] = mnli_matched['eval_accuracy'], mnli_mismatched['eval_accuracy']
+        mnli_matched = evaluate_model(model, head_mask, tokenizer, task, eval_matched)
+        mnli_mismatched = evaluate_model(model, head_mask, tokenizer, task, eval_mismatched)
+        results_dict['Matched Acc'], results_dict['Mismatched Acc'] = mnli_matched['accuracy'], mnli_mismatched['accuracy']
     elif task == 'stsb':
-        eval_results = evaluate_model(model, head_mask, tokenizer, task, test_dataset, exp_id)
-        results_dict['Spearmanr'], results_dict['Pearson'] = eval_results['eval_spearmanr'], eval_results['eval_pearson']
+        eval_results = evaluate_model(model, head_mask, tokenizer, task, test_dataset)
+        results_dict['Spearmanr'], results_dict['Pearson'] = eval_results['spearmanr'], eval_results['pearson']
     else:
         raise ValueError(f'No evaluation metrics found for task {task}')
     # return print(f"Task: {task.upper()} | {results_dict}")
     return results_dict
 
 
-def evaluate_model(model, head_mask, tokenizer, task_name, test_dataset, exp_id):
-    # define compute metrics function
-    def compute_metrics(preds, labels):
-        preds = np.squeeze(preds) if task_name == "stsb" else np.argmax(preds, axis=1)
-        metric = evaluate.load("glue", task_name)
-        return metric.compute(predictions=preds, references=labels)
-
+def evaluate_model(model, head_mask, tokenizer, task_name, test_dataset):
     device = get_device()
 
     preds = []
@@ -98,10 +92,8 @@ def evaluate_model(model, head_mask, tokenizer, task_name, test_dataset, exp_id)
         # define the names of the sentence keys based on task
         if task_name == "mnli":
             sent1, sent2 = "premise", "hypothesis"
-        elif task_name == "stsb":
+        else: #STS-B
             sent1, sent2 = "sentence1", "sentence2"
-        else:
-            raise ValueError(f"Task {task_name} not supported")
 
         # tokenize the current sentence pair
         row = test_dataset[i]
@@ -113,11 +105,15 @@ def evaluate_model(model, head_mask, tokenizer, task_name, test_dataset, exp_id)
         pred = outputs[0].tolist()[0][0] if task_name == "stsb" else torch.argmax(outputs.logits.softmax(dim=1)).item()
         preds.append(pred)
 
+        if i == 10:
+            break
+
     # get labels from dataset
-    labels = test_dataset['label']
-    # TO DO: get preds
-    # preds = outputs[]
+    labels = test_dataset['label'][:11]
 
-    # result = compute_metrics(preds, labels)
+    # calculate performance metric
+    metric = evaluate.load("glue", task_name)
+    result = metric.compute(predictions=preds, references=labels)
+    print(result)
 
-    # return result
+    return result
