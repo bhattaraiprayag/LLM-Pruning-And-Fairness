@@ -224,60 +224,6 @@ def mask_heads(model, eval_dataloader, device, local_rank, output_dir, task, mas
     return final_head_mask
 
 
-def prune_heads(model, eval_dataloader, device, local_rank, output_dir, task, head_mask):
-    """ This method shows how to prune head (remove heads weights) based on
-        the head importance scores as described in Michel et al. (http://arxiv.org/abs/1905.10650)
-    """
-    metric_name = {
-        "mnli": "acc",
-        "sts-b": "corr",
-    }[task]
-    output_mode = output_modes[task]
-
-
-    # Try pruning and test time speedup
-    # Pruning is like masking but we actually remove the masked weights
-    before_time = datetime.now()
-    _, _, preds, labels = compute_heads_importance(
-        model, eval_dataloader, device, local_rank, output_dir, compute_importance=False, head_mask=head_mask
-    )
-    preds = np.argmax(preds, axis=1) if output_mode == "classification" else np.squeeze(preds)
-    score_masking = glue_compute_metrics(task, preds, labels)[metric_name]
-    original_time = datetime.now() - before_time
-
-    original_num_params = sum(p.numel() for p in model.parameters())
-    heads_to_prune = {}
-    for layer in range(len(head_mask)):
-        heads_to_mask = [h[0] for h in (1 - head_mask[layer].long()).nonzero().tolist()]
-        heads_to_prune[layer] = heads_to_mask
-    assert sum(len(h) for h in heads_to_prune.values()) == (1 - head_mask.long()).sum().item()
-    logger.info(f"Heads to prune: {heads_to_prune}")
-    model.prune_heads(heads_to_prune)
-    pruned_num_params = sum(p.numel() for p in model.parameters())
-
-    before_time = datetime.now()
-    _, _, preds, labels = compute_heads_importance(
-        model, eval_dataloader, device, local_rank, output_dir, compute_importance=False, head_mask=None
-    )
-    preds = np.argmax(preds, axis=1) if output_mode == "classification" else np.squeeze(preds)
-    score_pruning = glue_compute_metrics(task, preds, labels)[metric_name]
-    new_time = datetime.now() - before_time
-
-    # calculate sparsity after pruning
-    sparsity = 1 - pruned_num_params / original_num_params
-
-    logger.info(
-        "Pruning: original num of params: %.2e, after pruning %.2e, sparsity: %.2f",
-        original_num_params,
-        pruned_num_params,
-        sparsity,
-    )
-    logger.info("Pruning: score with masking: %f score with pruning: %f", score_masking, score_pruning)
-    logger.info("Pruning: speed ratio (new timing / original timing): %f percents", original_time / new_time * 100)
-
-    return sparsity
-
-
 def create_examples(lines, task):
     """
     Creates examples for dev set.
