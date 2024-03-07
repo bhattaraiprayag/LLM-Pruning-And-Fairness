@@ -92,10 +92,6 @@ def main():
     if not os.path.exists(experiment_dir):
         os.makedirs(experiment_dir)
 
-    # NOT NEEDED?? create output/results folder directory (one folder per run) to put into functions
-    # outdir = f'/results/run{str(id)}'
-    # os.mkdir(outdir)
-
     # select model path based on task and model_no
     if exp_args.task == 'mnli':
         model_path = f'training/final_models/MNLI/model_no{exp_args.model_no}/'
@@ -153,5 +149,5 @@ def main():
 
 
 if __name__ == '__main__':
-    # Sample run: python run_experiment.py --task stsb --pruning_method l1-unstructured --sparsity_level 0.5 --seed 42
+    # Sample run: python run_experiment.py --seed 42 --task stsb --device 0 --model_no 2 --pruning_method imp --sparsity_level 0.1
     main()
