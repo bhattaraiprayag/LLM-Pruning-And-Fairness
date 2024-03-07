@@ -131,7 +131,7 @@ python ./evaluation/bias_nli/generate_templates.py --noun --p occupations --h ge
 Other options could be selected for `--p` and `--h`, but we are using this setting initially as they compare occupations with sentences with gendered words. This expands templates into a set of premise-hypothesis pairs and write the result into a CSV file. 
 The files used for this are in the [bias_nli folder](evaluation/bias_nli).
 
-There is then a function to produce the scores when it is given a model and tokenizer. It will return a dictionary with net neutral and fraction neutral values.
+There is then a function to produce the scores when it is given a model and tokenizer. It will return a dictionary with net neutral and fraction neutral values. An output file is also saved with all predictions, NOTE: 'entailed' and 'contradicted' are incorrectly switched in this additional file.
 
 #### Bias-STS
 
