@@ -165,7 +165,7 @@ class MagnitudePrunerIterative:
             print(f'Iteration: {iteration+1}')
 
             # Debug statement (slice data if True)
-            slicer = True
+            slicer = False
             if slicer:
                 train_dataset = self.datasets["train"]
                 train_dataset = train_dataset.select(range(10))
