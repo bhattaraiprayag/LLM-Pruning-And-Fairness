@@ -70,11 +70,6 @@ class ExperimentArguments:
         metadata={"help": "Specify which model is used. The different models were fine-tuned on different splits of the datasets. Default: 1"},
     )
 
-    imp_iters: Optional[int] = field(
-        default=10,
-        metadata={"help": "Specify number of iterations for iterative magnitude pruning."},
-    )
-
 
 # main function that runs the experiment pipeline (evaluation and pruning dependent on arguments)
 def main():
@@ -153,5 +148,5 @@ def main():
 
 
 if __name__ == '__main__':
-    # Sample run: python run_experiment.py --seed 42 --task stsb --device 0 --model_no 2 --pruning_method imp --sparsity_level 0.1 --imp_iters 2
+    # Sample run: python run_experiment.py --seed 42 --task stsb --device 0 --model_no 2 --pruning_method imp --sparsity_level 0.1
     main()
