@@ -51,7 +51,7 @@ def structured_pruning(model, tokenizer, seed, task, device, masking_threshold, 
     
     # get final sparsity of the model
     sparsity = check_sparsity(model)
-    print(f'Sparsity: {sparsity}')
+    print(f'Final sparsity: {sparsity}')
 
     return sparsity, head_mask_tensor
 
