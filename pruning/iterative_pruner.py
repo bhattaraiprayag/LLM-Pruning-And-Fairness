@@ -23,11 +23,12 @@ class MagnitudePrunerIterative:
         self.total_iterations = total_iterations
         self.rewind = rewind
         self.sparsity_level = sparsity_level
-        self.pruning_rate_per_step = sparsity_level / total_iterations        
+        self.pruning_rate_per_step = sparsity_level / (total_iterations + 1)
         self.exp_id = exp_id
         self.datasets = load_data_hub(self.task_name, self.model_no)
         self.initial_checkpoint = self._create_initial_checkpoint(self.model)
         self.tokenize()
+        self.head_mask = None
 
     # Tokenize data
     def tokenize(self):
@@ -154,11 +155,10 @@ class MagnitudePrunerIterative:
         get_seed(self.seed)
 
         print(f"First Pruning (before finetuning)...")
-        self.prune(self.sparsity_level)
+        self.prune(self.pruning_rate_per_step)
         print(f"First Pruning complete!")
 
-        print(f"Sparsity (check_sparsity): {check_sparsity(self.model)})")
-        print(f"Sparsity (see_weight_rate): {self.see_weight_rate()}")
+        print(f"Sparsity after first pruning: {self.see_weight_rate()}")
 
         for iteration in range(self.total_iterations):
             print("=====================================================")
@@ -209,7 +209,7 @@ class MagnitudePrunerIterative:
             print("=====================")
 
             # Post-Finetuning Evaluation
-            perf_finetune = evaluate_metrics(self.model, self.tokenizer, self.task_name, eval_dataset, self.exp_id)
+            perf_finetune = evaluate_metrics(self.model, self.head_mask, self.tokenizer, self.task_name, eval_dataset)
             self.save_perf_results(perf_finetune, iteration+1)
             print(f"Performance after finetuning: {perf_finetune}")
             print("=====================")
@@ -219,13 +219,11 @@ class MagnitudePrunerIterative:
             self.prune(self.pruning_rate_per_step)
             print(f"Pruning complete!")
             print("=====================")
-
             
-            print(f"Sparsity after pruning (check_sparsity): {check_sparsity(self.model)})")
-            print(f"Sparsity after pruning (see_weight_rate): {self.see_weight_rate()}")
+            print(f"Sparsity after pruning: {self.see_weight_rate()}")
 
             # Post-Pruning Evaluation
-            perf_prune = evaluate_metrics(self.model, self.tokenizer, self.task_name, eval_dataset, self.exp_id)
+            perf_prune = evaluate_metrics(self.model, self.head_mask, self.tokenizer, self.task_name, eval_dataset)
             self.save_perf_results(perf_prune, iteration+1)
             print(f"Performance after pruning: {perf_prune}")
             print("=====================")
@@ -234,12 +232,9 @@ class MagnitudePrunerIterative:
                 # Skip rewinding after the last iteration
                 if iteration < self.total_iterations - 1:
                     print(f"Rewinding to initial weights")
-                    # self.rewind_to_initial(iteration, total_steps)
                     _, optimizer, scheduler = self.rewind_to_initial(iteration, total_steps)
         
-        final_sparsity_check = check_sparsity(self.model)
-        final_sparsity_swr = self.see_weight_rate()
-        print(f"Final model sparsity (check): {final_sparsity_check}%")
-        print(f"Final model sparsity (swr): {final_sparsity_swr}%")
+        final_sparsity = self.see_weight_rate()
+        print(f"Final Sparsity: {final_sparsity}%")
         
         return self.model
