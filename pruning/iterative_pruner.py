@@ -212,6 +212,7 @@ class MagnitudePrunerIterative:
             perf_finetune = evaluate_metrics(self.model, self.head_mask, self.tokenizer, self.task_name, eval_dataset)
             self.save_perf_results(perf_finetune, iteration+1)
             print(f"Performance after finetuning: {perf_finetune}")
+            print(f"Sparsity after finetuning: {self.see_weight_rate()}")
             print("=====================")
 
             # Prune
@@ -219,13 +220,12 @@ class MagnitudePrunerIterative:
             self.prune(self.pruning_rate_per_step)
             print(f"Pruning complete!")
             print("=====================")
-            
-            print(f"Sparsity after pruning: {self.see_weight_rate()}")
 
             # Post-Pruning Evaluation
             perf_prune = evaluate_metrics(self.model, self.head_mask, self.tokenizer, self.task_name, eval_dataset)
             self.save_perf_results(perf_prune, iteration+1)
             print(f"Performance after pruning: {perf_prune}")
+            print(f"Sparsity after pruning: {self.see_weight_rate()}")
             print("=====================")
 
             if self.rewind:
