@@ -161,3 +161,5 @@ cython_debug/
 
 # Project specific
 evaluation/results/
+evaluation/performance_test.py
+pruning/structured_pruning_old.py

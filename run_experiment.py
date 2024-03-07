@@ -15,7 +15,7 @@ from dataclasses import dataclass, field, asdict
 from typing import Optional
 from pruning.pruning import pruning
 from pruning.utils import get_device, get_seed
-from evaluation.performance import load_eval_dataset, evaluate_metrics
+from evaluation.performance import load_test_dataset, evaluate_metrics
 from evaluation.seat import seatandweat
 from evaluation.stereoset import stereoset
 from evaluation.bias_nli import bias_nli
@@ -120,23 +120,24 @@ def main():
 
     # pruning (skipped if pruning == None)
     if exp_args.pruning_method != "None":
-        returned_sparsity = pruning(exp_args, model, tokenizer, id, experiment_dir)
+        returned_sparsity, head_mask = pruning(exp_args, model, tokenizer, id, experiment_dir)
         if returned_sparsity is not None:
             exp_args.sparsity_level = returned_sparsity
+    else:
+        head_mask = None
 
     # evaluate model "performance" (not fairness)
-    eval_datasets = load_eval_dataset(exp_args.task, exp_args.model_no)
-    res_performance = evaluate_metrics(model, tokenizer, exp_args.task, eval_datasets, id)
-    print(res_performance)
+    test_dataset = load_test_dataset(exp_args.task, exp_args.model_no)
+    res_performance = evaluate_metrics(model, head_mask, tokenizer, exp_args.task, test_dataset)
 
     # fairness evaluation
     # ideally: set up one evaluation function
-    res_seatandweat = seatandweat(model, tokenizer, id, exp_args.seed)
-    res_stereoset = stereoset(model, tokenizer, id)
+    res_seatandweat = seatandweat(model, head_mask, tokenizer, id, exp_args.seed)
+    res_stereoset = stereoset(model, head_mask, tokenizer, id)
     if exp_args.task == 'mnli':
-        res_bias = bias_nli(model, tokenizer, id)
+        res_bias = bias_nli(model, head_mask, tokenizer, id)
     else:
-        res_bias = bias_sts(model, tokenizer, id)
+        res_bias = bias_sts(model, head_mask, tokenizer, id)
 
     # create a dict with all variables of the current run
     results_run = {**asdict(exp_args), **res_performance, **res_seatandweat, **res_stereoset, **res_bias}

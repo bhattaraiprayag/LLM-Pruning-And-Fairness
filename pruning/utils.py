@@ -210,128 +210,91 @@ def mask_heads(model, eval_dataloader, device, local_rank, output_dir, task, mas
     """ This method shows how to mask head (set some heads to zero), to test the effect on the network,
         based on the head importance scores, as described in Michel et al. (http://arxiv.org/abs/1905.10650)
     """
+
+    def masking_loop(current_score, i, new_head_mask, new_head_importance):
+        while current_score >= original_score * masking_threshold:
+            head_mask = new_head_mask.clone()
+            head_importance = new_head_importance
+            score = current_score
+
+            # save current head mask
+            np.savetxt(os.path.join(output_dir, f"head_mask_{i}.npy"), head_mask.detach().cpu().numpy())
+            np.savetxt(os.path.join(output_dir, f"head_importance_{i}.npy"), head_importance.detach().cpu().numpy())
+
+            i += 1
+            # heads from least important to most - keep only not-masked heads
+            head_importance[head_mask == 0.0] = float("Inf")
+            current_heads_to_mask = head_importance.view(-1).sort()[1]
+
+            if len(current_heads_to_mask) <= num_to_mask:
+                break
+
+            # mask heads
+            selected_heads_to_mask = []
+            for head in current_heads_to_mask:
+                if len(selected_heads_to_mask) == num_to_mask or head_importance.view(-1)[head.item()] == float("Inf"):
+                    break
+                layer_idx = head.item() // model.roberta.config.num_attention_heads
+                head_idx = head.item() % model.roberta.config.num_attention_heads
+                new_head_mask[layer_idx][head_idx] = 0.0
+                selected_heads_to_mask.append(head.item())
+
+            if not selected_heads_to_mask:
+                break
+
+            logger.info("Heads to mask: %s", str(selected_heads_to_mask))
+
+            # new_head_mask = new_head_mask.view_as(head_mask)
+            print_2d_tensor(new_head_mask)
+
+            # Compute metric and head importance again
+            _, new_head_importance, preds, labels = compute_heads_importance(
+                model, eval_dataloader, device, local_rank, output_dir, head_mask=new_head_mask
+            )
+            preds = np.argmax(preds, axis=1) if output_mode == "classification" else np.squeeze(preds)
+            current_score = glue_compute_metrics(task, preds, labels)[metric_name]
+            logger.info(
+                "Masking: current score: %f, remaning heads %d (%.1f percents)",
+                current_score,
+                new_head_mask.sum(),
+                new_head_mask.sum() / new_head_mask.numel() * 100,
+            )
+        return score, i, head_mask, head_importance
+
     metric_name = {
         "mnli": "acc",
         "sts-b": "corr",
     }[task]
     output_mode = output_modes[task]
 
-    _, head_importance, preds, labels = compute_heads_importance(model, eval_dataloader, device, local_rank, output_dir)
+    _, new_head_importance, preds, labels = compute_heads_importance(model, eval_dataloader, device, local_rank, output_dir)
     preds = np.argmax(preds, axis=1) if output_mode == "classification" else np.squeeze(preds)
     original_score = glue_compute_metrics(task, preds, labels)[metric_name]
     logger.info("Pruning: original score: %f, threshold: %f", original_score, original_score * masking_threshold)
 
-    new_head_mask = torch.ones_like(head_importance)
+    new_head_mask = torch.ones_like(new_head_importance)
     num_to_mask = max(1, int(new_head_mask.numel() * masking_amount))
 
     current_score = original_score
     i = 0
-    while current_score >= original_score * masking_threshold:
-        head_mask = new_head_mask.clone()
-        # save current head mask
-        np.savetxt(os.path.join(output_dir, f"head_mask_{i}.npy"), head_mask.detach().cpu().numpy())
-        np.savetxt(os.path.join(output_dir, f"head_importance_{i}.npy"), head_importance.detach().cpu().numpy())
 
-        i += 1
-        # heads from least important to most - keep only not-masked heads
-        head_importance[head_mask == 0.0] = float("Inf")
-        current_heads_to_mask = head_importance.view(-1).sort()[1]
+    # mask and get as close to the threshold as possible with specified masking_amount
+    current_score, i, new_head_mask, new_head_importance = masking_loop(current_score, i, new_head_mask, new_head_importance)
 
-        if len(current_heads_to_mask) <= num_to_mask:
-            break
-
-        # mask heads
-        selected_heads_to_mask = []
-        for head in current_heads_to_mask:
-            if len(selected_heads_to_mask) == num_to_mask or head_importance.view(-1)[head.item()] == float("Inf"):
-                break
-            layer_idx = head.item() // model.roberta.config.num_attention_heads
-            head_idx = head.item() % model.roberta.config.num_attention_heads
-            new_head_mask[layer_idx][head_idx] = 0.0
-            selected_heads_to_mask.append(head.item())
-
-        if not selected_heads_to_mask:
-            break
-
-        logger.info("Heads to mask: %s", str(selected_heads_to_mask))
-
-        # new_head_mask = new_head_mask.view_as(head_mask)
-        print_2d_tensor(new_head_mask)
-
-        # Compute metric and head importance again
-        _, head_importance, preds, labels = compute_heads_importance(
-            model, eval_dataloader, device, local_rank, output_dir, head_mask=new_head_mask
-        )
-        preds = np.argmax(preds, axis=1) if output_mode == "classification" else np.squeeze(preds)
-        current_score = glue_compute_metrics(task, preds, labels)[metric_name]
-        logger.info(
-            "Masking: current score: %f, remaning heads %d (%.1f percents)",
-            current_score,
-            new_head_mask.sum(),
-            new_head_mask.sum() / new_head_mask.numel() * 100,
-        )
+    # mask again only masking one head in each iteration to get closer to threshold
+    logger.info("Pruning one head at a time")
+    num_to_mask = 1
+    _, _, final_head_mask, _ = masking_loop(current_score, i, new_head_mask, new_head_importance)
 
     logger.info("Final head mask")
-    print_2d_tensor(head_mask)
-    np.savetxt(os.path.join(output_dir, "head_mask.npy"), head_mask.detach().cpu().numpy())
+    print_2d_tensor(final_head_mask)
 
-    return head_mask
+    np.savetxt(os.path.join(output_dir, "head_mask.npy"), final_head_mask.detach().cpu().numpy())
 
-
-def prune_heads(model, eval_dataloader, device, local_rank, output_dir, task, head_mask):
-    """ This method shows how to prune head (remove heads weights) based on
-        the head importance scores as described in Michel et al. (http://arxiv.org/abs/1905.10650)
-    """
-    metric_name = {
-        "mnli": "acc",
-        "sts-b": "corr",
-    }[task]
-    output_mode = output_modes[task]
-
-    # Try pruning and test time speedup
-    # Pruning is like masking but we actually remove the masked weights
-    before_time = datetime.now()
-    _, _, preds, labels = compute_heads_importance(
-        model, eval_dataloader, device, local_rank, output_dir, compute_importance=False, head_mask=head_mask
-    )
-    preds = np.argmax(preds, axis=1) if output_mode == "classification" else np.squeeze(preds)
-    score_masking = glue_compute_metrics(task, preds, labels)[metric_name]
-    original_time = datetime.now() - before_time
-
-    original_num_params = sum(p.numel() for p in model.parameters())
-    heads_to_prune = {}
-    for layer in range(len(head_mask)):
-        heads_to_mask = [h[0] for h in (1 - head_mask[layer].long()).nonzero().tolist()]
-        heads_to_prune[layer] = heads_to_mask
-    assert sum(len(h) for h in heads_to_prune.values()) == (1 - head_mask.long()).sum().item()
-    logger.info(f"Heads to prune: {heads_to_prune}")
-    model.prune_heads(heads_to_prune)
-    pruned_num_params = sum(p.numel() for p in model.parameters())
-
-    before_time = datetime.now()
-    _, _, preds, labels = compute_heads_importance(
-        model, eval_dataloader, device, local_rank, output_dir, compute_importance=False, head_mask=None
-    )
-    preds = np.argmax(preds, axis=1) if output_mode == "classification" else np.squeeze(preds)
-    score_pruning = glue_compute_metrics(task, preds, labels)[metric_name]
-    new_time = datetime.now() - before_time
-
-    # calculate sparsity after pruning
-    sparsity = 1 - pruned_num_params / original_num_params
-
-    logger.info(
-        "Pruning: original num of params: %.2e, after pruning %.2e, sparsity: %.2f",
-        original_num_params,
-        pruned_num_params,
-        sparsity,
-    )
-    logger.info("Pruning: score with masking: %f score with pruning: %f", score_masking, score_pruning)
-    logger.info("Pruning: speed ratio (new timing / original timing): %f percents", original_time / new_time * 100)
-
-    return sparsity
+    return final_head_mask
 
 
-def create_examples(lines):
+def create_examples(lines, task):
     """
     Creates examples for dev set.
     Based on _create_examples class method of stsb and mnli processor
@@ -344,6 +307,11 @@ def create_examples(lines):
         text_a = line[0]
         text_b = line[1]
         label = line[2]
+        # for mnli turn label ids to label names
+        if task == 'mnli':
+            id2label = {'0': "entailment", '1': "neutral", '2': "contradiction"}
+            label = id2label[label]
+
         examples.append(InputExample(guid=guid, text_a=text_a, text_b=text_b, label=label))
     return examples
 
@@ -354,15 +322,12 @@ def load_examples(task, tokenizer, data_dir):
 
     # Load data features from dataset file
     logger.info("Creating features from dataset file at %s", data_dir)
-    label_list = processor.get_labels()
-    if task == "mnli":
-        # HACK(label indices are swapped in RoBERTa pretrained model)
-        label_list[1], label_list[2] = label_list[2], label_list[1]
+    label_list = ['entailment', 'neutral', 'contradiction'] if task == 'mnli' else processor.get_labels()
 
     with open(f'{data_dir}/dev.tsv', "r", encoding="utf-8-sig") as f:
         data = list(csv.reader(f, delimiter="\t"))
         examples = (
-            create_examples(data)
+            create_examples(data, task)
         )
 
     features = convert_examples_to_features(

@@ -6,7 +6,7 @@ import os
 from tqdm import tqdm
 from evaluation.utils.bias_sts import get_device
 
-def bias_nli(model, tokenizer, exp_id):
+def bias_nli(model, head_mask, tokenizer, exp_id):
     # Input: model and tokenizer with the transformers pipeline containing the model and tokenizer
     # Output: results dictionary with net neutral and fraction neutral scores, also saves csv with predictions
 
@@ -34,13 +34,13 @@ def bias_nli(model, tokenizer, exp_id):
 
                 inputs = tokenizer(pair_list, max_length=512, truncation=True, padding=True, return_tensors='pt')
                 inputs.to(device)
-                preds = model(**inputs).logits.softmax(dim=1)
+                preds = model(**inputs, head_mask=head_mask).logits.softmax(dim=1)
                 prediction.extend(preds.tolist())
                 pair_list = []
 
         inputs = tokenizer(pair_list, max_length=512, truncation=True, padding=True, return_tensors='pt')
         inputs.to(device)
-        preds = model(**inputs).logits.softmax(dim=1)
+        preds = model(**inputs, head_mask=head_mask).logits.softmax(dim=1)
         prediction.extend(preds.tolist())
 
     # Save predictions
