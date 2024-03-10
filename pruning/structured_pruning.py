@@ -4,8 +4,9 @@ import logging
 import os
 import torch
 from torch.utils.data import DataLoader, SequentialSampler, Subset  # Subset needed if you uncomment line when preparing the dataset
-from pruning.utils import load_examples, get_seed, mask_heads, check_sparsity
+from pruning.utils import load_examples, get_seed, mask_heads
 from pruning.utils import get_device
+from pruning.sparsity_check import analyse_sparsity
 
 logger = logging.getLogger(__name__)
 logging.getLogger("experiment_impact_tracker.compute_tracker.ImpactTracker").disabled = True
@@ -47,10 +48,11 @@ def structured_pruning(model, tokenizer, seed, task, device, masking_threshold, 
 
     # perform masking
     head_mask = mask_heads(model, eval_dataloader, device, local_rank, output_dir, task, masking_amount, masking_threshold)
+    # convert head_mask to tensor which is needed for applying the head mask to the model in the evaluation functions
     head_mask_tensor = torch.tensor(head_mask, dtype=torch.float32)
     
     # get final sparsity of the model
-    sparsity = check_sparsity(model)
+    sparsity = analyse_sparsity(model, head_mask, verbose=False)
     print(f'Final sparsity: {sparsity}')
 
     return sparsity, head_mask_tensor
