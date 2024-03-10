@@ -3,6 +3,8 @@ from pruning.magnitude_pruner import MagnitudePrunerOneShot
 from pruning.iterative_pruner import MagnitudePrunerIterative
 from pruning.structured_pruning import structured_pruning
 
+from pruning.sparsity_check import analyse_sparsity
+
 from transformers import TrainingArguments
 
 
@@ -31,9 +33,11 @@ def pruning(exp_args, model, tokenizer, exp_id, experiment_dir):
 
         pruner = MagnitudePrunerIterative(model, exp_args.seed, tokenizer, exp_args.task, exp_args.model_no, training_args, exp_args.device, total_iterations, rewind, exp_args.sparsity_level, exp_id)
         pruner.train()
+        returned_sparsity = analyse_sparsity(pruner.model, verbose=False)
     else:
         pruner = MagnitudePrunerOneShot(model, exp_args.seed, exp_args.pruning_method, exp_args.sparsity_level)
         pruner.prune()
+        returned_sparsity = analyse_sparsity(pruner.model, verbose=False)
 
     # save pruned model
     pruned_model_dir = f'{experiment_dir}/pruned_model/'
