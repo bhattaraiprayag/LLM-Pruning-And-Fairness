@@ -4,6 +4,7 @@ import random
 import numpy as np
 
 from pruning.utils import get_seed, check_sparsity
+from pruning.checker import analyse_sparsity
 
 # Class for one-shot magnitude pruning
 class MagnitudePrunerOneShot:
@@ -17,8 +18,8 @@ class MagnitudePrunerOneShot:
         # Set seed
         get_seed(self.seed)
 
-        # # Check sparsity before pruning
-        # print(f"Sparsity before pruning: {check_sparsity(self.model):.4%}")
+        # Check sparsity before pruning
+        print(f"Sparsity before pruning: {analyse_sparsity(self.model)}")
 
         if self.pruning_method == "l1-unstructured":
             self._apply_l1_unstructured()
@@ -34,7 +35,7 @@ class MagnitudePrunerOneShot:
             raise ValueError("Magnitude Pruning method not supported, yet!")
 
         # Check sparsity after pruning
-        print(f"Sparsity after pruning: {check_sparsity(self.model):.4%}")
+        print(f"Sparsity after pruning: {analyse_sparsity(self.model)}")
 
         return self.model
 
