@@ -29,13 +29,16 @@ def analyse_sparsity(model, head_mask=None, verbose=False):
         raise ValueError("The model does not have an encoder attribute.")
 
     for i, layer in enumerate(encoder.layer):
-        print("-"*60)
-        print(f"RobertaLayer #{i+1}")
+        current_head_mask = head_mask[i] if head_mask is not None and i < len(head_mask) else None
+        if verbose or current_head_mask is not None:
+            print("-"*60)
+            print(f"RobertaLayer #{i+1}")
+
         layer_total_elements = 0
         layer_zero_elements = 0
-        
-        pruned_heads = identify_pruned_heads(head_mask[i] if head_mask is not None else None, num_attention_heads)
-        if head_mask is not None:
+
+        pruned_heads = identify_pruned_heads(current_head_mask, num_attention_heads)
+        if current_head_mask is not None:
             pruned_head_elements = len(pruned_heads) * head_size * hidden_size
             layer_zero_elements += pruned_head_elements
             layer_total_elements += num_attention_heads * head_size * hidden_size
@@ -65,7 +68,7 @@ def analyse_sparsity(model, head_mask=None, verbose=False):
             layer_zero_elements += zeros
             layer_total_elements += elements
         
-        if head_mask is not None:
+        if current_head_mask is not None:
             print(f"# Attention Heads: {num_attention_heads}")
             print(f"# Pruned Attention Heads: {len(pruned_heads)}")
             if pruned_heads:
@@ -76,18 +79,22 @@ def analyse_sparsity(model, head_mask=None, verbose=False):
         total_elements += layer_total_elements
         layer_sparsity = 100 * layer_zero_elements / layer_total_elements if layer_total_elements > 0 else 0
         if head_mask is None:
-            print(f"Layer Sparsity: {layer_sparsity:.10f}")
+            if verbose:
+                print(f"Layer Sparsity: {layer_sparsity:.10f}")
 
     overall_sparsity_percentage = 100 * total_zero_elements / total_elements if total_elements > 0 else 0
-    print("-"*60)
-    print(f"Overall Model Sparsity: {overall_sparsity_percentage:.10f}")
-    print("-"*60)
+    
+    if verbose:
+        print("-"*60)
+        print(f"Overall Model Sparsity: {overall_sparsity_percentage:.10f}")
+        print("-"*60)
 
-    # return overall_sparsity_percentage.__round__(10)
+    return overall_sparsity_percentage.__round__(10)
 
 
-# # FUNCTION USAGE:
-# # Options: base_model, unpruned_model, magnitude_pruned_model, (structure_pruned_model, structure_pruned_head_mask). ONLY Structure Pruning requires both model and head_mask.
+# # USAGE:
+# # PARAMETERS: model, head_mask=None, verbose=False
+# # Model Options: base_model, unpruned_model, magnitude_pruned_model, (structure_pruned_model, structure_pruned_head_mask). Note: ONLY Structure Pruning requires both model and head_mask.
 # # Example 1: analyse_sparsity(base_model, verbose=True)   # For base_model, unpruned_model, magnitude_pruned_model
 # # Example 2: analyse_sparsity(structure_pruned_model, structure_pruned_head_mask, verbose=False)  # Only for structure_pruned_model
 
