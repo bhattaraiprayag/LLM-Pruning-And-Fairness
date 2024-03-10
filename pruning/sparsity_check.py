@@ -47,21 +47,21 @@ def analyse_sparsity(model, head_mask=None, verbose=False):
                 if sub_layer is not None:
                     zeros, elements = identify_layer_sparsity(sub_layer)
                     if verbose:
-                        print(f"Sub-layer: {sub_layer_name} | Sparsity: {100 * zeros / elements:.8f}")
+                        print(f"Sub-layer: {sub_layer_name} | Sparsity: {100 * zeros / elements:.10f}")
                     layer_zero_elements += zeros
                     layer_total_elements += elements
 
         if hasattr(layer, 'intermediate') and hasattr(layer.intermediate, 'dense'):
             zeros, elements = identify_layer_sparsity(layer.intermediate.dense)
             if verbose:
-                print(f"Intermediate.dense | Sparsity: {100 * zeros / elements:.8f}")
+                print(f"Intermediate.dense | Sparsity: {100 * zeros / elements:.10f}")
             layer_zero_elements += zeros
             layer_total_elements += elements
 
         if hasattr(layer, 'output') and hasattr(layer.output, 'dense'):
             zeros, elements = identify_layer_sparsity(layer.output.dense)
             if verbose:
-                print(f"Output.dense | Sparsity: {100 * zeros / elements:.8f}")
+                print(f"Output.dense | Sparsity: {100 * zeros / elements:.10f}")
             layer_zero_elements += zeros
             layer_total_elements += elements
         
@@ -76,14 +76,14 @@ def analyse_sparsity(model, head_mask=None, verbose=False):
         total_elements += layer_total_elements
         layer_sparsity = 100 * layer_zero_elements / layer_total_elements if layer_total_elements > 0 else 0
         if head_mask is None:
-            print(f"Layer Sparsity: {layer_sparsity:.8f}")
+            print(f"Layer Sparsity: {layer_sparsity:.10f}")
 
     overall_sparsity_percentage = 100 * total_zero_elements / total_elements if total_elements > 0 else 0
     print("-"*60)
-    print(f"Overall Model Sparsity: {overall_sparsity_percentage:.8f}")
+    print(f"Overall Model Sparsity: {overall_sparsity_percentage:.10f}")
     print("-"*60)
 
-    # return overall_sparsity_percentage
+    # return overall_sparsity_percentage.__round__(10)
 
 
 # # FUNCTION USAGE:
