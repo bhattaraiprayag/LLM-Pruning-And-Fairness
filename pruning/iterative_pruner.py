@@ -3,16 +3,17 @@ import torch.nn.utils.prune as prune
 import json
 import os
 import tqdm
+import copy
 
 from torch.optim import AdamW
 from transformers import Trainer, get_linear_schedule_with_warmup
-from pruning.utils import load_data_hub, check_sparsity, get_seed
+from pruning.utils import load_data_hub, get_seed
 from evaluation.performance import evaluate_metrics
 
 
 # Class for iterative magnitude pruning
 class MagnitudePrunerIterative:
-    def __init__(self, model, seed, tokenizer, task_name, model_no, training_args, device, total_iterations, rewind, sparsity_level, exp_id):
+    def __init__(self, model, seed, tokenizer, task_name, model_no, training_args, device, total_iterations, rewind, desired_sparsity_level, exp_id):
         self.model = model
         self.seed = seed
         self.tokenizer = tokenizer
@@ -22,13 +23,48 @@ class MagnitudePrunerIterative:
         self.device = device
         self.total_iterations = total_iterations
         self.rewind = rewind
-        self.sparsity_level = sparsity_level
-        self.pruning_rate_per_step = sparsity_level / (total_iterations + 1)
+        self.sparsity_level = desired_sparsity_level
+        self.pruning_rate_per_step = desired_sparsity_level / (total_iterations + 1)
         self.exp_id = exp_id
         self.datasets = load_data_hub(self.task_name, self.model_no)
-        self.initial_checkpoint = self._create_initial_checkpoint(self.model)
         self.tokenize()
         self.head_mask = None
+
+
+    # Save initial state
+    def save_initial_state(self):
+        self.initial_state_dict = copy.deepcopy(self.model.state_dict())
+        self.initial_optimizer_state_dict = copy.deepcopy(self.optimizer.state_dict())
+
+
+    # Rewind to initial state
+    def rewind_weights(self):
+        current_state_dict = self.model.state_dict()
+        for name, param in self.initial_state_dict.items():
+            if name in current_state_dict:
+                mask = current_state_dict[name].ne(0)  # create a mask of which weights are currently not pruned
+                # Only rewind the non-pruned weights
+                rewound_param = param.data * mask
+                current_state_dict[name].data.copy_(rewound_param)
+
+        # Reload the optimizer state
+        self.optimizer.load_state_dict(self.initial_optimizer_state_dict)
+
+
+    # Initialize optimizer and scheduler within __init__ or another setup method
+    def initialize_optimizer_and_scheduler(self, train_dataset):
+        self.optimizer = AdamW(
+            self.model.parameters(),
+            lr=self.training_args.learning_rate,
+            eps=self.training_args.adam_epsilon
+        )
+        total_steps = len(train_dataset) * self.training_args.num_train_epochs
+        self.scheduler = get_linear_schedule_with_warmup(
+            self.optimizer,
+            num_warmup_steps=self.training_args.warmup_steps,
+            num_training_steps=total_steps
+        )
+
 
     # Tokenize data
     def tokenize(self):
@@ -36,6 +72,7 @@ class MagnitudePrunerIterative:
             fields = ('premise', 'hypothesis') if self.task_name == 'mnli' else ('sentence1', 'sentence2')
             return self.tokenizer(*[examples[field] for field in fields], padding='max_length', max_length=128, truncation=True)
         self.datasets = {split: dataset.map(preprocess, batched=True) for split, dataset in self.datasets.items()}
+
 
     # Prune model
     def prune(self, pruning_rate):
@@ -59,33 +96,6 @@ class MagnitudePrunerIterative:
             amount=pruning_rate,
         )
         return self.model
-
-
-    # Rewind weights to initial checkpoint
-    def rewind_to_initial(self, iteration, total_steps):
-        model_dict = self.model.state_dict()
-        model_dict.update(self.initial_checkpoint)
-        self.model.load_state_dict(model_dict)
-
-        mass_dict = {}
-        for key in model_dict.keys():
-            if 'mask' in key:
-                mass_dict[key] = model_dict[key]
-        torch.save(mass_dict, f"{self.training_args.output_dir}/mask_dict_{iteration+1}.pt")
-
-        no_decay = ['bias', 'LayerNorm.weight']
-        optimizer_grouped_parameters = [
-            {
-                'params': [p for n, p in self.model.named_parameters() if not any(nd in n for nd in no_decay)], 'weight_decay': 0.01
-            },
-            {
-                'params': [p for n, p in self.model.named_parameters() if any(nd in n for nd in no_decay)], 'weight_decay': 0.0
-            }
-        ]
-        optimizer = AdamW(optimizer_grouped_parameters, lr=self.training_args.learning_rate, eps=self.training_args.adam_epsilon)
-        scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=self.training_args.warmup_steps, num_training_steps=total_steps)
-        
-        return self.model, optimizer, scheduler
 
 
     # Save evaluation results
@@ -128,28 +138,6 @@ class MagnitudePrunerIterative:
         return 100*zero_sum/sum_list
 
 
-    # Create initial model checkpoint
-    def _create_initial_checkpoint(self, model):
-        recover_dict = {}
-        name_list = []
-        for ii in range(12):
-            name_list.append(f'roberta.encoder.layer.{ii}.attention.self.query.weight')
-            name_list.append(f'roberta.encoder.layer.{ii}.attention.self.key.weight')
-            name_list.append(f'roberta.encoder.layer.{ii}.attention.self.value.weight')
-            name_list.append(f'roberta.encoder.layer.{ii}.attention.output.dense.weight')
-            name_list.append(f'roberta.encoder.layer.{ii}.intermediate.dense.weight')
-            name_list.append(f'roberta.encoder.layer.{ii}.output.dense.weight')
-        name_list.append('roberta.pooler.dense.weight')
-        for key in model.state_dict().keys():
-            if 'roberta' in key:
-                if key in name_list:
-                    new_key = key + '_orig'
-                else:
-                    new_key = key
-                recover_dict[new_key] = model.state_dict()[key]
-        return recover_dict
-
-
     # Train model
     def train(self):
         get_seed(self.seed)
@@ -157,41 +145,30 @@ class MagnitudePrunerIterative:
         print(f"First Pruning (before finetuning)...")
         self.prune(self.pruning_rate_per_step)
         print(f"First Pruning complete!")
-
         print(f"Sparsity after first pruning: {self.see_weight_rate()}")
+
+        # Debug statement (slice data if True)
+        slicer = False
+        if slicer:
+            train_dataset = self.datasets["train"]
+            train_dataset = train_dataset.select(range(5))
+        else:
+            train_dataset = self.datasets["train"]
+        
+        if self.task_name == 'mnli':
+            eval_dataset = [self.datasets["validation_matched"], self.datasets["validation_mismatched"]]
+        else:
+            eval_dataset = self.datasets["validation"]
+
+        # Initialize optimizer and scheduler
+        self.initialize_optimizer_and_scheduler(train_dataset)
+
+        # Save the initial state after the first pruning (but before fine-tuning)
+        self.save_initial_state()
 
         for iteration in range(self.total_iterations):
             print("=====================================================")
             print(f'Iteration: {iteration+1}')
-
-            # Debug statement (slice data if True)
-            slicer = False
-            if slicer:
-                train_dataset = self.datasets["train"]
-                train_dataset = train_dataset.select(range(10))
-            else:
-                train_dataset = self.datasets["train"]
-            
-            if self.task_name == 'mnli':
-                eval_dataset = [self.datasets["validation_matched"], self.datasets["validation_mismatched"]]
-            else:
-                eval_dataset = self.datasets["validation"]
-
-            # Initialize optimizer and scheduler
-            if iteration == 0:
-                optimizer = AdamW(
-                    self.model.parameters(),
-                    lr=self.training_args.learning_rate,
-                    eps=self.training_args.adam_epsilon
-                )
-                total_steps = len(train_dataset) * self.training_args.num_train_epochs
-                scheduler = get_linear_schedule_with_warmup(
-                    optimizer,
-                    num_warmup_steps=self.training_args.warmup_steps,
-                    num_training_steps=total_steps
-                )
-            else:
-                pass
 
             # Initialize trainer
             trainer = Trainer(
@@ -199,7 +176,7 @@ class MagnitudePrunerIterative:
                 args=self.training_args,
                 train_dataset=train_dataset,
                 eval_dataset=eval_dataset,
-                optimizers=(optimizer, scheduler)
+                optimizers=(self.optimizer, self.scheduler)
             )
 
             # Finetune
@@ -227,14 +204,23 @@ class MagnitudePrunerIterative:
             print(f"Performance after pruning: {perf_prune}")
             print(f"Sparsity after pruning: {self.see_weight_rate()}")
             print("=====================")
-
+            
+            # Rewind weights if required
             if self.rewind:
-                # Skip rewinding after the last iteration
-                if iteration < self.total_iterations - 1:
-                    print(f"Rewinding to initial weights")
-                    _, optimizer, scheduler = self.rewind_to_initial(iteration, total_steps)
+                print("Rewinding to initial state...")
+                self.rewind_weights()
+                print("Rewinding complete!")
+
+            # Reinitialize the trainer with reset optimizer and scheduler
+            trainer = Trainer(
+                model=self.model,
+                args=self.training_args,
+                train_dataset=train_dataset,
+                eval_dataset=eval_dataset,
+                optimizers=(self.optimizer, self.scheduler)
+            )
         
         final_sparsity = self.see_weight_rate()
         print(f"Final Sparsity: {final_sparsity}%")
         
-        return self.model
+        return self.model, final_sparsity
