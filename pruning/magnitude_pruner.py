@@ -4,7 +4,7 @@ import random
 import numpy as np
 
 from pruning.utils import get_seed, check_sparsity
-from pruning.checker import analyse_sparsity
+from pruning.sparsity_check import analyse_sparsity
 
 # Class for one-shot magnitude pruning
 class MagnitudePrunerOneShot:
