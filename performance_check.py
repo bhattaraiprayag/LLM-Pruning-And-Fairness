@@ -99,7 +99,7 @@ def main():
 
         # evaluate model "performance" (not fairness)
         eval_datasets = load_test_dataset(exp_args.task, exp_args.model_no)
-        res_performance = evaluate_metrics(model, tokenizer, exp_args.task, eval_datasets, 0)
+        res_performance = evaluate_metrics(model, None, tokenizer, exp_args.task, eval_datasets, 0)
         performance[i] = res_performance
 
     if exp_args.pruning_method=='random-unstructured':
