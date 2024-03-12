@@ -15,7 +15,7 @@ from dataclasses import dataclass, field, asdict
 from typing import Optional
 from pruning.utils import get_seed, get_device
 from pruning.magnitude_pruner import MagnitudePrunerOneShot
-from evaluation.performance import load_eval_dataset, evaluate_metrics
+from evaluation.performance import load_test_dataset, evaluate_metrics
 
 # dataclass that contains all arguments needed to run the experiment
 @dataclass
@@ -98,7 +98,7 @@ def main():
             pruner.prune()
 
         # evaluate model "performance" (not fairness)
-        eval_datasets = load_eval_dataset(exp_args.task, exp_args.model_no)
+        eval_datasets = load_test_dataset(exp_args.task, exp_args.model_no)
         res_performance = evaluate_metrics(model, tokenizer, exp_args.task, eval_datasets, 0)
         performance[i] = res_performance
 
