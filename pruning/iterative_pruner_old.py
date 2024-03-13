@@ -99,14 +99,10 @@ class MagnitudePrunerIterative:
 
 
     # Save evaluation results
-    def save_perf_results(self, eval_results, current_iter, is_additional_iteration):
-        if is_additional_iteration:
-            filename_suffix = f"additional_{current_iter}"
-        else:
-            filename_suffix = f"{current_iter}"
-        filename = f"{self.training_args.output_dir}/eval_iter_{filename_suffix}.json"
+    def save_perf_results(self, eval_results, iter):
+        filename = f"{self.training_args.output_dir}/eval_iter_{iter}.json"
         if os.path.exists(filename):
-            filename = f"{self.training_args.output_dir}/eval_iter_{filename_suffix}_post_pruning.json"
+            filename = f"{self.training_args.output_dir}/eval_iter_{iter}_post_pruning.json"
         with open(filename, 'w') as f:
             json.dump(eval_results, f)
 
@@ -139,7 +135,7 @@ class MagnitudePrunerIterative:
             sum_list = sum_list+float(self.model.roberta.pooler.dense.weight.nelement())
             zero_sum = zero_sum+float(torch.sum(self.model.roberta.pooler.dense.weight == 0))
 
-        return zero_sum/sum_list
+        return 100*zero_sum/sum_list
 
 
     # Train model
@@ -161,8 +157,6 @@ class MagnitudePrunerIterative:
         
         if self.task_name == 'mnli':
             eval_dataset = [self.datasets["validation_matched"], self.datasets["validation_mismatched"]]
-            if slicer:
-                eval_dataset = [dataset.select(range(2)) for dataset in eval_dataset]
         else:
             eval_dataset = self.datasets["validation"]
 
@@ -172,18 +166,9 @@ class MagnitudePrunerIterative:
         # Save the initial state after the first pruning (but before fine-tuning)
         self.save_initial_state()
 
-
-        # Main IMP Loop
-        iteration = 0
-        additional_iteration = 0
-        pruning_rate_current_iter = self.pruning_rate_per_step
-        while True:
-            current_iteration = iteration + 1 if iteration < self.total_iterations else self.total_iterations + additional_iteration
-            is_additional_iteration = iteration >= self.total_iterations
-
-            print("="*60)
-            print(f'Iteration: {current_iteration}')
-            print(f"Pruning rate for this iter: {pruning_rate_current_iter}")
+        for iteration in range(self.total_iterations):
+            print("=====================================================")
+            print(f'Iteration: {iteration+1}')
 
             # Initialize trainer
             trainer = Trainer(
@@ -198,27 +183,27 @@ class MagnitudePrunerIterative:
             print(f'Finetuning...')
             trainer.train()
             print(f'Finetuning complete!')
-            print("*"*20)
+            print("=====================")
 
             # Post-Finetuning Evaluation
             perf_finetune = evaluate_metrics(self.model, self.head_mask, self.tokenizer, self.task_name, eval_dataset)
-            self.save_perf_results(perf_finetune, current_iteration, is_additional_iteration)
+            self.save_perf_results(perf_finetune, iteration+1)
             print(f"Performance after finetuning: {perf_finetune}")
             print(f"Sparsity after finetuning: {self.see_weight_rate()}")
-            print("*"*20)
+            print("=====================")
 
             # Prune
             print(f"Pruning...")
-            self.prune(pruning_rate_current_iter)
+            self.prune(self.pruning_rate_per_step)
             print(f"Pruning complete!")
-            print("*"*20)
+            print("=====================")
 
             # Post-Pruning Evaluation
             perf_prune = evaluate_metrics(self.model, self.head_mask, self.tokenizer, self.task_name, eval_dataset)
-            self.save_perf_results(perf_prune, current_iteration, is_additional_iteration)
+            self.save_perf_results(perf_prune, iteration+1)
             print(f"Performance after pruning: {perf_prune}")
             print(f"Sparsity after pruning: {self.see_weight_rate()}")
-            print("*"*20)
+            print("=====================")
             
             # Rewind weights if required
             if self.rewind:
@@ -234,35 +219,8 @@ class MagnitudePrunerIterative:
                 eval_dataset=eval_dataset,
                 optimizers=(self.optimizer, self.scheduler)
             )
-
-            # Check sparsity and decide to continue or break
-            if self.see_weight_rate() >= self.sparsity_level:
-                print(f"Desired sparsity {self.sparsity_level} reached!")
-                break
-            elif iteration >= self.total_iterations:
-                if is_additional_iteration:
-                    print(f"Desired sparsity {self.sparsity_level} not reached after {self.total_iterations + additional_iteration} iterations. Going for extra iterations...")
-                else:
-                    print(f"Desired sparsity {self.sparsity_level} not reached after {iteration + additional_iteration} iterations. Going for extra iterations...")
-                additional_iteration += 1
-            else:
-                iteration += 1
-
-            # Adjusting pruning rate based on current sparsity. Diff should not be less than 10^-3
-            current_sparsity = self.see_weight_rate()
-            diff = self.sparsity_level - current_sparsity
-            if diff > 0 and diff < self.pruning_rate_per_step:
-                if diff > 1e-3:
-                    pruning_rate_current_iter = diff
-                else:
-                    # Round up to nearest 10^-3 value
-                    pruning_rate_current_iter = 1e-3
-            else:
-                pruning_rate_current_iter = self.pruning_rate_per_step
-
-            print("*"*20)
-
+        
         final_sparsity = self.see_weight_rate()
-        print(f"Final Sparsity: {final_sparsity}")
+        print(f"Final Sparsity: {final_sparsity}%")
         
         return self.model, final_sparsity

@@ -50,21 +50,21 @@ def analyse_sparsity(model, head_mask=None, verbose=False):
                 if sub_layer is not None:
                     zeros, elements = identify_layer_sparsity(sub_layer)
                     if verbose:
-                        print(f"Sub-layer: {sub_layer_name} | Sparsity: {100 * zeros / elements:.10f}")
+                        print(f"Sub-layer: {sub_layer_name} | Sparsity: {zeros / elements:.10f}")
                     layer_zero_elements += zeros
                     layer_total_elements += elements
 
         if hasattr(layer, 'intermediate') and hasattr(layer.intermediate, 'dense'):
             zeros, elements = identify_layer_sparsity(layer.intermediate.dense)
             if verbose:
-                print(f"Intermediate.dense | Sparsity: {100 * zeros / elements:.10f}")
+                print(f"Intermediate.dense | Sparsity: {zeros / elements:.10f}")
             layer_zero_elements += zeros
             layer_total_elements += elements
 
         if hasattr(layer, 'output') and hasattr(layer.output, 'dense'):
             zeros, elements = identify_layer_sparsity(layer.output.dense)
             if verbose:
-                print(f"Output.dense | Sparsity: {100 * zeros / elements:.10f}")
+                print(f"Output.dense | Sparsity: {zeros / elements:.10f}")
             layer_zero_elements += zeros
             layer_total_elements += elements
         
@@ -77,19 +77,19 @@ def analyse_sparsity(model, head_mask=None, verbose=False):
 
         total_zero_elements += layer_zero_elements
         total_elements += layer_total_elements
-        layer_sparsity = 100 * layer_zero_elements / layer_total_elements if layer_total_elements > 0 else 0
+        layer_sparsity = layer_zero_elements / layer_total_elements if layer_total_elements > 0 else 0
         if head_mask is None:
             if verbose:
                 print(f"Layer Sparsity: {layer_sparsity:.10f}")
 
-    overall_sparsity_percentage = 100 * total_zero_elements / total_elements if total_elements > 0 else 0
+    overall_sparsity_percentage = total_zero_elements / total_elements if total_elements > 0 else 0
     
     if verbose:
         print("-"*60)
         print(f"Overall Model Sparsity: {overall_sparsity_percentage:.10f}")
         print("-"*60)
 
-    return overall_sparsity_percentage.__round__(10)
+    return overall_sparsity_percentage
 
 
 # # USAGE:
