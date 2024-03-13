@@ -1,21 +1,11 @@
 import numpy as np
-import os
-import pandas as pd
-from datetime import date
 
 from transformers import (
-    AutoTokenizer,
     RobertaForSequenceClassification,
-    TextClassificationPipeline,
     HfArgumentParser,
-    set_seed,
 )
 
-from dataclasses import dataclass, field, asdict
-from typing import Optional
-from pruning.utils import get_seed, get_device
-from pruning.magnitude_pruner import MagnitudePrunerOneShot
-from evaluation.performance import load_test_dataset, evaluate_metrics
+from dataclasses import dataclass, field
 from pruning.sparsity_check import structured_sparsity
 
 @dataclass
@@ -50,7 +40,10 @@ def all_checks(run_no_list):
     return output
 
 def main():
-    print(all_checks(run_nos))
+    parser = HfArgumentParser(ExperimentArguments)
+    exp_args = parser.parse_args_into_dataclasses()[0]
+
+    print(all_checks(exp_args.run_nos))
 
 if __name__ == '__main__':
     main()
