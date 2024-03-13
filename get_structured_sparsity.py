@@ -10,13 +10,6 @@ from pruning.sparsity_check import structured_sparsity
 from report.utils import run_info
 
 
-@dataclass
-class ExperimentArguments:
-    run_nos: list = field(
-        metadata={"help": "Specify list of run numbers."}
-    )
-
-
 def single_check(run_no):
     info = run_info(run_no)
     if info.get('task') == 'mnli':
@@ -30,7 +23,7 @@ def single_check(run_no):
     else:
         raise ValueError("task not supported")
 
-    head_mask = np.loadtxt(f"results/run{run_no}/head_mask.npy")
+    head_mask = np.loadtxt(f"results/head_masks/head_mask{run_no}.npy")
 
     return structured_sparsity(model, head_mask)
 
@@ -44,10 +37,8 @@ def all_checks(run_no_list):
 
 
 def main():
-    parser = HfArgumentParser(ExperimentArguments)
-    exp_args = parser.parse_args_into_dataclasses()[0]
-
-    print(all_checks(exp_args.run_nos))
+    run_nos = [136, 137, 138, 139, 140, 142, 143, 144, 145, 146, 147, 148, 149, 150, 152, 154, 155, 156, 157, 158, 159, 160, 201, 202, 203, 204, 205]
+    print(all_checks(run_nos))
 
 
 if __name__ == '__main__':
