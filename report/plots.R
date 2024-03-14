@@ -173,6 +173,7 @@ spars_vs_bias_plot <- function(data, bias_measure, base_folder, optimum, task){
   
   output <-
     data %>%
+    filter(pruning_method!='random-unstructured') %>%
     zero_spars() %>%
     ggplot(aes(x=sparsity_level, y=.data[[bias_measure]], group=pruning_method, colour=pruning_method)) +
     geom_line(linewidth=2) +
