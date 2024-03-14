@@ -164,6 +164,13 @@ zero_spars <- function(data){
 }
 
 spars_vs_bias_plot <- function(data, bias_measure, base_folder, optimum, task){
+  if(task=='mnli'){
+    data = data %>%
+      filter(Matched_Acc > 0.66)}
+  else{
+    data = data %>%
+      filter(Spearmanr > 0.5)}
+  
   output <-
     data %>%
     zero_spars() %>%
