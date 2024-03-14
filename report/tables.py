@@ -5,7 +5,7 @@ import re
 
 
 ### Table for overview of all MNLI results
-def mnli_overview(filepath):
+def mnli_overview(filepath, cutoff=True):
     # Read in data
     results = pd.read_csv(filepath)
     results = results[results['task'] == 'mnli']
@@ -22,6 +22,9 @@ def mnli_overview(filepath):
     working2 = (working2.groupby(['sparsity_level', 'pruning_method'], as_index=False)[
                     ['SEAT_gender', 'WEAT_gender', 'StereoSet_LM_gender', 'StereoSet_SS_gender',
                      'BiasNLI_NN', 'BiasNLI_FN', 'Matched Acc', 'Mismatched Acc']].mean())
+    if cutoff==True:
+        working1 = working1[working1['Matched Acc'] > 0.66]
+        working2 = working2[working2['Matched Acc'] > 0.66]
 
     # Combine into a single table
     output = pd.concat([working1, working2], axis=0, ignore_index=True)
@@ -38,11 +41,15 @@ def mnli_overview(filepath):
     # Sort rows
     output.sort_values(by=['Pruning method', 'Sparsity level'], inplace=True)
 
+    extra_cap = ''
+    if cutoff==True:
+        extra_cap = 'Models are only included where the matched accuracy is above 0.66.'
+
     # Convert to latex
     latex = output.to_latex(index=False,
                             column_format='p{0.16\\textwidth}p{0.06\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}p{0.04\\textwidth}p{0.04\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}',
                             label=f'tab:mnli_all',
-                            caption=f'Results from the MNLI models. Where the masking threshold was specified for structured pruning, the average sparsity level is shown.',
+                            caption=f'Results from the MNLI models. Where the masking threshold was specified for structured pruning, the average sparsity level is shown.{extra_cap}',
                             na_rep='-',
                             float_format="%.3f")
     # Change to table* so it is page wide instead of confined to column
