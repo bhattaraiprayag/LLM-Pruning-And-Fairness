@@ -164,8 +164,16 @@ zero_spars <- function(data){
 }
 
 spars_vs_bias_plot <- function(data, bias_measure, base_folder, optimum, task){
+  if(task=='mnli'){
+    data = data %>%
+      filter(Matched_Acc > 0.66)}
+  else{
+    data = data %>%
+      filter(Spearmanr > 0.5)}
+  
   output <-
     data %>%
+    filter(pruning_method!='random-unstructured') %>%
     zero_spars() %>%
     ggplot(aes(x=sparsity_level, y=.data[[bias_measure]], group=pruning_method, colour=pruning_method)) +
     geom_line(linewidth=2) +
@@ -249,6 +257,7 @@ perf_stsb <- function(data, pruning_method_set, base_folder){
     ggplot(working, aes(x=sparsity, y=performance, group=metric, colour=metric)) +
     geom_line(linewidth=2) +
     geom_ribbon(aes(x = sparsity, ymax = maxi, ymin = mini, group=metric, fill=metric), alpha = 0.3, colour = NA) +
+    geom_hline(yintercept=0.5, linewidth=2, colour=colours[8], linetype='dashed') +
     scale_fill_manual(values=colours) +
     scale_colour_manual(values=colours) +
     scale_x_continuous(expand = c(0,0),
@@ -278,6 +287,7 @@ perf_stsb_compare <- function(data, base_folder){
     geom_line(linewidth=2) +
     scale_fill_manual(values=colours) +
     scale_colour_manual(values=colours) +
+    geom_hline(yintercept=0.5, linewidth=2, colour=colours[8], linetype='dashed') +
     scale_x_continuous(expand = c(0,0),
                        limits = c(0,1)) +
     scale_y_continuous(expand = c(0,0),
@@ -317,6 +327,7 @@ perf_mnli <- function(data, pruning_method_set, base_folder){
     geom_line(linewidth=2) +
     geom_ribbon(aes(x = sparsity, ymax = maxi, ymin = mini, group=accuracy, fill=accuracy), alpha = 0.3, colour = NA) +
     scale_fill_manual(values=colours) +
+    geom_hline(yintercept=0.66, linewidth=2, colour=colours[8], linetype='dashed') +
     scale_colour_manual(values=colours) +
     scale_x_continuous(expand = c(0,0),
                        limits = c(0,1)) +
@@ -344,6 +355,7 @@ perf_mnli_compare <- function(data, base_folder){
     ggplot(working, aes(x=sparsity, y=matched, group=pruning_method, colour=pruning_method)) +
     geom_line(linewidth=2) +
     scale_fill_manual(values=colours) +
+    geom_hline(yintercept=0.66, linewidth=2, colour=colours[8], linetype='dashed') +
     scale_colour_manual(values=colours) +
     scale_x_continuous(expand = c(0,0),
                        limits = c(0,1)) +
@@ -365,6 +377,8 @@ perf_all <- function(data, base_folder){
   perf_mnli(data, 'l1-unstructured', base_folder)
   perf_stsb(data, 'random-unstructured', base_folder)
   perf_mnli(data, 'random-unstructured', base_folder)
+  perf_stsb(data, 'global-unstructured', base_folder)
+  perf_mnli(data, 'global-unstructured', base_folder)
   perf_stsb_compare(data, base_folder)
   perf_mnli_compare(data, base_folder)
 }
