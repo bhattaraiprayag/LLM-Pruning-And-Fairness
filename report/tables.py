@@ -43,7 +43,7 @@ def mnli_overview(filepath, cutoff=True):
 
     extra_cap = ''
     if cutoff==True:
-        extra_cap = 'Models are only included where the matched accuracy is above 0.66.'
+        extra_cap = ' Models are only included where the matched accuracy is above 0.66.'
 
     # Convert to latex
     latex = output.to_latex(index=False,
@@ -60,7 +60,7 @@ def mnli_overview(filepath, cutoff=True):
 
 
 ### Table for overview of all STS-B results
-def stsb_overview(filepath):
+def stsb_overview(filepath, cutoff=True):
     results = pd.read_csv(filepath)
     results = results[results['task'] == 'stsb']
 
@@ -77,6 +77,10 @@ def stsb_overview(filepath):
                     ['SEAT_gender', 'WEAT_gender', 'StereoSet_LM_gender', 'StereoSet_SS_gender',
                      'BiasSTS', 'Spearmanr', 'Pearson']].mean())
 
+    if cutoff==True:
+        working1 = working1[working1['Spearmanr'] > 0.5]
+        working2 = working2[working2['Spearmanr'] > 0.5]
+
     # Combine into a single table
     output = pd.concat([working1, working2], axis=0, ignore_index=True)
     # Reorder columns
@@ -90,11 +94,15 @@ def stsb_overview(filepath):
     # Sort rows
     output.sort_values(by=['Pruning method', 'Sparsity level'], inplace=True)
 
+    extra_cap = ''
+    if cutoff == True:
+        extra_cap = ' Models are only included where the Spearman rank is above 0.5.'
+
     # Convert to latex
     latex = output.to_latex(index=False,
                             column_format='p{0.16\\textwidth}p{0.06\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}p{0.04\\textwidth}p{0.04\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}',
                             label=f'tab:stsb_all',
-                            caption=f'Results from the STSB models. Where the masking threshold was specified for structured pruning, the average sparsity level is shown.',
+                            caption=f'Results from the STSB models. Where the masking threshold was specified for structured pruning, the average sparsity level is shown.{extra_cap}',
                             na_rep='-',
                             float_format="%.3f")
     # Change to table* so it is page wide instead of confined to column
