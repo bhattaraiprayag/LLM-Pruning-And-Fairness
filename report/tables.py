@@ -72,6 +72,7 @@ def stsb_overview(filepath, cutoff=True):
 
     # Group for everything else, where the target sparsity was an input
     working2 = results[results['pruning_method'] != 'structured'].copy()
+    working2 = working2[working2['pruning_method'] != 'imp-ft']
     working2['pruning_method'] = working2['pruning_method'].replace(np.nan, 'original')
     working2 = (working2.groupby(['sparsity_level', 'pruning_method'], as_index=False)[
                     ['SEAT_gender', 'WEAT_gender', 'StereoSet_LM_gender', 'StereoSet_SS_gender',
@@ -210,6 +211,7 @@ def sweat_overview(filepath):
     # Group for everything else, where the target sparsity was an input
     working2 = results[results['pruning_method'] != 'structured'].copy()
     working2['pruning_method'] = working2['pruning_method'].replace(np.nan, 'original')
+    working2 = working2[working2['pruning_method'] != 'imp-ft']
     working2 = (working2.groupby(['sparsity_level', 'pruning_method', 'task'], as_index=False)[
                     ['seat_gender', 'seat_race', 'seat_illness', 'seat_religion',
                      'weat_gender', 'weat_race', 'weat_illness']].mean())
@@ -253,6 +255,7 @@ def stereoset_overview(filepath):
     # Group for everything else, where the target sparsity was an input
     working2 = results[results['pruning_method'] != 'structured'].copy()
     working2['pruning_method'] = working2['pruning_method'].replace(np.nan, 'original')
+    working2 = working2[working2['pruning_method'] != 'imp-ft']
     working2 = (working2.groupby(['sparsity_level', 'pruning_method', 'task'], as_index=False)[
                     ['gender', 'profession', 'race',  'religion']].mean())
 
