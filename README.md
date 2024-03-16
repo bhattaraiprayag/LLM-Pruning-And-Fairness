@@ -6,54 +6,19 @@ To install the necessary packages in a conda environment, follow the instruction
 
 ## Fine-tuning
 
+Fine-tuning for our two tasks, MNLI and STS-B, is done using the [run_glue.py](training/run_glue.py) script made available by [huggingface](https://github.com/huggingface/transformers/blob/main/examples/pytorch/text-classification/run_glue.py). For each task three models are fine-tuned, each using a different train-validation-test split.
+The data files for each split can be saved by running the script [save_data.py](training/glue_data/save_data.py).
+
 ## Pruning
 
 ### Overview
 In our project, we focus on exploring the impact of various pruning techniques on the biasness of RoBERTa-base. Pruning, a method to reduce model size and computational load, involves selectively removing parameters (weights), or neurons, from the neural network. We have implemented and experimented with different types of pruning strategies, starting with magnitude-based methods and structure Pruning.
 
 ### Structured Pruning:
-Structured pruning is implemented in [structure_pruning.py](pruning/structure_pruning.py). 
+Structured pruning is implemented in [structure_pruning.py](pruning/structure_pruning.py) and is based on the code published in [When BERT Plays the Lottery, All Tickets Are Winning](https://github.com/sai-prasanna/bert-experiments). 
 
-Variables that can be changed are: masking threshold (define the metric threshold for stopping masking) and masking amount (the number of heads to mask).
+The variable that can be changed is the masking threshold, which defines the performance threshold for stopping masking. For performance evaluation within the the corresponding validation set of the used model is utilized. The masking amount (the fraction of heads to mask in each iteration) is kept constant at 0.1.
 
-For performance evaluation within the structured pruning approach the corresponding validation set of the used model is utilized. The data files can be saved using the script [save_data.py](training/glue_data/save_data.py).
-
-#### Turning structure_pruning.py into a function:
-
-Arguments:
-* data_dir: not needed in final function because the data is not stored locally but loaded from the hub
-* ~~model_name_or_path: directly have the model as argument of the final function~~
-* ~~model_type: always 'roberta'~~
-* task_name: argument of final function
-* output_dir: define this based on id (id as argument of final function)
-* config_name: default 'roberta-base'
-* ~~tokenizer_name: default 'roberta-base'~~
-* cache_dir: not relevant??
-* ~~data_subset: might be helpful to keep for debugging~~
-* overwrite_output_dir: not relevant because output dir depends on id and id is set automatically 
-* overwrite_cache: not relevant id cache_dir is not relevant
-* ~~save_mask_all_iterations: "Saves the masks and importance scores in all iterations"~~ I don't think that's necessary for us
-* dont_normalize_importance_by_layer: False ???
-* dont_normalize_global_importance: True ???
-* ~~try_masking: always True in our use case (?)~~
-* ~~use_train_data: not needed because we just always directly use the correct validation set~~ 
-* masking_threshold: might need to be added to pipeline (and results df) as exp run argument 
-* masking_amount: might need to be added to pipeline (and results df) as exp run argument
-* ~~metric_name: we always want to use the default metric of the glue task, so this is probably not relevant to us (?)~~
-* ~~max_seq_length: default 126 (everywhere else we've set this to 512 -> change this to 512 here as well~~ 
-* batch_size: default 1 -> always set it to 1
-* seed: argument of final function
-* local_rank: ???
-* ~~no_cuda: we always want to use CUDA when available~~
-* ~~server_ip: we don't want to use distant debugging, so doesn't matter to us~~
-* ~~server_port: we don't want to use distant debugging, so doesn't matter to us~~
-
-We don't want to work with entropy -> in compute_heads_importance: compute_entropy is always False
-
-Arguments in functions:
-* compute_heads_importance: device, local_rank, dont_normalize_importance_by_layer, dont_normalize_global_importance, output_dir
-* mask_heads: output_mode, task_name, metric_name, masking_threshold, masking_amount, save_mask_all_iterations, output_dir
-* prune_heads: output_mode, task_name, metric_name
 
 ### Magnitude Pruning:
 Magnitude pruning is implemented through the **MagnitudePrunerOneShot** class, defined in [pruning/magnitude_pruner.py](magnitude_pruner.py). This class offers three distinct methods of magnitude-based pruning:
@@ -134,6 +99,10 @@ The files used for this are in the [bias_nli folder](evaluation/bias_nli).
 There is then a function to produce the scores when it is given a model and tokenizer. It will return a dictionary with net neutral and fraction neutral values. An output file is also saved with all predictions, NOTE: 'entailed' and 'contradicted' are incorrectly switched in this additional file.
 
 #### Bias-STS
+
+This is implemented based on the code published in [Sustainability and Fairness in Pretrained Language Models: Analysis and Mitigation of Bias when Distilling BERT](https://github.com/mariushes/thesis_sustainability_fairness/blob/master/evaluation_framework.py) using the corresponding [dataset](https://github.com/mariushes/thesis_sustainability_fairness/blob/master/datasets/bias_evaluation_STS-B.tsv).
+
+The final function that is called in the pipeline is contained in [bias_sts.py](evaluation/bias_sts.py). It returns the absolute average difference, which is the evaluation score of the method. It also saves a json file in the results folder of the run that contains a dict with the average differences for each occupation and a csv file with the scores for each sentence pair.
 
 ## Report
 

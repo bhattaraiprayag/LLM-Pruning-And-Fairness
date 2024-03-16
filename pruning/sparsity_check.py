@@ -91,6 +91,17 @@ def analyse_sparsity(model, head_mask=None, verbose=False):
 
     return overall_sparsity_percentage
 
+# separate function that returns the final sparsity after structured pruning based on the number of heads that are masked
+def structured_sparsity(model, head_mask):
+    # Get just encoder - so ignore embedding and classification
+    encoder = model.roberta.encoder if hasattr(model, 'roberta') else model.encoder if hasattr(model, 'encoder') else None
+
+    total_params = sum(p.numel() for p in encoder.parameters())
+    no_masked_heads = (head_mask == 0).sum()
+    sparsity = (196800 * no_masked_heads) / total_params
+
+    return sparsity
+
 
 # # USAGE:
 # # PARAMETERS: model, head_mask=None, verbose=False

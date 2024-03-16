@@ -6,7 +6,7 @@ import torch
 from torch.utils.data import DataLoader, SequentialSampler, Subset  # Subset needed if you uncomment line when preparing the dataset
 from pruning.utils import load_examples, get_seed, mask_heads
 from pruning.utils import get_device
-from pruning.sparsity_check import analyse_sparsity
+from pruning.sparsity_check import structured_sparsity
 
 logger = logging.getLogger(__name__)
 logging.getLogger("experiment_impact_tracker.compute_tracker.ImpactTracker").disabled = True
@@ -52,7 +52,7 @@ def structured_pruning(model, tokenizer, seed, task, device, masking_threshold, 
     head_mask_tensor = torch.tensor(head_mask, dtype=torch.float32)
     
     # get final sparsity of the model
-    sparsity = analyse_sparsity(model, head_mask, verbose=False)
+    sparsity = structured_sparsity(model, head_mask)
     print(f'Final sparsity: {sparsity}')
 
     return sparsity, head_mask_tensor
