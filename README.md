@@ -2,8 +2,6 @@
 
 This is repository for our team project at the University of Mannheim. This project will explore how a range of pruning methods impact the bias of a Language Model.
 
-To install the necessary packages in a conda environment, follow the instructions in [requirements.txt](requirements.txt). This is currently set up for the evaluation packages.
-
 ## Fine-tuning
 
 Fine-tuning for our two tasks, MNLI and STS-B, is done using the [run_glue.py](training/run_glue.py) script made available by [huggingface](https://github.com/huggingface/transformers/blob/main/examples/pytorch/text-classification/run_glue.py). For each task three models are fine-tuned, each using a different train-validation-test split.
