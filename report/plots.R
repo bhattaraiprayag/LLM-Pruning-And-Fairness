@@ -11,13 +11,26 @@ library(readr)
 
 # Basic settings
 base_folder <- SET BASE FOLDER
-colours = c('#332288', '#117733', '#CC6677', '#882255', '#88CCEE', '#DDCC77', '#AA4499', '#44AA99')
-shapes = c(0,1,2,3,4,5,6,8)
+colours = c('initial-model'='#332288', 
+            'structured'='#117733', 
+            'l1-unstructured'='#CC6677', 
+            'global-unstructured'='#882255', 
+            'global-unstructured-attention'='#88CCEE', 
+            'imp'='#DDCC77', 
+            'random-unstructured'='#AA4499', 
+            '#44AA99')
+shapes = c('l1-unstructured'=21,
+           'global-unstructured'=22,
+           'global-unstructured-attention'=23,
+           'structured'=24,
+           'imp'=25,
+           'random-unstructured'=4,
+           'initial-model'=8)
 
 # Load in the data
 results_data <- read_csv(paste0(base_folder,'LLM-Pruning-And-Fairness/results/results.csv')) %>%
   filter(!ID %in% c(10,11)) %>%
-  mutate(pruning_method = coalesce(pruning_method, paste0('initial ', task, ' model')))
+  mutate(pruning_method = coalesce(pruning_method, paste0('initial-model')))
 
 # Group up based on the actual categories - still has both tasks
 
@@ -65,7 +78,8 @@ sp_group <- results_data %>%
 # Then everything else
 results_group <- results_data %>%
   filter(pruning_method!='structured',
-         pruning_method!='imp-ft') %>%
+         pruning_method!='imp-ft',
+         pruning_method!='random-unstructured') %>%
   group_by(task, pruning_method, sparsity_level) %>%
   summarise(SEAT_gender_max = max(SEAT_gender),
             SEAT_gender_min = min(SEAT_gender),
@@ -108,11 +122,12 @@ results_group <- results_data %>%
 # Function for plotting bias measures against model performance measures
 acc_vs_bias_plot <- function(data, acc_measure, bias_measure, base_folder, optimum, task){
   output <-
-    ggplot(data, aes(x=.data[[acc_measure]], y=.data[[bias_measure]], group=pruning_method, colour=pruning_method, shape=pruning_method, alpha=1-sparsity_level)) +
+    ggplot(data, aes(x=.data[[acc_measure]], y=.data[[bias_measure]], group=pruning_method, colour=pruning_method, shape=pruning_method, fill=pruning_method, alpha=1-sparsity_level)) +
     geom_point(size=4) +
     geom_hline(yintercept=optimum, linewidth=2, colour=colours[8], linetype='dashed') +
-    scale_shape_manual(values=shapes) +
+    scale_shape_manual(values=shapes)+
     scale_colour_manual(values=colours) +
+    scale_fill_manual(values=colours) +
     scale_x_continuous(expand = c(0,0),
                        limits = c(0,1)) +
     scale_y_continuous(expand = c(0,0),
@@ -120,6 +135,7 @@ acc_vs_bias_plot <- function(data, acc_measure, bias_measure, base_folder, optim
     theme_bw() + 
     guides(colour=guide_legend(title='Pruning:'),
            shape=guide_legend(title='Pruning:'),
+           fill=guide_legend(title='Pruning:'),
            alpha=guide_legend(title='Density')) +
     coord_cartesian(clip='off')
   
@@ -391,4 +407,3 @@ perf_all <- function(data, base_folder){
 acc_vs_bias_all(results_group, base_folder)
 spars_vs_bias_all(results_group, base_folder)
 perf_all(perf_data, base_folder)
-
