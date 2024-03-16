@@ -180,7 +180,7 @@ spars_vs_bias_plot <- function(data, bias_measure, base_folder, optimum, task){
     zero_spars() %>%
     ggplot(aes(x=sparsity_level, y=.data[[bias_measure]], group=pruning_method, colour=pruning_method)) +
     geom_line(linewidth=2) +
-    geom_ribbon(aes(x = sparsity_level, ymax = .data[[paste0(bias_measure, '_max')]], ymin = .data[[paste0(bias_measure, '_min')]], group=pruning_method, fill=pruning_method), alpha = 0.3, colour = NA) +
+    geom_ribbon(aes(x = sparsity_level, ymax = .data[[paste0(bias_measure, '_max')]], ymin = .data[[paste0(bias_measure, '_min')]], group=pruning_method, fill=pruning_method), alpha = 0.2, colour = NA) +
     geom_point(size=2) +
     geom_hline(yintercept=optimum, linewidth=2, colour=colours[8], linetype='dashed') +
     scale_colour_manual(values=colours) +
@@ -259,7 +259,7 @@ perf_stsb <- function(data, pruning_method_set, base_folder){
   output <-
     ggplot(working, aes(x=sparsity, y=performance, group=metric, colour=metric)) +
     geom_line(linewidth=2) +
-    geom_ribbon(aes(x = sparsity, ymax = maxi, ymin = mini, group=metric, fill=metric), alpha = 0.3, colour = NA) +
+    geom_ribbon(aes(x = sparsity, ymax = maxi, ymin = mini, group=metric, fill=metric), alpha = 0.2, colour = NA) +
     geom_hline(yintercept=0.5, linewidth=2, colour=colours[8], linetype='dashed') +
     scale_fill_manual(values=colours) +
     scale_colour_manual(values=colours) +
@@ -328,7 +328,7 @@ perf_mnli <- function(data, pruning_method_set, base_folder){
   output <-
     ggplot(working, aes(x=sparsity, y=performance, group=accuracy, colour=accuracy)) +
     geom_line(linewidth=2) +
-    geom_ribbon(aes(x = sparsity, ymax = maxi, ymin = mini, group=accuracy, fill=accuracy), alpha = 0.3, colour = NA) +
+    geom_ribbon(aes(x = sparsity, ymax = maxi, ymin = mini, group=accuracy, fill=accuracy), alpha = 0.2, colour = NA) +
     scale_fill_manual(values=colours) +
     geom_hline(yintercept=0.66, linewidth=2, colour=colours[8], linetype='dashed') +
     scale_colour_manual(values=colours) +
