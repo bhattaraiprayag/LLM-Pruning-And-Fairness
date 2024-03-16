@@ -63,7 +63,8 @@ sp_group <- results_data %>%
 
 # Then everything else
 results_group <- results_data %>%
-  filter(pruning_method!='structured') %>%
+  filter(pruning_method!='structured',
+         pruning_method!='imp-ft') %>%
   group_by(task, pruning_method, sparsity_level) %>%
   summarise(SEAT_gender_max = max(SEAT_gender),
             SEAT_gender_min = min(SEAT_gender),
