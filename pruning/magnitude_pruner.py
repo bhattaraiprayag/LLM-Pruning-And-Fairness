@@ -3,7 +3,7 @@ import torch.nn.utils.prune as prune
 import random
 import numpy as np
 
-from pruning.utils import get_seed, check_sparsity
+from pruning.utils import get_seed
 from pruning.sparsity_check import analyse_sparsity
 
 # Class for one-shot magnitude pruning
@@ -113,9 +113,6 @@ class MagnitudePrunerOneShot:
                     layer.attention.self.query,
                     layer.attention.self.key,
                     layer.attention.self.value,
-                    layer.attention.output.dense,
-                    layer.intermediate.dense,
-                    layer.output.dense,
                 ]
                 parameters_to_prune.extend([(l, 'weight') for l in layers])
 
