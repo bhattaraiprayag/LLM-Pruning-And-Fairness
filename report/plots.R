@@ -12,6 +12,7 @@ library(readr)
 # Basic settings
 base_folder <- SET BASE FOLDER
 colours = c('#332288', '#117733', '#CC6677', '#882255', '#88CCEE', '#DDCC77', '#AA4499', '#44AA99')
+shapes = c(0,1,2,3,4,5,6,8)
 
 # Load in the data
 results_data <- read_csv(paste0(base_folder,'LLM-Pruning-And-Fairness/results/results.csv')) %>%
@@ -110,6 +111,7 @@ acc_vs_bias_plot <- function(data, acc_measure, bias_measure, base_folder, optim
     ggplot(data, aes(x=.data[[acc_measure]], y=.data[[bias_measure]], group=pruning_method, colour=pruning_method, shape=pruning_method, alpha=1-sparsity_level)) +
     geom_point(size=4) +
     geom_hline(yintercept=optimum, linewidth=2, colour=colours[8], linetype='dashed') +
+    scale_shape_manual(values=shapes) +
     scale_colour_manual(values=colours) +
     scale_x_continuous(expand = c(0,0),
                        limits = c(0,1)) +
