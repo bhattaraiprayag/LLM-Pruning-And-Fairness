@@ -26,6 +26,13 @@ shapes = c('l1-unstructured'=21,
            'imp'=25,
            'random-unstructured'=4,
            'initial-model'=8)
+names=c('initial-model'='Initial model', 
+        'structured'='Structured', 
+        'l1-unstructured'='Layerwise L1', 
+        'global-unstructured'='Global L1', 
+        'global-unstructured-attention'='Global L1 AH', 
+        'imp'='Iterative', 
+        'random-unstructured'='Random')
 
 # Load in the data
 results_data <- read_csv(paste0(base_folder,'LLM-Pruning-And-Fairness/results/results.csv')) %>%
@@ -125,9 +132,12 @@ acc_vs_bias_plot <- function(data, acc_measure, bias_measure, base_folder, optim
     ggplot(data, aes(x=.data[[acc_measure]], y=.data[[bias_measure]], group=pruning_method, colour=pruning_method, shape=pruning_method, fill=pruning_method, alpha=1-sparsity_level)) +
     geom_point(size=4) +
     geom_hline(yintercept=optimum, linewidth=2, colour=colours[8], linetype='dashed') +
-    scale_shape_manual(values=shapes)+
-    scale_colour_manual(values=colours) +
-    scale_fill_manual(values=colours) +
+    scale_shape_manual(values=shapes,
+                       labels=names)+
+    scale_colour_manual(values=colours,
+                        labels=names) +
+    scale_fill_manual(values=colours,
+                      labels=names) +
     scale_x_continuous(expand = c(0,0),
                        limits = c(0,1)) +
     scale_y_continuous(expand = c(0,0),
@@ -199,8 +209,10 @@ spars_vs_bias_plot <- function(data, bias_measure, base_folder, optimum, task){
     geom_ribbon(aes(x = sparsity_level, ymax = .data[[paste0(bias_measure, '_max')]], ymin = .data[[paste0(bias_measure, '_min')]], group=pruning_method, fill=pruning_method), alpha = 0.2, colour = NA) +
     geom_point(size=2) +
     geom_hline(yintercept=optimum, linewidth=2, colour=colours[8], linetype='dashed') +
-    scale_colour_manual(values=colours) +
-    scale_fill_manual(values=colours) +
+    scale_colour_manual(values=colours,
+                        labels=names) +
+    scale_fill_manual(values=colours,
+                      labels=names) +
     scale_x_continuous(expand = c(0,0)) +
     scale_y_continuous(expand = c(0,0),
                        limits = c(0,1)) +
@@ -277,8 +289,10 @@ perf_stsb <- function(data, pruning_method_set, base_folder){
     geom_line(linewidth=2) +
     geom_ribbon(aes(x = sparsity, ymax = maxi, ymin = mini, group=metric, fill=metric), alpha = 0.2, colour = NA) +
     geom_hline(yintercept=0.5, linewidth=2, colour=colours[8], linetype='dashed') +
-    scale_fill_manual(values=colours) +
-    scale_colour_manual(values=colours) +
+    scale_fill_manual(values=colours,
+                      labels=names) +
+    scale_colour_manual(values=colours,
+                        labels=names) +
     scale_x_continuous(expand = c(0,0),
                        limits = c(0,1)) +
     scale_y_continuous(expand = c(0,0),
@@ -304,8 +318,10 @@ perf_stsb_compare <- function(data, base_folder){
   output <-
     ggplot(working, aes(x=sparsity, y=spearmanr, group=pruning_method, colour=pruning_method)) +
     geom_line(linewidth=2) +
-    scale_fill_manual(values=colours) +
-    scale_colour_manual(values=colours) +
+    scale_fill_manual(values=colours,
+                      labels=names) +
+    scale_colour_manual(values=colours,
+                        labels=names) +
     geom_hline(yintercept=0.5, linewidth=2, colour=colours[8], linetype='dashed') +
     scale_x_continuous(expand = c(0,0),
                        limits = c(0,1)) +
@@ -345,9 +361,11 @@ perf_mnli <- function(data, pruning_method_set, base_folder){
     ggplot(working, aes(x=sparsity, y=performance, group=accuracy, colour=accuracy)) +
     geom_line(linewidth=2) +
     geom_ribbon(aes(x = sparsity, ymax = maxi, ymin = mini, group=accuracy, fill=accuracy), alpha = 0.2, colour = NA) +
-    scale_fill_manual(values=colours) +
+    scale_fill_manual(values=colours,
+                      labels=names) +
     geom_hline(yintercept=0.66, linewidth=2, colour=colours[8], linetype='dashed') +
-    scale_colour_manual(values=colours) +
+    scale_colour_manual(values=colours,
+                        labels=names) +
     scale_x_continuous(expand = c(0,0),
                        limits = c(0,1)) +
     scale_y_continuous(expand = c(0,0),
@@ -373,9 +391,11 @@ perf_mnli_compare <- function(data, base_folder){
   output <-
     ggplot(working, aes(x=sparsity, y=matched, group=pruning_method, colour=pruning_method)) +
     geom_line(linewidth=2) +
-    scale_fill_manual(values=colours) +
+    scale_fill_manual(values=colours,
+                      labels=names) +
     geom_hline(yintercept=0.66, linewidth=2, colour=colours[8], linetype='dashed') +
-    scale_colour_manual(values=colours) +
+    scale_colour_manual(values=colours,
+                        labels=names) +
     scale_x_continuous(expand = c(0,0),
                        limits = c(0,1)) +
     scale_y_continuous(expand = c(0,0),
