@@ -18,7 +18,9 @@ colours = c('initial-model'='#332288',
             'global-unstructured-attention'='#88CCEE', 
             'imp'='#DDCC77', 
             'random-unstructured'='#AA4499', 
-            '#44AA99')
+            '#44AA99',
+            '#332288', 
+            '#117733')
 shapes = c('l1-unstructured'=21,
            'global-unstructured'=22,
            'global-unstructured-attention'=23,
@@ -147,7 +149,9 @@ acc_vs_bias_plot <- function(data, acc_measure, bias_measure, base_folder, optim
            shape=guide_legend(title='Pruning:'),
            fill=guide_legend(title='Pruning:'),
            alpha=guide_legend(title='Density')) +
-    coord_cartesian(clip='off')
+    coord_cartesian(clip='off') +
+    labs(x = str_replace_all(acc_measure, '_', ' ') %>% str_to_sentence() %>% str_replace('acc', 'accuracy'),
+         y = str_replace_all(bias_measure, '_', ' '))
   
   
   ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/ab_', task, '_', acc_measure, '_', bias_measure, '.png'),
@@ -219,7 +223,9 @@ spars_vs_bias_plot <- function(data, bias_measure, base_folder, optimum, task){
     theme_bw() + 
     guides(colour=guide_legend(title='Pruning:'),
            fill=guide_legend(title='Pruning:')) +
-    coord_cartesian(clip='off')
+    coord_cartesian(clip='off') +
+    labs(x = 'Sparsity level',
+         y = str_replace_all(bias_measure, '_', ' '))
   
   ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/sb_', task, '_', bias_measure, '.png'),
          plot = output,
@@ -289,10 +295,8 @@ perf_stsb <- function(data, pruning_method_set, base_folder){
     geom_line(linewidth=2) +
     geom_ribbon(aes(x = sparsity, ymax = maxi, ymin = mini, group=metric, fill=metric), alpha = 0.2, colour = NA) +
     geom_hline(yintercept=0.5, linewidth=2, colour=colours[8], linetype='dashed') +
-    scale_fill_manual(values=colours,
-                      labels=names) +
-    scale_colour_manual(values=colours,
-                        labels=names) +
+    scale_fill_manual(values=colours) +
+    scale_colour_manual(values=colours) +
     scale_x_continuous(expand = c(0,0),
                        limits = c(0,1)) +
     scale_y_continuous(expand = c(0,0),
@@ -300,7 +304,9 @@ perf_stsb <- function(data, pruning_method_set, base_folder){
     theme_bw() + 
     guides(colour=guide_legend(title='Metric:'),
            fill=guide_legend(title='Metric:')) +
-    coord_cartesian(clip='off')
+    coord_cartesian(clip='off') +
+    labs(x = 'Sparsity level',
+         y = 'Performance')
   
   ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/pc_stsb_', pruning_method_set, '.png'),
          plot = output,
@@ -329,7 +335,9 @@ perf_stsb_compare <- function(data, base_folder){
                        limits = c(NA,1)) +
     theme_bw() + 
     guides(colour=guide_legend(title='Metric:')) +
-    coord_cartesian(clip='off')
+    coord_cartesian(clip='off') +
+    labs(x = 'Sparsity level',
+         y = 'Spearmanr')
   
   ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/pc_stsb_compare.png'),
          plot = output,
@@ -361,11 +369,9 @@ perf_mnli <- function(data, pruning_method_set, base_folder){
     ggplot(working, aes(x=sparsity, y=performance, group=accuracy, colour=accuracy)) +
     geom_line(linewidth=2) +
     geom_ribbon(aes(x = sparsity, ymax = maxi, ymin = mini, group=accuracy, fill=accuracy), alpha = 0.2, colour = NA) +
-    scale_fill_manual(values=colours,
-                      labels=names) +
+    scale_fill_manual(values=colours[9:10]) +
     geom_hline(yintercept=0.66, linewidth=2, colour=colours[8], linetype='dashed') +
-    scale_colour_manual(values=colours,
-                        labels=names) +
+    scale_colour_manual(values=colours[9:10]) +
     scale_x_continuous(expand = c(0,0),
                        limits = c(0,1)) +
     scale_y_continuous(expand = c(0,0),
@@ -373,7 +379,9 @@ perf_mnli <- function(data, pruning_method_set, base_folder){
     theme_bw() + 
     guides(colour=guide_legend(title='Accuracy:'),
            fill=guide_legend(title='Accuracy:')) +
-    coord_cartesian(clip='off')
+    coord_cartesian(clip='off') +
+    labs(x = 'Sparsity level',
+         y = 'Performance')
   
   ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/pc_mnli_', pruning_method_set, '.png'),
          plot = output,
@@ -402,7 +410,9 @@ perf_mnli_compare <- function(data, base_folder){
                        limits = c(0,1)) +
     theme_bw() + 
     guides(colour=guide_legend(title='Accuracy:')) +
-    coord_cartesian(clip='off')
+    coord_cartesian(clip='off') +
+    labs(x = 'Sparsity level',
+         y = 'Matched accuracy')
   
   ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/pc_mnli_compare.png'),
          plot = output,
