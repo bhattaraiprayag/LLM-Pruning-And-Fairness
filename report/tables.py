@@ -3,6 +3,13 @@ import numpy as np
 from utils import run_info, run_phrase
 import re
 
+name_dict = {'imp': 'IMP',
+             'random-unstructured': 'Random',
+             'l1-unstructured': 'Layer-wise L1',
+             'global-unstructured': 'Global L1',
+             'global-unstructured-attention': 'Global L1 AH',
+             'structured': 'Structured',
+             'original': 'Original'}
 
 ### Table for overview of all MNLI results
 def mnli_overview(filepath, cutoff=True):
@@ -39,6 +46,8 @@ def mnli_overview(filepath, cutoff=True):
                            'StereoSet_SS_gender': 'StereoSet'}, inplace=True)
     # Sort rows
     output.sort_values(by=['Pruning method', 'Sparsity level'], inplace=True)
+    # Replace pruning method names
+    output.replace(name_dict, inplace=True)
 
     extra_cap = ''
     if cutoff==True:
@@ -93,6 +102,8 @@ def stsb_overview(filepath, cutoff=True):
                            'StereoSet_SS_gender': 'StereoSet'}, inplace=True)
     # Sort rows
     output.sort_values(by=['Pruning method', 'Sparsity level'], inplace=True)
+    # Replace pruning method names
+    output.replace(name_dict, inplace=True)
 
     extra_cap = ''
     if cutoff == True:
@@ -227,6 +238,8 @@ def sweat_overview(filepath):
                            'weat_race': 'WEAT race', 'weat_illness': 'WEAT illness'}, inplace=True)
     # Sort rows
     output.sort_values(by=['Task', 'Pruning method', 'Sparsity level'], inplace=True)
+    # Replace pruning method names
+    output.replace(name_dict, inplace=True)
 
     # Convert to latex
     latex = output.to_latex(index=False,
@@ -268,6 +281,8 @@ def stereoset_overview(filepath):
                            'race': 'Race', 'religion': 'Religion'}, inplace=True)
     # Sort rows
     output.sort_values(by=['Task', 'Pruning method', 'Sparsity level'], inplace=True)
+    # Replace pruning method names
+    output.replace(name_dict, inplace=True)
 
     # Convert to latex
     latex = output.to_latex(index=False,
