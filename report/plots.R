@@ -196,11 +196,12 @@ zero_spars <- function(data){
   return(output)
 }
 
-spars_vs_bias_plot <- function(data, bias_measure, base_folder, optimum, task){
-  if(task=='mnli'){
+spars_vs_bias_plot <- function(data, bias_measure, base_folder, optimum, task, bad_models=F){
+  
+  if(task=='mnli' & bad_models==F){
     data = data %>%
-      filter(Matched_Acc > 0.66)}
-  else{
+      filter(Matched_Acc > 0.66)
+  } else if(bad_models==F){
     data = data %>%
       filter(Spearmanr > 0.5)}
   
@@ -227,27 +228,33 @@ spars_vs_bias_plot <- function(data, bias_measure, base_folder, optimum, task){
     labs(x = 'Sparsity level',
          y = str_replace_all(bias_measure, '_', ' '))
   
-  ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/sb_', task, '_', bias_measure, '.png'),
+  if(bad_models==T){
+    output_file = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/sb_', task, '_', bias_measure, '_all.png')
+  } else {
+    output_file = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/sb_', task, '_', bias_measure, '.png')
+  }
+  
+  ggsave(filename = output_file,
          plot = output,
          width = 2100,
          height = 1400,
          units = "px")
 }
 
-spars_vs_bias_all <- function(data, base_folder){
+spars_vs_bias_all <- function(data, base_folder, bad_models=F){
   mnli <- data %>% filter(task=='mnli')
-  spars_vs_bias_plot(mnli, 'SEAT_gender', base_folder, 0, task='mnli')
-  spars_vs_bias_plot(mnli, 'WEAT_gender', base_folder, 0, task='mnli')
-  spars_vs_bias_plot(mnli, 'StereoSet_LM_gender', base_folder, 1, task='mnli')
-  spars_vs_bias_plot(mnli, 'StereoSet_SS_gender', base_folder, 0.5, task='mnli')
-  spars_vs_bias_plot(mnli, 'BiasNLI_NN', base_folder, 1, task='mnli')
-  spars_vs_bias_plot(mnli, 'BiasNLI_FN', base_folder, 1, task='mnli')
+  spars_vs_bias_plot(mnli, 'SEAT_gender', base_folder, 0, task='mnli', bad_models)
+  spars_vs_bias_plot(mnli, 'WEAT_gender', base_folder, 0, task='mnli', bad_models)
+  spars_vs_bias_plot(mnli, 'StereoSet_LM_gender', base_folder, 1, task='mnli', bad_models)
+  spars_vs_bias_plot(mnli, 'StereoSet_SS_gender', base_folder, 0.5, task='mnli', bad_models)
+  spars_vs_bias_plot(mnli, 'BiasNLI_NN', base_folder, 1, task='mnli', bad_models)
+  spars_vs_bias_plot(mnli, 'BiasNLI_FN', base_folder, 1, task='mnli', bad_models)
   stsb <- data %>% filter(task=='stsb')
-  spars_vs_bias_plot(stsb, 'SEAT_gender', base_folder, 0, task='stsb')
-  spars_vs_bias_plot(stsb, 'WEAT_gender', base_folder, 0, task='stsb')
-  spars_vs_bias_plot(stsb, 'StereoSet_LM_gender', base_folder, 1, task='stsb')
-  spars_vs_bias_plot(stsb, 'StereoSet_SS_gender', base_folder, 0.5, task='stsb')
-  spars_vs_bias_plot(stsb, 'BiasSTS', base_folder, 0, task='stsb')
+  spars_vs_bias_plot(stsb, 'SEAT_gender', base_folder, 0, task='stsb', bad_models)
+  spars_vs_bias_plot(stsb, 'WEAT_gender', base_folder, 0, task='stsb', bad_models)
+  spars_vs_bias_plot(stsb, 'StereoSet_LM_gender', base_folder, 1, task='stsb', bad_models)
+  spars_vs_bias_plot(stsb, 'StereoSet_SS_gender', base_folder, 0.5, task='stsb', bad_models)
+  spars_vs_bias_plot(stsb, 'BiasSTS', base_folder, 0, task='stsb', bad_models)
 }
 
 ### Performance over increasing sparsity ####
@@ -436,4 +443,5 @@ perf_all <- function(data, base_folder){
 ### Actually running all the functions ####
 acc_vs_bias_all(results_group, base_folder)
 spars_vs_bias_all(results_group, base_folder)
+spars_vs_bias_all(results_group, base_folder, bad_models=T)
 perf_all(perf_data, base_folder)
