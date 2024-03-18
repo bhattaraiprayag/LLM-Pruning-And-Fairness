@@ -15,7 +15,7 @@ In our project, we focus on exploring the impact of various pruning techniques o
 
 ### Structured Pruning
 
-Structured pruning is implemented in [structure_pruning.py](pruning/structured_pruning.py) and is based on the code published in [When BERT Plays the Lottery, All Tickets Are Winning](https://github.com/sai-prasanna/bert-experiments). 
+Structured pruning is implemented in [structured_pruning.py](pruning/structured_pruning.py) and is based on the code published in [When BERT Plays the Lottery, All Tickets Are Winning](https://github.com/sai-prasanna/bert-experiments). 
 
 The variable that can be changed is the masking threshold, which defines the performance threshold for stopping masking. For performance evaluation within the the corresponding validation set of the used model is utilized. The masking amount (the fraction of heads to mask in each iteration) is kept constant at 0.1.
 
