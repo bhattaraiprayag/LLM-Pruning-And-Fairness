@@ -152,7 +152,7 @@ def bnli_table(run_no):
                        inplace=True)
 
     latex = output_bnli.to_latex(index=False,
-                                 column_format='lccc',
+                                 column_format='lcccccc',
                                  label=f'tab:bnli{run_no}',
                                  caption=f'Results from Bias-NLI for the job titles that most entail or contradict gendered words. {info_sent}')
     # Save the LaTeX output
