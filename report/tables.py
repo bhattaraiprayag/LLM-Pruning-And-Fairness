@@ -13,14 +13,14 @@ def mnli_overview(filepath, cutoff=True):
     # Group just for structured pruning, where the sparsity needs to be averaged
     working1 = results[results['pruning_method'] == 'structured']
     working1 = (working1.groupby(['masking_threshold', 'pruning_method'], as_index=False)[
-                    ['sparsity_level', 'SEAT_gender', 'WEAT_gender', 'StereoSet_LM_gender', 'StereoSet_SS_gender',
+                    ['sparsity_level', 'SEAT_gender', 'WEAT_gender', 'StereoSet_SS_gender',
                      'BiasNLI_NN', 'BiasNLI_FN', 'Matched Acc', 'Mismatched Acc']].mean())
 
     # Group for everything else, where the target sparsity was an input
     working2 = results[results['pruning_method'] != 'structured'].copy()
     working2['pruning_method'] = working2['pruning_method'].replace(np.nan, 'original')
     working2 = (working2.groupby(['sparsity_level', 'pruning_method'], as_index=False)[
-                    ['SEAT_gender', 'WEAT_gender', 'StereoSet_LM_gender', 'StereoSet_SS_gender',
+                    ['SEAT_gender', 'WEAT_gender', 'StereoSet_SS_gender',
                      'BiasNLI_NN', 'BiasNLI_FN', 'Matched Acc', 'Mismatched Acc']].mean())
     if cutoff==True:
         working1 = working1[working1['Matched Acc'] > 0.66]
@@ -30,14 +30,13 @@ def mnli_overview(filepath, cutoff=True):
     output = pd.concat([working1, working2], axis=0, ignore_index=True)
     # Reorder columns
     output = output[['pruning_method', 'sparsity_level', 'masking_threshold', 'Matched Acc', 'Mismatched Acc',
-                     'BiasNLI_NN', 'BiasNLI_FN', 'SEAT_gender', 'WEAT_gender', 'StereoSet_LM_gender',
-                     'StereoSet_SS_gender']]
+                     'BiasNLI_NN', 'BiasNLI_FN', 'SEAT_gender', 'WEAT_gender', 'StereoSet_SS_gender']]
     # Rename columns
     output.rename(columns={'pruning_method': 'Pruning method', 'sparsity_level': 'Sparsity level',
                            'masking_threshold': 'Masking threshold', 'Matched Acc': 'Matched accuracy',
                            'Mismatched Acc': 'Mismatched accuracy', 'BiasNLI_NN': 'Bias-NLI NN',
                            'BiasNLI_FN': 'Bias-NLI FN', 'SEAT_gender': 'SEAT', 'WEAT_gender': 'WEAT',
-                           'StereoSet_LM_gender': 'StereoSet LM', 'StereoSet_SS_gender': 'StereoSet SS'}, inplace=True)
+                           'StereoSet_SS_gender': 'StereoSet'}, inplace=True)
     # Sort rows
     output.sort_values(by=['Pruning method', 'Sparsity level'], inplace=True)
 
@@ -47,7 +46,7 @@ def mnli_overview(filepath, cutoff=True):
 
     # Convert to latex
     latex = output.to_latex(index=False,
-                            column_format='p{0.16\\textwidth}p{0.06\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}p{0.04\\textwidth}p{0.04\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}',
+                            column_format='p{0.16\\textwidth}p{0.06\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}p{0.04\\textwidth}p{0.04\\textwidth}p{0.07\\textwidth}',
                             label=f'tab:mnli_all',
                             caption=f'Results from the MNLI models. Where the masking threshold was specified for structured pruning, the average sparsity level is shown.{extra_cap}',
                             na_rep='-',
@@ -67,7 +66,7 @@ def stsb_overview(filepath, cutoff=True):
     # Group just for structured pruning, where the sparsity needs to be averaged
     working1 = results[results['pruning_method'] == 'structured']
     working1 = (working1.groupby(['masking_threshold', 'pruning_method'], as_index=False)[
-                    ['sparsity_level', 'SEAT_gender', 'WEAT_gender', 'StereoSet_LM_gender', 'StereoSet_SS_gender',
+                    ['sparsity_level', 'SEAT_gender', 'WEAT_gender', 'StereoSet_SS_gender',
                      'BiasSTS', 'Spearmanr', 'Pearson']].mean())
 
     # Group for everything else, where the target sparsity was an input
@@ -75,7 +74,7 @@ def stsb_overview(filepath, cutoff=True):
     working2 = working2[working2['pruning_method'] != 'imp-ft']
     working2['pruning_method'] = working2['pruning_method'].replace(np.nan, 'original')
     working2 = (working2.groupby(['sparsity_level', 'pruning_method'], as_index=False)[
-                    ['SEAT_gender', 'WEAT_gender', 'StereoSet_LM_gender', 'StereoSet_SS_gender',
+                    ['SEAT_gender', 'WEAT_gender', 'StereoSet_SS_gender',
                      'BiasSTS', 'Spearmanr', 'Pearson']].mean())
 
     if cutoff==True:
@@ -86,12 +85,12 @@ def stsb_overview(filepath, cutoff=True):
     output = pd.concat([working1, working2], axis=0, ignore_index=True)
     # Reorder columns
     output = output[['pruning_method', 'sparsity_level', 'masking_threshold', 'Spearmanr', 'Pearson',
-                     'BiasSTS', 'SEAT_gender', 'WEAT_gender', 'StereoSet_LM_gender', 'StereoSet_SS_gender']]
+                     'BiasSTS', 'SEAT_gender', 'WEAT_gender', 'StereoSet_SS_gender']]
     # Rename columns
     output.rename(columns={'pruning_method': 'Pruning method', 'sparsity_level': 'Sparsity level',
                            'masking_threshold': 'Masking threshold', 'Spearmanr': 'Spearman rank',
                            'BiasSTS': 'Bias-STS', 'SEAT_gender': 'SEAT', 'WEAT_gender': 'WEAT',
-                           'StereoSet_LM_gender': 'StereoSet LM', 'StereoSet_SS_gender': 'StereoSet SS'}, inplace=True)
+                           'StereoSet_SS_gender': 'StereoSet'}, inplace=True)
     # Sort rows
     output.sort_values(by=['Pruning method', 'Sparsity level'], inplace=True)
 
@@ -101,7 +100,7 @@ def stsb_overview(filepath, cutoff=True):
 
     # Convert to latex
     latex = output.to_latex(index=False,
-                            column_format='p{0.16\\textwidth}p{0.06\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}p{0.04\\textwidth}p{0.04\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}',
+                            column_format='p{0.16\\textwidth}p{0.06\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}p{0.07\\textwidth}p{0.04\\textwidth}p{0.04\\textwidth}p{0.07\\textwidth}',
                             label=f'tab:stsb_all',
                             caption=f'Results from the STSB models. Where the masking threshold was specified for structured pruning, the average sparsity level is shown.{extra_cap}',
                             na_rep='-',
