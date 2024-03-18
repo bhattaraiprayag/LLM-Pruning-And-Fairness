@@ -141,14 +141,14 @@ def bnli_table(run_no):
     neutral_bnli = group_bnli.sort_values('neutral', ascending=False).drop_duplicates(['hypothesis_filler_word'])
 
     # Final table
-    output_bnli = entail_bnli[['hypothesis_filler_word', 'premise_filler_word']].copy()
-    output_bnli.rename(columns={'premise_filler_word': 'Entailment'}, inplace=True)
-    output_bnli = output_bnli.merge(neutral_bnli[['hypothesis_filler_word', 'premise_filler_word']], how='left',
+    output_bnli = entail_bnli[['hypothesis_filler_word', 'premise_filler_word', 'contradiction']].copy()
+    output_bnli.rename(columns={'premise_filler_word': 'Entailment', 'contradiction': 'E Value'}, inplace=True)
+    output_bnli = output_bnli.merge(neutral_bnli[['hypothesis_filler_word', 'premise_filler_word', 'neutral']], how='left',
                                     on='hypothesis_filler_word')
-    output_bnli.rename(columns={'premise_filler_word': 'Neutral'}, inplace=True)
-    output_bnli = output_bnli.merge(contradict_bnli[['hypothesis_filler_word', 'premise_filler_word']], how='left',
+    output_bnli.rename(columns={'premise_filler_word': 'Neutral', 'neutral': 'N Value'}, inplace=True)
+    output_bnli = output_bnli.merge(contradict_bnli[['hypothesis_filler_word', 'premise_filler_word', 'entailment']], how='left',
                                     on='hypothesis_filler_word')
-    output_bnli.rename(columns={'premise_filler_word': 'Contradiction', 'hypothesis_filler_word': 'Gendered word'},
+    output_bnli.rename(columns={'premise_filler_word': 'Contradiction', 'hypothesis_filler_word': 'Gendered word', 'entailment': 'C Value'},
                        inplace=True)
 
     latex = output_bnli.to_latex(index=False,
