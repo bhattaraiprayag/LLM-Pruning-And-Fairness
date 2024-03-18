@@ -10,25 +10,40 @@ The data files for each split can be saved by running the script [save_data.py](
 ## Pruning
 
 ### Overview
+
 In our project, we focus on exploring the impact of various pruning techniques on the biasness of RoBERTa-base. Pruning, a method to reduce model size and computational load, involves selectively removing parameters (weights), or neurons, from the neural network. We have implemented and experimented with different types of pruning strategies, starting with magnitude-based methods and structure Pruning.
 
-### Structured Pruning:
+### Structured Pruning
+
 Structured pruning is implemented in [structure_pruning.py](pruning/structure_pruning.py) and is based on the code published in [When BERT Plays the Lottery, All Tickets Are Winning](https://github.com/sai-prasanna/bert-experiments). 
 
 The variable that can be changed is the masking threshold, which defines the performance threshold for stopping masking. For performance evaluation within the the corresponding validation set of the used model is utilized. The masking amount (the fraction of heads to mask in each iteration) is kept constant at 0.1.
 
+### Unstructured Pruning
 
-### Magnitude Pruning:
-Magnitude pruning is implemented through the **MagnitudePrunerOneShot** class, defined in [pruning/magnitude_pruner.py](magnitude_pruner.py). This class offers three distinct methods of magnitude-based pruning:
-* L1-Unstructured: This global pruning strategy removes weights across the entire network based on their L1-norm magnitude. Can be used with *--pruning_method l1-unstructured*.
-* L1-Unstructured (Linear): Targets only the linear layers of the model, pruning weights based on their L1-norm. Can be used with *--pruning_method l1-unstructured-linear*.
-* Random-Unstructured: Randomly prunes weights to the specified sparsity
+In our pursuit to understand the effects of pruning on the bias in language models, we've delved into unstructured pruning methods. These techniques hinge on the notion of removing weights from the neural network based on their magnitude, offering a granular approach to model compression.
 
-We ensure that each pruning process begins with a consistent state by setting a seed for reproducibility. Post-pruning, we evaluate and report the sparsity levels of the model to understand the extent of weight reduction.
+#### One-Shot Pruning
+
+The one-shot approach to unstructured pruning is encapsulated in the **MagnitudePrunerOneShot** class, defined in [pruning/magnitude_pruner.py](magnitude_pruner.py). This class provides a suite of methods for different styles of magnitude-based pruning:
+1. Random Unstructured: BASELINE. A less deterministic approach, this randomly prunes weights to a specified sparsity level. It can be activated by specifying *--pruning_method random-unstructured*.
+2. Layer-wise L1 Unstructured: This method prunes weights across the entire network based on their L1-norm magnitude. It can be utilized by specifying *--pruning_method l1-unstructured*.
+3. Layer-wise L1 Unstructured (Linear): Targeting only the linear layers, this method prunes weights based on their L1-norm. This can be activated with *--pruning_method l1-unstructured-linear*.
+4. Global L1 Unstructured: This method prunes weights across the entire network based on their L1-norm magnitude. It can be used with *--pruning_method global-unstructured*.
+5. Global L1 Unstructured (Attention Head): This method prunes weights of the attention heads based on their L1-norm magnitude. It can be activated by specifying *--pruning_method global-unstructured-attention*.
+
+#### Iterative Magnitude Pruning
+
+Expanding our exploration, we introduce the **MagnitudePrunerIterative** class, defined in [pruning/iterative_pruner.py](iterative_pruner.py). This class implements a more dynamic approach to pruning:
+1. Iterative Process: The model undergoes multiple iterations of pruning and fine-tuning. In each iteration, a small fraction of weights are pruned, followed by fine-tuning to recover performance.
+2. Configurations: Parameters like total iterations, desired sparsity level, and the rate of pruning per step are configurable, offering flexibility in the pruning process.
+3. Rewind Mechanism: A unique feature of this approach is the 'rewind' to the initial state of the model after each pruning step. This is hypothesized to preserve the "winning ticket" – a subset of weights critical for efficient learning.
+4. Evaluation & Sparsity Tracking: After each iteration, the model's performance is evaluated, and its sparsity level is reported. This provides insights into the trade-offs between model size and performance.
 
 ## Evaluation
 
 ### Performance evaluation
+
 To gauge the performance of our pruned models, we turn to our benchmark tasks: the Multi-Genre Natural Language Inference (MNLI) and the Semantic Textual Similarity Benchmark (STS-B). These tasks allow us to assess the model's understanding of language and its ability to capture semantic relationships, respectively.
 
 Our [performance.py](evaluation/performance.py) script encapsulates the evaluation pipeline:
