@@ -11,12 +11,35 @@ library(readr)
 
 # Basic settings
 base_folder <- SET BASE FOLDER
-colours = c('#332288', '#117733', '#CC6677', '#882255', '#88CCEE', '#DDCC77', '#AA4499', '#44AA99')
+colours = c('initial-model'='#332288', 
+            'structured'='#117733', 
+            'l1-unstructured'='#CC6677', 
+            'global-unstructured'='#882255', 
+            'global-unstructured-attention'='#88CCEE', 
+            'imp'='#DDCC77', 
+            'random-unstructured'='#AA4499', 
+            '#44AA99',
+            '#332288', 
+            '#117733')
+shapes = c('l1-unstructured'=21,
+           'global-unstructured'=22,
+           'global-unstructured-attention'=23,
+           'structured'=24,
+           'imp'=25,
+           'random-unstructured'=4,
+           'initial-model'=8)
+names=c('initial-model'='Initial model', 
+        'structured'='Structured', 
+        'l1-unstructured'='Layerwise L1', 
+        'global-unstructured'='Global L1', 
+        'global-unstructured-attention'='Global L1 AH', 
+        'imp'='Iterative', 
+        'random-unstructured'='Random')
 
 # Load in the data
 results_data <- read_csv(paste0(base_folder,'LLM-Pruning-And-Fairness/results/results.csv')) %>%
   filter(!ID %in% c(10,11)) %>%
-  mutate(pruning_method = coalesce(pruning_method, paste0('initial ', task, ' model')))
+  mutate(pruning_method = coalesce(pruning_method, paste0('initial-model')))
 
 # Group up based on the actual categories - still has both tasks
 
@@ -63,7 +86,9 @@ sp_group <- results_data %>%
 
 # Then everything else
 results_group <- results_data %>%
-  filter(pruning_method!='structured') %>%
+  filter(pruning_method!='structured',
+         pruning_method!='imp-ft',
+         pruning_method!='random-unstructured') %>%
   group_by(task, pruning_method, sparsity_level) %>%
   summarise(SEAT_gender_max = max(SEAT_gender),
             SEAT_gender_min = min(SEAT_gender),
@@ -106,10 +131,15 @@ results_group <- results_data %>%
 # Function for plotting bias measures against model performance measures
 acc_vs_bias_plot <- function(data, acc_measure, bias_measure, base_folder, optimum, task){
   output <-
-    ggplot(data, aes(x=.data[[acc_measure]], y=.data[[bias_measure]], group=pruning_method, colour=pruning_method, shape=pruning_method, alpha=1-sparsity_level)) +
+    ggplot(data, aes(x=.data[[acc_measure]], y=.data[[bias_measure]], group=pruning_method, colour=pruning_method, shape=pruning_method, fill=pruning_method, alpha=1-sparsity_level)) +
     geom_point(size=4) +
     geom_hline(yintercept=optimum, linewidth=2, colour=colours[8], linetype='dashed') +
-    scale_colour_manual(values=colours) +
+    scale_shape_manual(values=shapes,
+                       labels=names)+
+    scale_colour_manual(values=colours,
+                        labels=names) +
+    scale_fill_manual(values=colours,
+                      labels=names) +
     scale_x_continuous(expand = c(0,0),
                        limits = c(0,1)) +
     scale_y_continuous(expand = c(0,0),
@@ -117,8 +147,11 @@ acc_vs_bias_plot <- function(data, acc_measure, bias_measure, base_folder, optim
     theme_bw() + 
     guides(colour=guide_legend(title='Pruning:'),
            shape=guide_legend(title='Pruning:'),
+           fill=guide_legend(title='Pruning:'),
            alpha=guide_legend(title='Density')) +
-    coord_cartesian(clip='off')
+    coord_cartesian(clip='off') +
+    labs(x = str_replace_all(acc_measure, '_', ' ') %>% str_to_sentence() %>% str_replace('acc', 'accuracy'),
+         y = str_replace_all(bias_measure, '_', ' '))
   
   
   ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/ab_', task, '_', acc_measure, '_', bias_measure, '.png'),
@@ -163,11 +196,12 @@ zero_spars <- function(data){
   return(output)
 }
 
-spars_vs_bias_plot <- function(data, bias_measure, base_folder, optimum, task){
-  if(task=='mnli'){
+spars_vs_bias_plot <- function(data, bias_measure, base_folder, optimum, task, bad_models=F){
+  
+  if(task=='mnli' & bad_models==F){
     data = data %>%
-      filter(Matched_Acc > 0.66)}
-  else{
+      filter(Matched_Acc > 0.66)
+  } else if(bad_models==F){
     data = data %>%
       filter(Spearmanr > 0.5)}
   
@@ -177,40 +211,50 @@ spars_vs_bias_plot <- function(data, bias_measure, base_folder, optimum, task){
     zero_spars() %>%
     ggplot(aes(x=sparsity_level, y=.data[[bias_measure]], group=pruning_method, colour=pruning_method)) +
     geom_line(linewidth=2) +
-    geom_ribbon(aes(x = sparsity_level, ymax = .data[[paste0(bias_measure, '_max')]], ymin = .data[[paste0(bias_measure, '_min')]], group=pruning_method, fill=pruning_method), alpha = 0.3, colour = NA) +
+    geom_ribbon(aes(x = sparsity_level, ymax = .data[[paste0(bias_measure, '_max')]], ymin = .data[[paste0(bias_measure, '_min')]], group=pruning_method, fill=pruning_method), alpha = 0.2, colour = NA) +
     geom_point(size=2) +
     geom_hline(yintercept=optimum, linewidth=2, colour=colours[8], linetype='dashed') +
-    scale_colour_manual(values=colours) +
-    scale_fill_manual(values=colours) +
+    scale_colour_manual(values=colours,
+                        labels=names) +
+    scale_fill_manual(values=colours,
+                      labels=names) +
     scale_x_continuous(expand = c(0,0)) +
     scale_y_continuous(expand = c(0,0),
                        limits = c(0,1)) +
     theme_bw() + 
     guides(colour=guide_legend(title='Pruning:'),
            fill=guide_legend(title='Pruning:')) +
-    coord_cartesian(clip='off')
+    coord_cartesian(clip='off') +
+    labs(x = 'Sparsity level',
+         y = str_replace_all(bias_measure, '_', ' '))
   
-  ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/sb_', task, '_', bias_measure, '.png'),
+  if(bad_models==T){
+    output_file = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/sb_', task, '_', bias_measure, '_all.png')
+  } else {
+    output_file = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/sb_', task, '_', bias_measure, '.png')
+  }
+  
+  ggsave(filename = output_file,
          plot = output,
          width = 2100,
          height = 1400,
          units = "px")
 }
 
-spars_vs_bias_all <- function(data, base_folder){
+spars_vs_bias_all <- function(data, base_folder, bad_models=F){
   mnli <- data %>% filter(task=='mnli')
-  spars_vs_bias_plot(mnli, 'SEAT_gender', base_folder, 0, task='mnli')
-  spars_vs_bias_plot(mnli, 'WEAT_gender', base_folder, 0, task='mnli')
-  spars_vs_bias_plot(mnli, 'StereoSet_LM_gender', base_folder, 1, task='mnli')
-  spars_vs_bias_plot(mnli, 'StereoSet_SS_gender', base_folder, 0.5, task='mnli')
-  spars_vs_bias_plot(mnli, 'BiasNLI_NN', base_folder, 1, task='mnli')
-  spars_vs_bias_plot(mnli, 'BiasNLI_FN', base_folder, 1, task='mnli')
+  spars_vs_bias_plot(mnli, 'SEAT_gender', base_folder, 0, task='mnli', bad_models)
+  spars_vs_bias_plot(mnli, 'WEAT_gender', base_folder, 0, task='mnli', bad_models)
+  spars_vs_bias_plot(mnli, 'StereoSet_LM_gender', base_folder, 1, task='mnli', bad_models)
+  spars_vs_bias_plot(mnli, 'StereoSet_SS_gender', base_folder, 0.5, task='mnli', bad_models)
+  spars_vs_bias_plot(mnli, 'BiasNLI_NN', base_folder, 1, task='mnli', bad_models)
+  spars_vs_bias_plot(mnli, 'BiasNLI_FN', base_folder, 1, task='mnli', bad_models)
   stsb <- data %>% filter(task=='stsb')
-  spars_vs_bias_plot(stsb, 'SEAT_gender', base_folder, 0, task='stsb')
-  spars_vs_bias_plot(stsb, 'WEAT_gender', base_folder, 0, task='stsb')
-  spars_vs_bias_plot(stsb, 'StereoSet_LM_gender', base_folder, 1, task='stsb')
-  spars_vs_bias_plot(stsb, 'StereoSet_SS_gender', base_folder, 0.5, task='stsb')
-  spars_vs_bias_plot(stsb, 'BiasSTS', base_folder, 0, task='stsb')
+  spars_vs_bias_plot(stsb, 'SEAT_gender', base_folder, 0, task='stsb', bad_models)
+  spars_vs_bias_plot(stsb, 'WEAT_gender', base_folder, 0, task='stsb', bad_models)
+  spars_vs_bias_plot(stsb, 'StereoSet_LM_gender', base_folder, 1, task='stsb', bad_models)
+  spars_vs_bias_plot(stsb, 'StereoSet_SS_gender', base_folder, 0.5, task='stsb', bad_models)
+  spars_vs_bias_plot(stsb, 'BiasSTS', base_folder, 0, task='stsb', bad_models)
 }
 
 ### Performance over increasing sparsity ####
@@ -256,7 +300,7 @@ perf_stsb <- function(data, pruning_method_set, base_folder){
   output <-
     ggplot(working, aes(x=sparsity, y=performance, group=metric, colour=metric)) +
     geom_line(linewidth=2) +
-    geom_ribbon(aes(x = sparsity, ymax = maxi, ymin = mini, group=metric, fill=metric), alpha = 0.3, colour = NA) +
+    geom_ribbon(aes(x = sparsity, ymax = maxi, ymin = mini, group=metric, fill=metric), alpha = 0.2, colour = NA) +
     geom_hline(yintercept=0.5, linewidth=2, colour=colours[8], linetype='dashed') +
     scale_fill_manual(values=colours) +
     scale_colour_manual(values=colours) +
@@ -267,7 +311,9 @@ perf_stsb <- function(data, pruning_method_set, base_folder){
     theme_bw() + 
     guides(colour=guide_legend(title='Metric:'),
            fill=guide_legend(title='Metric:')) +
-    coord_cartesian(clip='off')
+    coord_cartesian(clip='off') +
+    labs(x = 'Sparsity level',
+         y = 'Performance')
   
   ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/pc_stsb_', pruning_method_set, '.png'),
          plot = output,
@@ -285,8 +331,10 @@ perf_stsb_compare <- function(data, base_folder){
   output <-
     ggplot(working, aes(x=sparsity, y=spearmanr, group=pruning_method, colour=pruning_method)) +
     geom_line(linewidth=2) +
-    scale_fill_manual(values=colours) +
-    scale_colour_manual(values=colours) +
+    scale_fill_manual(values=colours,
+                      labels=names) +
+    scale_colour_manual(values=colours,
+                        labels=names) +
     geom_hline(yintercept=0.5, linewidth=2, colour=colours[8], linetype='dashed') +
     scale_x_continuous(expand = c(0,0),
                        limits = c(0,1)) +
@@ -294,7 +342,9 @@ perf_stsb_compare <- function(data, base_folder){
                        limits = c(NA,1)) +
     theme_bw() + 
     guides(colour=guide_legend(title='Metric:')) +
-    coord_cartesian(clip='off')
+    coord_cartesian(clip='off') +
+    labs(x = 'Sparsity level',
+         y = 'Spearmanr')
   
   ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/pc_stsb_compare.png'),
          plot = output,
@@ -325,10 +375,10 @@ perf_mnli <- function(data, pruning_method_set, base_folder){
   output <-
     ggplot(working, aes(x=sparsity, y=performance, group=accuracy, colour=accuracy)) +
     geom_line(linewidth=2) +
-    geom_ribbon(aes(x = sparsity, ymax = maxi, ymin = mini, group=accuracy, fill=accuracy), alpha = 0.3, colour = NA) +
-    scale_fill_manual(values=colours) +
+    geom_ribbon(aes(x = sparsity, ymax = maxi, ymin = mini, group=accuracy, fill=accuracy), alpha = 0.2, colour = NA) +
+    scale_fill_manual(values=colours[9:10]) +
     geom_hline(yintercept=0.66, linewidth=2, colour=colours[8], linetype='dashed') +
-    scale_colour_manual(values=colours) +
+    scale_colour_manual(values=colours[9:10]) +
     scale_x_continuous(expand = c(0,0),
                        limits = c(0,1)) +
     scale_y_continuous(expand = c(0,0),
@@ -336,7 +386,9 @@ perf_mnli <- function(data, pruning_method_set, base_folder){
     theme_bw() + 
     guides(colour=guide_legend(title='Accuracy:'),
            fill=guide_legend(title='Accuracy:')) +
-    coord_cartesian(clip='off')
+    coord_cartesian(clip='off') +
+    labs(x = 'Sparsity level',
+         y = 'Performance')
   
   ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/pc_mnli_', pruning_method_set, '.png'),
          plot = output,
@@ -354,16 +406,20 @@ perf_mnli_compare <- function(data, base_folder){
   output <-
     ggplot(working, aes(x=sparsity, y=matched, group=pruning_method, colour=pruning_method)) +
     geom_line(linewidth=2) +
-    scale_fill_manual(values=colours) +
+    scale_fill_manual(values=colours,
+                      labels=names) +
     geom_hline(yintercept=0.66, linewidth=2, colour=colours[8], linetype='dashed') +
-    scale_colour_manual(values=colours) +
+    scale_colour_manual(values=colours,
+                        labels=names) +
     scale_x_continuous(expand = c(0,0),
                        limits = c(0,1)) +
     scale_y_continuous(expand = c(0,0),
                        limits = c(0,1)) +
     theme_bw() + 
     guides(colour=guide_legend(title='Accuracy:')) +
-    coord_cartesian(clip='off')
+    coord_cartesian(clip='off') +
+    labs(x = 'Sparsity level',
+         y = 'Matched accuracy')
   
   ggsave(filename = paste0(base_folder, 'LLM-Pruning-And-Fairness/report/figures/pc_mnli_compare.png'),
          plot = output,
@@ -387,5 +443,5 @@ perf_all <- function(data, base_folder){
 ### Actually running all the functions ####
 acc_vs_bias_all(results_group, base_folder)
 spars_vs_bias_all(results_group, base_folder)
+spars_vs_bias_all(results_group, base_folder, bad_models=T)
 perf_all(perf_data, base_folder)
-
